@@ -1,3 +1,5 @@
 node C:/xampp/htsdocsC:\xampp\htdocs\IPS\js\dbconnect.js
 
 C:\Users\User Name>npm install mysql
+
+db port: 5432
