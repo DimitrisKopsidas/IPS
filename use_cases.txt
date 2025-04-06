@@ -18,8 +18,8 @@ https://miro.com/app/board/uXjVKMRCwxU=/
 4 Προβολη στατιστικων στοιχειων αντλημενων απο το database
 
 #3 Hardware
-1 Χρηση ESP32 ή STM με καμερα για πλοηγηση ως πληκτρολογιο ή/και ποντικι για το PI
-2 Χρηση Raspberry PI Zero 2 για εμφανιση frontend και αποστολη δεδομενων προς σερβερ
+1 Χρηση Raspberry PI με καμερα για πλοηγηση ως ποντίκι στο product page
+2 Χρηση Raspberry PI για εμφανιση frontend και αποστολη δεδομενων προς σερβερ
 3 Setup με προαπηθηκευμενα στοιχεια hotspot για συνδεση στο wifi του καταστηματος μεσω Anydesk
 4 3D printed βαση με clamp για plug-and-play σε οποιαδηποτε οθονη
 
