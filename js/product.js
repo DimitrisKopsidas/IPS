@@ -1,27 +1,20 @@
-//TO-DO
+//WISHLIST
 //1)WAIT PER IMAGE
-//2)CHANGEABLE AMOUNT OF SLIDES TO FIRE MINIGAME
-
-
-//ΣΚΑΛΩΜΑ ΜΕ ΑΦΕΤΗΡΙΑ ΣΤΟ MINIGAME!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 //USER DEFINED VARIABLES
 var autoplaywait =3000;//ισως να ειναι ιδια
 var actionwindow=5000;
 var autoplayspeed = 3000;
 var media = ["media/2.png","media/3.png","media/4.png"]
+var countforminigame=5;//αλλιως media.length
 
 //GLOBAL VARIABLES
 var prevslide=0;
 var currentslide;
 var onclickindex;
 var actionflag=0;
-var actioncount=0;
-
+var actioncount=1;
 var timeoutID;
-//---------------------------------------------------------------
-
-
 
 //CAROUSEL CREATION AND ATTRIBUTES
 document.addEventListener('DOMContentLoaded', function() {
@@ -79,29 +72,34 @@ function makeCell(img){
   cell.innerHTML = '<img src="'+img+'">';
   return cell;
 }
+
+//LISTEN FOR BACK SWIPES
 function swipeListener(current,prev){
   if((current<prev)&&(current!=0)){
     console.log('SWIPE EVENT');
   }
-  if((current==media.length)&&(prev==0)){//ιδιαιτεροτητες αφετηριας
+  if((current==media.length)&&(prev==0)){
     console.log('SWIPE EVENT1');
   }
-  if((current==0)&&(prev==1)){//ιδιαιτεροτητες αφετηριας
+  if((current==0)&&(prev==1)){
     console.log('SWIPE EVENT2');
   }
 }
+
+//COUNT ACTIONS TO START MINIGAME
 function minigameListener(current,prev){
   if((actionflag==1)&&(current>prev)){
     actioncount+=1;
-    //console.log("Count: ",actioncount);
   }
-  if((actionflag==1)&&((current==media.length)&&(prev==0))){
+  if((actionflag==1)&&(current==0)&&(prev==1)){
     actioncount+=1;
-    //console.log("Count: ",actioncount);
+  }
+  if((actionflag==1)&&(current==0)&&(prev==media.length)){
+    actioncount+=1;
   }
   
   console.log("Flag:"+actionflag+" Count:"+actioncount);
-  if(actioncount==(media.length)){//TODO2
+  if(actioncount==(countforminigame)){
     console.log("GO MINIGAME");
   }
 }
