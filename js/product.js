@@ -8,6 +8,7 @@ var actionwindow=5000;
 var autoplayspeed = 3000;
 var media = ["media/2.png","media/3.png","media/4.png"]
 var countforminigame=5;//αλλιως media.length
+var url="minigame.html";
 
 //GLOBAL VARIABLES
 var prevslide=0;
@@ -101,6 +102,6 @@ function minigameListener(current,prev){
   
   console.log("Flag:"+actionflag+" Count:"+actioncount);
   if(actioncount==(countforminigame)){
-    console.log("GO MINIGAME");
+    window.location.href = url;
   }
 }
