@@ -1,61 +1,169 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>IPS</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
-    <!-- jQuery -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-    <!-- Bootstrap JS -->
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
-  </head>
-  <body> 
-    <!-- <div class="container">
-      <h2>Upload Image</h2>
-      
-      <form action="/upload" method="post" enctype="multipart/form-data">
-        <div class="form-group">
-          <label for="image">Select image to upload:</label>
-          <input type="file" class="form-control" id="image" name="image" accept="image/*">
-        </div>
-        <div class="form-group">
-          <label for="title">Image Title:</label>
-          <input type="text" class="form-control" id="title" name="title" placeholder="Enter image title">
-        </div>
-        <div class="form-group">
-          <label for="description">Image Description:</label>
-          <textarea class="form-control" id="description" name="description" rows="3" placeholder="Enter image description"></textarea>
-        </div>
-        <button type="submit" class="btn btn-primary">Upload</button>
-      </form>
-    </div>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crystal Admin</title>
+    <link rel="stylesheet" href="css/admin.css">
+    <script type="module" src="js/admin.js"></script>
+</head>
+<body>
     <div class="container">
-      <h2>Image Gallery</h2>
-      
-      <button id="pastImagesBtn" class="btn btn-secondary">Past Images</button>
-      <button id="presentImagesBtn" class="btn btn-secondary">Present Images</button>
-      <div class="row" id="gallery">
+        <h1>My Crystal Settings</h1>
         
-      </div> -->
-
-
-
-
-
-
-
-      <p>TEST3</p>
-
-      <!-- Test form for upload -->
-      <form action="http://localhost:3000/api/upload" enctype="multipart/form-data" method="post">
+        <!-- Data Table with Thumbnails -->
         <div class="form-group">
-          <input type="text" name="name" placeholder="Enter file name">
-          <input type="file" name="file" class="form-control-file" >
-          <input type="submit" value="Upload image" class="btn btn-default">            
+            <h2>Database Records</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Preview</th>
+                        <th>Value</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>Temperature Chart</td>
+                        <td>
+                            <img src="media/0.png" 
+                                 class="thumbnail" 
+                                 alt="Temperature Chart"
+                                 onclick="openModal(this.src, this.alt)">
+                        </td>
+                        <td>23.5</td>
+                        <td>Active</td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>Humidity Graph</td>
+                        <td>
+                            <img src="media/1.png" 
+                                 class="thumbnail" 
+                                 alt="Humidity Graph"
+                                 onclick="openModal(this.src, this.alt)">
+                        </td>
+                        <td>65%</td>
+                        <td>Inactive</td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td>Pressure Diagram</td>
+                        <td>
+                            <img src="media/2.png" 
+                                 class="thumbnail" 
+                                 alt="Pressure Diagram"
+                                 onclick="openModal(this.src, this.alt)">
+                        </td>
+                        <td>1012 hPa</td>
+                        <td>Active</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
-      </form>
+        
+        <!-- Checkbox Settings Section -->
+        <div class="form-group">
+            <h2>Feature Toggles</h2>
+            <div class="checkbox-group">
+                <div class="checkbox-item">
+                    <input type="checkbox" id="feature1" checked>
+                    <label for="feature1">Enable Real-time Updates</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="feature2">
+                    <label for="feature2">Show Advanced Metrics</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="feature3" checked>
+                    <label for="feature3">Data Export</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="feature4">
+                    <label for="feature4">Notifications</label>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Dropdown Settings Section -->
+        <div class="form-group">
+            <h2>Configuration Options</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px;">
+                <div>
+                    <label for="updateInterval">Update Interval</label>
+                    <select id="updateInterval">
+                        <option value="5">5 seconds</option>
+                        <option value="10" selected>10 seconds</option>
+                        <option value="30">30 seconds</option>
+                        <option value="60">1 minute</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="theme">Color Theme</label>
+                    <select id="theme">
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                        <option value="blue" selected>Blue</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="dataPrecision">Data Precision</label>
+                    <select id="dataPrecision">
+                        <option value="1">1 decimal</option>
+                        <option value="2" selected>2 decimals</option>
+                        <option value="3">3 decimals</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <button id="saveSettings">Save Settings</button>
+        
+        <!-- The Modal -->
+        <div id="imageModal" class="modal">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <img class="modal-content" id="expandedImage">
+        </div>
     </div>
-  </body>
+    
+    <script>//FOR IMAGE PREVIEW
+        // Modal functionality
+        function openModal(src, alt) {
+            const modal = document.getElementById('imageModal');
+            const img = document.getElementById('expandedImage');
+            modal.style.display = "flex";
+            img.src = src;
+            img.alt = alt;
+        }
+        
+        function closeModal() {
+            document.getElementById('imageModal').style.display = "none";
+        }
+        
+        // Close when clicking outside the image
+        window.onclick = function(event) {
+            const modal = document.getElementById('imageModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+        
+        // Close with Escape key
+        document.onkeydown = function(evt) {
+            evt = evt || window.event;
+            if (evt.key === "Escape") {
+                closeModal();
+            }
+        };
+        
+        // Save settings button
+        document.getElementById('saveSettings').addEventListener('click', function() {
+            alert('Settings saved successfully!');
+            // Here you would typically send the settings to your backend
+        });
+    </script>
+</body>
 </html>

@@ -1,22 +1,26 @@
 //WISHLIST
 //1)WAIT PER IMAGE
 //2)HAND GIF "SWIPE ME" THAT APPEARS ON STANDARD INTERVALS
+//3)TIME OF WATCHING PER ITEM 
+
+//TO DO
+//1)DIV TO DISPLAY PRICE AND DISCOUNT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 //USER DEFINED VARIABLES
-var autoplaywait =3000;//ισως να ειναι ιδια
-var actionwindow=5000;
-var autoplayspeed = 3000;
-var media = ["media/2.png","media/3.png","media/4.png"]
-var countforminigame=5;//αλλιως media.length
-var url="minigame.html";
+var autoplaywait =1000;//DB
+var autoplayspeed = 3000;//DB
+var media = ["media/2.png","media/3.png","media/4.png"];//BACKEND
+var countforminigame=5;//DB
 
-//GLOBAL VARIABLES
+//PROGRAM VARIABLES
 var prevslide=0;
 var currentslide;
 var onclickindex;
 var actionflag=0;
 var actioncount=1;
 var timeoutID;
+var url="minigame.html";
+var actionwindow=autoplaywait+2000;
 
 //CAROUSEL CREATION AND ATTRIBUTES
 document.addEventListener('DOMContentLoaded', function() {
@@ -78,23 +82,22 @@ function makeCell(img){
 //LISTEN FOR BACK SWIPES
 function swipeListener(current,prev){
   if((current<prev)&&(current!=0)){
-    console.log('SWIPE EVENT');
+    //console.log('SWIPE EVENT');
   }
   if((current==media.length)&&(prev==0)){
-    console.log('SWIPE EVENT1');
+    //console.log('SWIPE EVENT1');
   }
   if((current==0)&&(prev==1)){
-    console.log('SWIPE EVENT2');
+    //console.log('SWIPE EVENT2');
   }
 }
 
 //COUNT ACTIONS TO START MINIGAME
 function minigameListener(current,prev){
   if((actionflag==1)&&(current>prev)){
-    actioncount+=1;
-  }
-  if((actionflag==1)&&(current==0)&&(prev==1)){
-    actioncount+=1;
+      actioncount+=1;
+      if((current==media.length)&&(prev==0))
+      actioncount-=1;
   }
   if((actionflag==1)&&(current==0)&&(prev==media.length)){
     actioncount+=1;

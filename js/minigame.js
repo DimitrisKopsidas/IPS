@@ -3,43 +3,6 @@
 //2)FUNCTION TO ADD IMAGES
 
 
-import {Wheel} from 'https://cdn.jsdelivr.net/npm/spin-wheel@5.0.2/dist/spin-wheel-esm.js';
-//USER DEFINED VARIABLES
-var slicevalues = [];
-var winningitemindex=0;//BACKEND FUNCTION NEEDED HERE
-var winningitemimage="media/"+winningitemindex+".png";
-var revolutions=4;
-var duration=1000;
-var url="product.html";
-var onstopchangedelay=0;
-var inactivitychangedelay=0;
-var promocode=123456;//BACKEND FUNCTION NEEDED HERE
-
-
-//GLOBAL VARIABLES
-var leftsep=document.getElementById('leftsep');
-var rightsep=document.getElementById('rightsep');
-var wheelstart=0;
-var text1=document.getElementById('text1');
-var text2=document.getElementById('text2');
-var text3=document.getElementById('text3');
-var prizeimage=document.getElementById('prizeimage');
-
-window.onload = () => {
-  const props = {
-    items: 
-    [        
-      {label: '10%'},
-      {label: '20%'},
-      {label: '30%'},
-    ],
-    onRest: onwheelstop,
-  };
-  const container = document.querySelector('.wheel-wrapper');
-  window.wheel = new Wheel(container, props);
-  changepageinactivity();
-
-
   // props.items.push({ label: 'four' });
   // props.items.push({ label: 'five' });
 
@@ -47,42 +10,83 @@ window.onload = () => {
   //   console.log(item.label);
   // });
 
-  const spinleft=function(){
-    //wheel.spinToItem(0,500,true,1,1,null);
-    wheel.spinToItem(winningitemindex,duration,false,revolutions,1,null);
-    rightsep.removeEventListener('mouseleave',spinright);
-    leftsep.removeEventListener('mouseleave',spinleft);
-    wheelstart=1;
+
+
+import {Wheel} from 'https://cdn.jsdelivr.net/npm/spin-wheel@5.0.2/dist/spin-wheel-esm.js';
+//USER DEFINED VARIABLES
+var winningitemindex=1;//BACKEND
+var revolutions=4;//DB
+var spinduration=3000;//DB
+var onstopchangedelay=5000;//DB
+var inactivitychangedelay=10000;//DB
+var promocode=123456;//BACKEND
+
+
+//PROGRAM VARIABLES
+var leftsep=document.getElementById('leftsep');
+var rightsep=document.getElementById('rightsep');
+var wheelstartbyseparator=0;
+var text1=document.getElementById('text1');
+var text2=document.getElementById('text2');
+var text3=document.getElementById('text3');
+var prizeimage=document.getElementById('prizeimage');
+var winningitemimage="media/"+winningitemindex+".png";
+var producturl="product.html";
+
+
+window.onload = () => {
+  var overlay=new Image();
+  overlay.src='media/overlay.svg';//INITIALIZE OVERLAY AS IMAGE
+  const props = {//INITIALIZE WHEEL
+    items: //BACKEND FUNCTION NEEDED HERE
+    [        
+      {label: '10%'},
+      {label: '20%'},
+      {label: '30%'},
+    ],
+    onRest: onwheelstop,
+    overlayImage: overlay,
+  };
+  const container = document.querySelector('.wheel-wrapper');
+  window.wheel = new Wheel(container, props);
+  changepageoninactivity();
+  const spinleft=function(){//SPIN WHEEL AND DISABLE ITSELF AND OTHER SEPARATOR ACTIVATION
+    wheel.spinToItem(winningitemindex,spinduration,false,revolutions,1,null);
+    rightsep.removeEventListener('mouseover',spinright);
+    leftsep.removeEventListener('mouseover',spinleft);
+    wheelstartbyseparator=1;
   }
-  const spinright=function(){
-    wheel.spinToItem(winningitemindex,duration,false,revolutions,-1,null);
-    leftsep.removeEventListener('mouseleave',spinleft);
-    rightsep.removeEventListener('mouseleave',spinright);
-    wheelstart=1;
+  const spinright=function(){//SPIN WHEEL AND DISABLE ITSELF AND OTHER SEPARATOR ACTIVATION
+    wheel.spinToItem(winningitemindex,spinduration,false,revolutions,-1,null);
+    leftsep.removeEventListener('mouseover',spinleft);
+    rightsep.removeEventListener('mouseover',spinright);
+    wheelstartbyseparator=1;
   }
-  leftsep.addEventListener('mouseleave',spinleft);
-  rightsep.addEventListener('mouseleave',spinright);
+  leftsep.addEventListener('mouseover',spinleft);
+  rightsep.addEventListener('mouseover',spinright);
 
   function onwheelstop(){
-    changepageononwheelstop();
-    displayprize();
+    if(wheelstartbyseparator==1){
+      changepageononwheelstop();
+      displayprize();
+    }
   }
   function changepageononwheelstop() {
     setTimeout(function() {
       if(inactivitychangedelay!=0)
-        window.location.href = url;
+        window.location.href = producturl;
     }, onstopchangedelay);
   }
-  function changepageinactivity() {
+  function changepageoninactivity() {
     setTimeout(function() {
-      if((wheelstart==0)&&(inactivitychangedelay!=0)){
-        window.location.href = url;
+      if((wheelstartbyseparator==0)&&(inactivitychangedelay!=0)){
+        window.location.href = producturl;
       }
     }, inactivitychangedelay);
   }
   function displayprize(){
     prizeimage.src=winningitemimage;
-    text1.innerHTML="Συγχαρητήρια κέρδισες έκπτωση "+props.items[0].label+" για το :";
+    text1.innerHTML="Συγχαρητήρια κέρδισες έκπτωση "+props.items[winningitemindex].label+" για το :";
     text2.innerHTML="Φωτογράφισε τον κωδικό και εξαργύρωσε τον εντός του καταστήματος!";
     text3.innerHTML=promocode;
   }
