@@ -17,8 +17,8 @@ import {Wheel} from 'https://cdn.jsdelivr.net/npm/spin-wheel@5.0.2/dist/spin-whe
 var winningitemindex=1;//BACKEND
 var revolutions=4;//DB
 var spinduration=3000;//DB
-var onstopchangedelay=5000;//DB
-var inactivitychangedelay=10000;//DB
+var onstopchangedelay=3000;//DB
+var inactivitychangedelay=0;//DB
 var promocode=123456;//BACKEND
 
 
@@ -55,12 +55,14 @@ window.onload = () => {
     rightsep.removeEventListener('mouseover',spinright);
     leftsep.removeEventListener('mouseover',spinleft);
     wheelstartbyseparator=1;
+    console.log("left");
   }
   const spinright=function(){//SPIN WHEEL AND DISABLE ITSELF AND OTHER SEPARATOR ACTIVATION
     wheel.spinToItem(winningitemindex,spinduration,false,revolutions,-1,null);
     leftsep.removeEventListener('mouseover',spinleft);
     rightsep.removeEventListener('mouseover',spinright);
     wheelstartbyseparator=1;
+    console.log("right");
   }
   leftsep.addEventListener('mouseover',spinleft);
   rightsep.addEventListener('mouseover',spinright);
@@ -73,7 +75,7 @@ window.onload = () => {
   }
   function changepageononwheelstop() {
     setTimeout(function() {
-      if(inactivitychangedelay!=0)
+      if(onstopchangedelay!=0)
         window.location.href = producturl;
     }, onstopchangedelay);
   }
