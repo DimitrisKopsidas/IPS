@@ -1,0 +1,183 @@
+/* Styles specific to the promo code verification page */
+.promo-container {
+    display: flex;
+    gap: 30px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.promo-card {
+    flex: 2;
+    min-width: 350px;
+    background-color: white;
+    border-radius: 8px;
+    padding: 30px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.promo-info {
+    flex: 1;
+    min-width: 250px;
+    background-color: #f5f9ff;
+    padding: 25px;
+    border-radius: 8px;
+    border-left: 4px solid #0077cc;
+}
+
+.promo-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.promo-icon {
+    width: 60px;
+    height: 60px;
+    margin-right: 20px;
+    border-radius: 50%;
+    background-color: #f5f9ff;
+    padding: 5px;
+}
+
+.promo-header h2 {
+    margin: 0;
+    color: #0077cc;
+}
+
+.promo-description {
+    color: #666;
+    margin-bottom: 25px;
+    line-height: 1.5;
+}
+
+.promo-form {
+    margin-bottom: 20px;
+}
+
+.promo-form .form-group {
+    margin-bottom: 20px;
+}
+
+.promo-form label {
+    display: block;
+    font-weight: 600;
+    color: #0077cc;
+    margin-bottom: 5px;
+}
+
+.promo-form input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #e1f0ff;
+    border-radius: 4px;
+    font-size: 16px;
+    letter-spacing: 1px;
+}
+
+.promo-form input:focus {
+    outline: none;
+    border-color: #0077cc;
+    box-shadow: 0 0 0 2px rgba(0, 119, 204, 0.2);
+}
+
+.result-container {
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 25px;
+    text-align: center;
+}
+
+.result-container.hidden {
+    display: none;
+}
+
+.status-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    margin: 0 auto 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+}
+
+.status-icon.success {
+    background-color: #28a745;
+}
+
+.status-icon.error {
+    background-color: #dc3545;
+}
+
+.result-message {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.discount-details {
+    margin-bottom: 20px;
+    color: #666;
+}
+
+.promo-actions {
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.promo-info h3 {
+    color: #0077cc;
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+.promo-info ul {
+    padding-left: 20px;
+    margin-bottom: 30px;
+}
+
+.promo-info li {
+    margin-bottom: 10px;
+    color: #555;
+}
+
+.customer-support {
+    background-color: white;
+    padding: 15px;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.support-link {
+    color: #0077cc;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.support-link:hover {
+    text-decoration: underline;
+}
+
+/* Animation for result appearance */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.result-container:not(.hidden) {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .promo-container {
+        flex-direction: column;
+    }
+    
+    .promo-card, .promo-info {
+        width: 100%;
+    }
+}

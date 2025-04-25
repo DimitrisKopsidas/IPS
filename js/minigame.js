@@ -31,7 +31,7 @@ var text2=document.getElementById('text2');
 var text3=document.getElementById('text3');
 var prizeimage=document.getElementById('prizeimage');
 var winningitemimage="media/"+winningitemindex+".png";
-var producturl="product.html";
+var carouselurl="carousel.html";
 
 
 window.onload = () => {
@@ -76,13 +76,13 @@ window.onload = () => {
   function changepageononwheelstop() {
     setTimeout(function() {
       if(onstopchangedelay!=0)
-        window.location.href = producturl;
+        window.location.href = carouselurl;
     }, onstopchangedelay);
   }
   function changepageoninactivity() {
     setTimeout(function() {
       if((wheelstartbyseparator==0)&&(inactivitychangedelay!=0)){
-        window.location.href = producturl;
+        window.location.href = carouselurl;
       }
     }, inactivitychangedelay);
   }

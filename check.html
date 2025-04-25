@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promo Code Verification</title>
+    <link rel="stylesheet" href="css/view.css">
+    <link rel="stylesheet" href="css/check.css">
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">← Back to Shopping</a>
+        
+        <h1>Promo Code Verification</h1>
+        
+        <div class="promo-container">
+            <div class="promo-card">
+                <div class="promo-header">
+                    <img src="https://via.placeholder.com/100x100?text=Discount" alt="Discount icon" class="promo-icon">
+                    <h2>Verify Your Promo Code</h2>
+                </div>
+                
+                <div class="promo-description">
+                    Enter your promo code below to verify its validity and see the applicable discount or special offer.
+                </div>
+                
+                <form id="promoForm" class="promo-form">
+                    <div class="form-group">
+                        <label for="promoCode">Promo Code</label>
+                        <input type="text" id="promoCode" name="promoCode" placeholder="Enter promo code" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" id="verifyBtn">Verify Code</button>
+                </form>
+                
+                <div id="resultContainer" class="result-container hidden">
+                    <div id="statusIcon" class="status-icon"></div>
+                    <div id="resultMessage" class="result-message"></div>
+                    <div id="discountDetails" class="discount-details"></div>
+                    <div class="action-buttons promo-actions">
+                        <button class="btn btn-secondary" id="copyCodeBtn">Copy Code</button>
+                        <button class="btn btn-primary" id="applyCodeBtn">Apply to Cart</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- <div class="promo-info">
+                <h3>About Promo Codes</h3>
+                <ul>
+                    <li>Promo codes are case-sensitive</li>
+                    <li>Promotional discounts may not be combined with other offers</li>
+                    <li>Each code can only be used once per customer</li>
+                    <li>Promo codes have an expiration date</li>
+                    <li>Some restrictions may apply to certain products</li>
+                </ul>
+                
+                <div class="customer-support">
+                    <p>Need help with your promo code?</p>
+                    <a href="contact.html" class="support-link">Contact Customer Support</a>
+                </div>
+            </div> -->
+        </div>
+    </div>
+    
+    <script src="js/check.js"></script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f9ff;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: white;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+h1 {
+    color: #0077cc;
+    border-bottom: 2px solid #e1f0ff;
+    padding-bottom: 10px;
+    margin-top: 0;
+}
+
+.dev-info {
+    background-color: #f0f7ff;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    border-left: 4px solid #0077cc;
+}
+
+.page-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.page-item {
+    margin-bottom: 15px;
+    padding: 15px;
+    border-radius: 6px;
+    background-color: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease;
+}
+
+.page-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.page-link {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-decoration: none;
+    color: #0077cc;
+    font-weight: 500;
+}
+
+.page-link span.icon {
+    font-size: 24px;
+}
+
+.page-description {
+    color: #666;
+    margin-top: 5px;
+    font-size: 14px;
+}
+
+.file-list {
+    background-color: #f5f5f5;
+    padding: 15px;
+    border-radius: 6px;
+    margin-top: 30px;
+}
+
+.file-list h2 {
+    margin-top: 0;
+    color: #555;
+    font-size: 18px;
+}
+
+.file-list code {
+    background-color: #eee;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-family: monospace;
+}
+
+.file-category {
+    margin-bottom: 15px;
+}
