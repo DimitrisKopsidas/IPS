@@ -1,0 +1,29 @@
+.carousel {
+    background: #EEE;
+    margin-bottom: 20px;
+  }
+  
+   .carousel-cell {
+    width: 66%;
+    height: 96vh;
+    margin-right: 10px;
+    background: #8C8;
+    border-radius: 5px;
+    counter-increment: gallery-cell;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  } 
+  
+  .carousel-cell:nth-child(even) {
+    background: #8C8;
+  }
+  
+  .carousel-cell:nth-child(odd) {
+    background: #88C;
+  }
+  
+  .carousel-cell img {
+    display: block;
+    max-height: 100%;
+  }

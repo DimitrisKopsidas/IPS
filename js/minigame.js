@@ -1,7 +1,8 @@
 //TO-DO
 //1)FUNCTION TO APPEND ITEMS
 //2)FUNCTION TO ADD IMAGES
-
+//3)SLICE SIZE ACCORDING TO CHANCE
+//4)DISPLAY DEATHDATE
 
   // props.items.push({ label: 'four' });
   // props.items.push({ label: 'five' });
