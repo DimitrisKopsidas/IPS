@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Administration</title>
+    <link rel="stylesheet" href="css/product.css">
+    <link rel="stylesheet" href="css/ptest.css">
+</head>
+<body>
+    <body>
+        <div class="container">
+            <div class="header-container">
+                <div class="title-section">
+                    <a href="index.html" class="back-link">← Back to Products</a>
+                    <h1>Product Administration</h1>
+                </div>
+                <div class="navigation-buttons">
+                    <button id="prevProductBtn" class="nav-btn"><span>←</span> Previous</button>
+                    <button id="nextProductBtn" class="nav-btn">Next <span>→</span></button>
+                </div>
+            </div>
+            
+            <div class="product-container">
+                <!-- Product Image Section - Now at the left, aligned to top -->
+                <div class="product-image">
+                    <img src="media/1.png" alt="Product Image" id="mainProductImage">
+                </div>
+                
+                <!-- Product Details Section -->
+                <div class="product-details">
+                    <form id="productForm">
+                        <div class="form-group">
+                            <label for="productName">Name:</label>
+                            <input type="text" id="productName" name="name" value="Premium Wireless Headphones" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="productCode">Code:</label>
+                            <input type="text" id="productCode" name="code" value="WH-2023-PRO" required>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group half">
+                                <label for="productGroup">Group:</label>
+                                <input type="text" id="productGroup" name="group" value="Audio" required>
+                            </div>
+                            
+                            <div class="form-group half">
+                                <label for="productMaker">Maker:</label>
+                                <input type="text" id="productMaker" name="maker" value="SoundTech" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group half">
+                                <label for="productPrice">Price ($):</label>
+                                <input type="text" id="productPrice" name="price" value="199.99" required>
+                            </div>
+                            
+                            <div class="form-group half">
+                                <label for="productDiscount">Discount (%):</label>
+                                <input type="number" id="productDiscount" name="discount" value="0" step="1" min="0" max="100">
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <h3>Associated Carousels</h3>
+                            <div class="info-list" id="carouselList">
+                                <div class="info-item">Featured Products</div>
+                                <div class="info-item">New Arrivals</div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <h3>Active Promo Codes</h3>
+                            <div class="info-list" id="promoList">
+                                <div class="info-item">SUMMER25 - 25% off</div>
+                                <div class="info-item">FREESHIP - Free shipping</div>
+                            </div>
+                        </div>
+                        
+                        <div class="action-buttons">
+                            <button type="submit" class="btn btn-primary" id="saveBtn">Save Changes</button>
+                            <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div id="saveConfirmation" class="confirmation-modal">
+            <div class="modal-content">
+                <span class="close-btn">&times;</span>
+                <p>Changes saved successfully!</p>
+            </div>
+        </div>
+        
+        <div id="unsavedChangesModal" class="confirmation-modal">
+            <div class="modal-content">
+                <h3>Unsaved Changes</h3>
+                <p>You have unsaved changes. Would you like to save before moving to another product?</p>
+                <div class="modal-buttons">
+                    <button id="saveAndContinueBtn" class="btn btn-primary">Save & Continue</button>
+                    <button id="discardAndContinueBtn" class="btn btn-secondary">Discard Changes</button>
+                    <button id="cancelNavigationBtn" class="btn btn-outline">Cancel</button>
+                </div>
+            </div>
+        </div>
+    
+    <script src="js/ptest.js"></script>
+</body>
+</html>
