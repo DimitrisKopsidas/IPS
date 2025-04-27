@@ -15,7 +15,10 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentProductId = 1;
     let formChanged = false;
     let pendingNavigationDirection = null;
-    
+
+    // Predefined options (replace with API/database call in a real app)
+    const groups = ["Audio", "Electronics", "Photography", "Home Appliances"];
+    const makers = ["SoundTech", "VisionTech", "OptikPro", "HomeEase"];
   
     const products = [  // Sample product data (would come from API in real app)
         {
@@ -70,16 +73,30 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     ];
     
-  
+    const groupSelect = document.getElementById('productGroup');
+    groups.forEach(group => {
+        const option = document.createElement('option');
+        option.value = group;
+        option.textContent = group;
+        groupSelect.appendChild(option);
+    });
+
+    // Populate the Maker dropdown
+    const makerSelect = document.getElementById('productMaker');
+    makers.forEach(maker => {
+        const option = document.createElement('option');
+        option.value = maker;
+        option.textContent = maker;
+        makerSelect.appendChild(option);
+    });
+
     loadProductData(currentProductId);  // Load initial product data
     updateNavigationState();
     
-  
     productForm.addEventListener('input', function() {  // Form change detection
         formChanged = true;
     });
     
-
     productForm.addEventListener('submit', function(e) {    // Form submission handler
         e.preventDefault();
         saveProductData();
@@ -93,15 +110,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    
     document.getElementById('cancelBtn').addEventListener('click', function() {// Cancel button handler
         if (confirm('Are you sure you want to cancel? All unsaved changes will be lost.')) {
             loadProductData(currentProductId); // Reload original data
             formChanged = false;
         }
     });
-    
-
+     
     prevBtn.addEventListener('click', function() {    // Navigation button handlers
         handleNavigation('prev');
     });
@@ -181,10 +196,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // Populate form fields
         document.getElementById('productName').value = productData.name;
         document.getElementById('productCode').value = productData.code;
-        document.getElementById('productGroup').value = productData.group;
-        document.getElementById('productMaker').value = productData.maker;
+        // document.getElementById('productGroup').value = productData.group;
+        // document.getElementById('productMaker').value = productData.maker;
         document.getElementById('productPrice').value = productData.price;
         document.getElementById('productDiscount').value = productData.discount;
+        groupSelect.value = productData.group;
+        makerSelect.value = productData.maker;
         
         // Display carousels
         const carouselList = document.getElementById('carouselList');
@@ -207,7 +224,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         // Update the product image (in a real app, this would be dynamic)
-        document.getElementById('mainProductImage').src = `https://via.placeholder.com/600x400?text=${encodeURIComponent(productData.name)}`;
+        //document.getElementById('mainProductImage').src = `https://via.placeholder.com/600x400?text=${encodeURIComponent(productData.name)}`;
     }
     
     // Function to save product data
@@ -217,8 +234,8 @@ document.addEventListener('DOMContentLoaded', function() {
             id: currentProductId,
             name: document.getElementById('productName').value,
             code: document.getElementById('productCode').value,
-            group: document.getElementById('productGroup').value,
-            maker: document.getElementById('productMaker').value,
+            group: groupSelect.value,
+            maker: makerSelect.value,
             price: document.getElementById('productPrice').value,
             discount: parseInt(document.getElementById('productDiscount').value)
         };
@@ -252,4 +269,29 @@ document.addEventListener('DOMContentLoaded', function() {
     function showUnsavedChangesModal() {
         unsavedChangesModal.style.display = 'flex';
     }
+    // References to price, discount, and final price fields
+    const priceInput = document.getElementById('productPrice');
+    const discountInput = document.getElementById('productDiscount');
+    const finalPriceInput = document.getElementById('productFinalPrice');
+
+    // Event listeners for discount and final price inputs
+    discountInput.addEventListener('input', function() {
+        const price = parseFloat(priceInput.value) || 0;
+        const discount = parseFloat(discountInput.value) || 0;
+
+        if (price > 0 && discount >= 0 && discount <= 100) {
+            const finalPrice = price - (price * (discount / 100));
+            finalPriceInput.value = finalPrice.toFixed(2);
+        }
+    });
+
+    finalPriceInput.addEventListener('input', function() {
+        const price = parseFloat(priceInput.value) || 0;
+        const finalPrice = parseFloat(finalPriceInput.value) || 0;
+
+        if (price > 0 && finalPrice >= 0 && finalPrice <= price) {
+            const discount = ((price - finalPrice) / price) * 100;
+            discountInput.value = discount.toFixed(2);
+        }
+    });
 });

@@ -185,6 +185,24 @@ input[type="text"]::-webkit-inner-spin-button {
     color: #555;
 }
 
+/* Ensure the info-list takes full width and displays one item per line */
+.info-list.full-width {
+    display: block; /* Change to block layout */
+    width: 100%; /* Take full width of parent */
+}
+
+.info-list.full-width .info-item {
+    display: block; /* Each item takes a full line */
+    width: 100%; /* Ensure the item spans the full width */
+    padding: 10px;
+    margin-bottom: 5px; /* Add spacing between items */
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    color: #555;
+}
+
 /* Buttons */
 .action-buttons {
     display: flex;
@@ -281,6 +299,23 @@ input[type="text"]::-webkit-inner-spin-button {
 
 .close-btn:hover {
     color: #333;
+}
+
+/* Style for select fields to match input fields */
+select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    background-color: #fff;
+    appearance: none; /* Remove default dropdown arrow for consistency */
+}
+
+select:focus {
+    outline: none;
+    border-color: #4a6fa5;
+    box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.2);
 }
 
 /* Responsive adjustments */
