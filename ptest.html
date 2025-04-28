@@ -40,9 +40,16 @@
             <div class="product-section-left">
                 <!-- Product Image Section -->
                 <div class="product-image">
-                    <img src="media/2.png" alt="Product Image" id="mainProductImage">
+                    <img src="media/0.png" alt="Product Image" id="mainProductImage">
                 </div>
-                <!-- Move action buttons here -->
+                <div class="image-upload">
+                    <input type="file" id="imageInput" accept="image/*" class="hidden-input">
+                    <button type="button" class="btn btn-secondary btn-upload" id="changeImageBtn">
+                        <span class="upload-icon">📷</span>
+                        Change Image
+                    </button>
+                </div>
+                <!-- Action buttons -->
                 <div class="action-buttons">
                     <button type="submit" class="btn btn-primary" id="saveBtn">Save Changes</button>
                     <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>

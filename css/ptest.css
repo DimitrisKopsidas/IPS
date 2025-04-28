@@ -564,3 +564,33 @@ select:focus {
     }
 }
 
+.image-upload {
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.hidden-input {
+    display: none;
+}
+
+.btn-upload {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background-color: #f8f9fa;
+    border: 2px dashed #dee2e6;
+    padding: 12px;
+    transition: all 0.3s ease;
+}
+
+.btn-upload:hover {
+    background-color: #e9ecef;
+    border-color: #4a6fa5;
+}
+
+.upload-icon {
+    font-size: 1.2rem;
+}
+

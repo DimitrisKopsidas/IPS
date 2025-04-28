@@ -393,4 +393,26 @@ document.addEventListener('DOMContentLoaded', function() {
             deleteConfirmationModal.style.display = 'none';
         }
     });
+
+    // Image upload handling
+    const imageInput = document.getElementById('imageInput');
+    const changeImageBtn = document.getElementById('changeImageBtn');
+    const mainProductImage = document.getElementById('mainProductImage');
+
+    changeImageBtn.addEventListener('click', function() {
+        imageInput.click();
+    });
+
+    imageInput.addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+            const reader = new FileReader();
+            
+            reader.onload = function(event) {
+                mainProductImage.src = event.target.result;
+                formChanged = true;
+            };
+            
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    });
 });
