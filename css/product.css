@@ -28,17 +28,6 @@ h1 {
     margin-top: 20px;
 }
 
-.product-image {
-    flex: 1;
-    min-width: 300px;
-    background-color: #f5f9ff;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-}
-
 .product-image img {
     max-width: 100%;
     max-height: 400px;
