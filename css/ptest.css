@@ -13,7 +13,7 @@ body {
 }
 
 .container {
-    padding-top: 25px; /* Increased from 60px to 80px */
+    margin-top: 70px; /* Increased from 60px to 80px */
     max-width: 1200px;
     margin: 10vh auto;
     padding: 25px;
@@ -519,7 +519,7 @@ select:focus {
 }
 
 .header-input.code {
-    font-size: 1.2rem;
+    font-size: 1.8rem;
     font-weight: 600;
     color: #4a6fa5;
     font-family: 'Consolas', monospace;
@@ -529,6 +529,7 @@ select:focus {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    text-align: left;
 }
 
 .header-input.name {
@@ -594,3 +595,99 @@ select:focus {
     font-size: 1.2rem;
 }
 
+/* Navigation styles */
+.nav-content {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    height: 100%;
+    background-color: #4b73af;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    padding: 0 25px;
+}
+
+/* App brand styles */
+.app-brand {
+    display: flex;
+    align-items: center;
+    padding-right: 30px;
+    margin-right: 30px;
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+    height: 100%;
+}
+
+.app-logo {
+    width: 32px;
+    height: 32px;
+    margin-right: 12px;
+}
+
+.app-name {
+    color: white;
+    font-size: 1.2rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* Navigation list styles */
+.nav-content ul {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    flex: 1;
+    height: 100%;
+}
+
+.nav-content ul li {
+    flex: 1;
+    height: 100%;
+}
+
+.nav-content ul li a {
+    color: white;
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 500;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    background-color: #4a6fa5;
+}
+
+.nav-content ul li a:hover {
+    background-color: #5c80b6;
+    color: white;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .nav-content {
+        padding: 0 15px;
+    }
+
+    .app-brand {
+        padding-right: 15px;
+        margin-right: 15px;
+    }
+
+    .app-name {
+        font-size: 1rem;
+    }
+
+    .nav-content ul li a {
+        font-size: 0.9rem;
+        padding: 0 10px;
+    }
+}
+.btn-outline {
+    background-color: #f5f9ff;
+    color: #0077cc;
+    border: 1px solid #0077cc;
+}
