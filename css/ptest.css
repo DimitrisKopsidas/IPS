@@ -190,22 +190,14 @@ input[type="text"]::-webkit-inner-spin-button {
     margin-top: 10px;
 }
 
-.info-item {
-    padding: 10px;
-    background-color: #fff;
-    border-radius: 4px;
-    border: 1px solid #eee;
-    font-size: 0.95rem;
-    color: #555;
-}
 
 /* Ensure the info-list takes full width and displays one item per line */
-.info-list.full-width {
+.info-carousel {
     display: block; /* Change to block layout */
     width: 100%; /* Take full width of parent */
 }
 
-.info-list.full-width .info-item {
+.info-carousel .info-item {
     display: block; /* Each item takes a full line */
     width: 100%; /* Ensure the item spans the full width */
     padding: 10px;
@@ -215,7 +207,38 @@ input[type="text"]::-webkit-inner-spin-button {
     border-radius: 4px;
     font-size: 1rem;
     color: #555;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
 }
+
+.info-carousel .info-item:hover {
+    background-color: #f0f4f8;
+}
+
+
+.info-promo {
+    display: block; /* Change to block layout */
+    width: 100%; /* Take full width of parent */
+}
+
+.info-promo .info-item {
+    display: block; /* Each item takes a full line */
+    width: 100%; /* Ensure the item spans the full width */
+    padding: 10px;
+    margin-bottom: 5px; /* Add spacing between items */
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    color: #555;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.info-promo .info-item:hover {
+    background-color: #f0f4f8;
+}
+
 
 /* Buttons */
 .action-buttons {

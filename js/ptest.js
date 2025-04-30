@@ -48,12 +48,12 @@ document.addEventListener('DOMContentLoaded', function() {
             price: 199.99,
             discount: 0,
             carousels: [
-                "Featured Products",
-                "New Arrivals"
+                "101 - Featured Products",
+                "102 - New Arrivals"
             ],
             promos: [
-                "SUMMER25 - 25% off",
-                "FREESHIP - Free shipping"
+                "200 - SUMMER25 - 25% off",
+                "100 - FREESHIP - Free shipping"
             ]
         },
         {
@@ -109,11 +109,13 @@ document.addEventListener('DOMContentLoaded', function() {
     loadProductData(currentProductId);  // Load initial product data
     updateNavigationState();
 
-    productForm.addEventListener('input', function() {  // Form change detection
+    // -----------------------------------------
+    productForm.addEventListener('input', function() {
         formChanged = true;
     });
 
-    productForm.addEventListener('submit', function(e) {    // Form submission handler
+    // -----------------------------------------
+    productForm.addEventListener('submit', function(e) {
         e.preventDefault();
         saveProductData();
         formChanged = false;
@@ -126,35 +128,35 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Show cancel confirmation modal when cancel button is clicked
+    // -----------------------------------------
     cancelBtn.addEventListener('click', function() {
         cancelConfirmationModal.style.display = 'flex';
     });
 
-    // Handle cancel confirmation
+    // -----------------------------------------
     confirmCancelBtn.addEventListener('click', function() {
-        // Reload the current product data to revert changes
         loadProductData(currentProductId);
         cancelConfirmationModal.style.display = 'none';
     });
 
-    // Handle cancel reverting
+    // -----------------------------------------
     cancelRevertBtn.addEventListener('click', function() {
         cancelConfirmationModal.style.display = 'none';
     });
 
-    // Add cancel modal to the window click handler
+    // -----------------------------------------
     window.addEventListener('click', function(e) {
         if (e.target === cancelConfirmationModal) {
             cancelConfirmationModal.style.display = 'none';
         }
     });
 
-    // Add event listeners for side navigation buttons
+    // -----------------------------------------
     sidePrevBtn.addEventListener('click', function() {
         handleNavigation('prev');
     });
 
+    // -----------------------------------------
     sideNextBtn.addEventListener('click', function() {
         handleNavigation('next');
     });
@@ -188,19 +190,19 @@ document.addEventListener('DOMContentLoaded', function() {
         sideNextBtn.disabled = isLast;
     }
 
-    // Close confirmation modal
+    // -----------------------------------------
     closeBtn.addEventListener('click', function() {
         saveConfirmation.style.display = 'none';
     });
 
-    // Close modal when clicking outside
+    // -----------------------------------------
     window.addEventListener('click', function(e) {
         if (e.target === saveConfirmation) {
             saveConfirmation.style.display = 'none';
         }
     });
 
-    // Unsaved changes modal handlers
+    // -----------------------------------------
     document.getElementById('saveAndContinueBtn').addEventListener('click', function() {
         saveProductData();
         formChanged = false;
@@ -209,6 +211,7 @@ document.addEventListener('DOMContentLoaded', function() {
         unsavedChangesModal.style.display = 'none';
     });
 
+    // -----------------------------------------
     document.getElementById('discardAndContinueBtn').addEventListener('click', function() {
         formChanged = false;
         navigateProduct(pendingNavigationDirection);
@@ -216,6 +219,7 @@ document.addEventListener('DOMContentLoaded', function() {
         unsavedChangesModal.style.display = 'none';
     });
 
+    // -----------------------------------------
     document.getElementById('cancelNavigationBtn').addEventListener('click', function() {
         pendingNavigationDirection = null;
         unsavedChangesModal.style.display = 'none';
@@ -266,6 +270,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Update the product image (in a real app, this would be dynamic)
         //document.getElementById('mainProductImage').src = `https://via.placeholder.com/600x400?text=${encodeURIComponent(productData.name)}`;
+
+        // -----------------------------------------
+        // Add click handlers for info items
+        document.querySelectorAll('.info-promo .info-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const code = this.textContent.substring(0, 3);
+                window.location.href = `promo/${code}.html`;
+            });
+        });
+        document.querySelectorAll('.info-carousel .info-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const code = this.textContent.substring(0, 3);
+                window.location.href = `carousel/${code}.html`;
+            });
+        });
     }
 
     // Function to save product data
@@ -320,79 +339,63 @@ document.addEventListener('DOMContentLoaded', function() {
         unsavedChangesModal.style.display = 'flex';
     }
 
-    // Event listeners for discount and final price inputs
+    // -----------------------------------------
     discountInput.addEventListener('input', function() {
         const price = parseFloat(priceInput.value) || 0;
         const discount = parseFloat(discountInput.value) || 0;
-
         if (price > 0 && discount >= 0 && discount <= 100) {
-            const finalPrice = price - (price * (discount / 100));
-            finalPriceInput.value = finalPrice.toFixed(2);
+            finalPriceInput.value = (price - (price * (discount / 100))).toFixed(2);
         }
     });
 
+    // -----------------------------------------
     finalPriceInput.addEventListener('input', function() {
         const price = parseFloat(priceInput.value) || 0;
         const finalPrice = parseFloat(finalPriceInput.value) || 0;
-
         if (price > 0 && finalPrice >= 0 && finalPrice <= price) {
-            const discount = ((price - finalPrice) / price) * 100;
-            discountInput.value = discount.toFixed(2);
+            discountInput.value = (((price - finalPrice) / price) * 100).toFixed(2);
         }
     });
 
-    // Show delete confirmation modal when delete button is clicked
+    // -----------------------------------------
     deleteBtn.addEventListener('click', function() {
         deleteConfirmationModal.style.display = 'flex';
     });
 
-    // Handle delete confirmation
+    // -----------------------------------------
     confirmDeleteBtn.addEventListener('click', function() {
-        // Here you would typically make an API call to delete the product
         const productIndex = products.findIndex(p => p.id === currentProductId);
         if (productIndex !== -1) {
-            products.splice(productIndex, 1); // Remove product from array
-
-            // Navigate to the previous product if available, otherwise next
+            products.splice(productIndex, 1);
             if (currentProductId > 1) {
                 currentProductId--;
                 loadProductData(currentProductId);
             } else if (products.length > 0) {
                 loadProductData(products[0].id);
             }
-
             updateNavigationState();
         }
-
         deleteConfirmationModal.style.display = 'none';
     });
 
-    // Handle delete cancellation
+    // -----------------------------------------
     cancelDeleteBtn.addEventListener('click', function() {
         deleteConfirmationModal.style.display = 'none';
     });
 
-    // Close modal when clicking outside
-    window.addEventListener('click', function(e) {
-        if (e.target === deleteConfirmationModal) {
-            deleteConfirmationModal.style.display = 'none';
-        }
-    });
-
-    // Image upload handling
+    // -----------------------------------------
     changeImageBtn.addEventListener('click', function() {
         imageInput.click();
     });
 
+    // -----------------------------------------
     imageInput.addEventListener('change', function(e) {
         if (e.target.files && e.target.files[0]) {
             const reader = new FileReader();
-
             reader.onload = function(event) {
                 mainProductImage.src = event.target.result;
                 formChanged = true;
             };
-
             reader.readAsDataURL(e.target.files[0]);
         }
     });
