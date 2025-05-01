@@ -49,6 +49,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const previewImage = document.getElementById('previewImage');
     const closeModal = document.querySelector('.preview-close-modal');
 
+    // Notes
+    const productNotes = document.getElementById('productNotes');
+
     // State variables
     let currentProductId = 1;
     let formChanged = false;
@@ -66,6 +69,7 @@ document.addEventListener('DOMContentLoaded', function() {
             maker: "SoundTech",
             price: 199.99,
             discount: 0,
+            notes: "10 left",
             carousels: [
                 "101 - Featured Products",
                 "102 - New Arrivals",
@@ -85,6 +89,7 @@ document.addEventListener('DOMContentLoaded', function() {
             maker: "VisionTech",
             price: 899.99,
             discount: 10,
+            notes: "In stock",
             carousels: [
                 "Featured Products",
                 "Best Sellers"
@@ -101,6 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
             maker: "OptikPro",
             price: 1299.99,
             discount: 5,
+            notes: "2 left",
             carousels: [
                 "New Arrivals",
                 "Premium Products"
@@ -156,6 +162,7 @@ document.addEventListener('DOMContentLoaded', function() {
         discountInput.value = productData.discount;
         groupSelect.value = productData.group;
         makerSelect.value = productData.maker;
+        productNotes.value = productData.notes; 
         mainProductImage.src = `media/`+productData.id+`.png`;
         
         carouselList.innerHTML = '';
@@ -172,6 +179,9 @@ document.addEventListener('DOMContentLoaded', function() {
             div.textContent = promo;
             promoList.appendChild(div);
         });
+
+        productNotes.style.height = 'auto';
+        productNotes.style.height = (productNotes.scrollHeight) + 'px';
 
         document.querySelectorAll('.info-promo .info-item').forEach(item => {
             item.addEventListener('click', function() {
@@ -402,4 +412,10 @@ document.addEventListener('DOMContentLoaded', function() {
             imagePreviewModal.style.display = 'none';
         }
     });
+
+    productNotes.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
+    });
+    
 });

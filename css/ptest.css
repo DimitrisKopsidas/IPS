@@ -758,3 +758,22 @@ select:focus {
 .preview-close-modal:hover {
     color: #999;
 }
+
+.auto-grow {
+    width: 100%;
+    min-height: 42px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    line-height: 1.5;
+    resize: none;
+    overflow: hidden;
+    transition: border-color 0.3s ease;
+}
+
+.auto-grow:focus {
+    outline: none;
+    border-color: #4a6fa5;
+    box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.2);
+}
