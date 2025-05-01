@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', function() {
         {
             id: 1,
             name: "Premium Wireless Headphones",
-            code: "WH-2023-PRO",
+            code: 100,
             group: "Audio",
             maker: "SoundTech",
             price: 199.99,
@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', function() {
         {
             id: 2,
             name: "Ultra HD Smart TV",
-            code: "TV-4K-65",
+            code: 200,
             group: "Electronics",
             maker: "VisionTech",
             price: 899.99,
@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', function() {
         {
             id: 3,
             name: "Professional DSLR Camera",
-            code: "CAM-PRO-X1",
+            code: 201,
             group: "Photography",
             maker: "OptikPro",
             price: 1299.99,
