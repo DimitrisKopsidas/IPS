@@ -1,6 +1,5 @@
-import initiateEvents from './product_events.js';
+import {fillDropdown,initiateHotkeys} from "./common.js";
 
-initiateEvents();
 
 document.addEventListener('DOMContentLoaded', function() {
     // Form references
@@ -28,11 +27,22 @@ document.addEventListener('DOMContentLoaded', function() {
     const deleteBtn = document.getElementById('deleteBtn');
     const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
     const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+    const saveAndContinueBtn = document.getElementById('saveAndContinueBtn');
+    const discardAndContinueBtn = document.getElementById('discardAndContinueBtn');
+    const cancelNavigationBtn = document.getElementById('cancelNavigationBtn');
 
     // Image elements
     const imageInput = document.getElementById('imageInput');
     const changeImageBtn = document.getElementById('changeImageBtn');
     const mainProductImage = document.getElementById('mainProductImage');
+
+    // Headers
+    const headerProductCode = document.getElementById('headerProductCode');
+    const headerProductName = document.getElementById('headerProductName');
+
+    //Carousel and promo lists
+    const carouselList = document.getElementById('carouselList');
+    const promoList = document.getElementById('promoList');
 
     // State variables
     let currentProductId = 1;
@@ -53,7 +63,9 @@ document.addEventListener('DOMContentLoaded', function() {
             discount: 0,
             carousels: [
                 "101 - Featured Products",
-                "102 - New Arrivals"
+                "102 - New Arrivals",
+                "103 - Best Sellers",
+                "104 - On Sale"
             ],
             promos: [
                 "200 - SUMMER25 - 25% off",
@@ -95,36 +107,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     ];
 
-    // Populate the Group and Maker dropdowns
-    groups.forEach(group => {
-        const option = document.createElement('option');
-        option.value = group;
-        option.textContent = group;
-        groupSelect.appendChild(option);
-    });
-
-    makers.forEach(maker => {
-        const option = document.createElement('option');
-        option.value = maker;
-        option.textContent = maker;
-        makerSelect.appendChild(option);
-    });
+    fillDropdown(groups,groupSelect);
+    fillDropdown(makers,makerSelect);
+    initiateHotkeys(navigateProduct);
 
     loadProductData(currentProductId);  // Load initial product data
     updateNavigationState();
-
     
-
-
-    // -----------------------------------------
-    sidePrevBtn.addEventListener('click', function() {
-        handleNavigation('prev');
-    });
-
-    // -----------------------------------------
-    sideNextBtn.addEventListener('click', function() {
-        handleNavigation('next');
-    });
     function handleNavigation(direction) {// Handle navigation with unsaved changes check
         if (formChanged) {
             pendingNavigationDirection = direction;
@@ -145,42 +134,25 @@ document.addEventListener('DOMContentLoaded', function() {
         updateNavigationState();
     }
 
-    function updateNavigationState() {    // Update navigation buttons state
+    function updateNavigationState() {// Update navigation buttons state
         const isFirst = currentProductId <= 1;
         const isLast = currentProductId >= products.length;
 
-        // Update existing buttons
         sidePrevBtn.disabled = isFirst;
         sideNextBtn.disabled = isLast;
     }
-
     
-
-    // Function to load product data
-    function loadProductData(productId) {
+    function loadProductData(productId) {// Function to load product data
         const productData = products.find(p => p.id === productId) || products[0];
 
-        // Update header inputs
-        document.getElementById('headerProductCode').value = productData.code;
-        document.getElementById('headerProductName').value = productData.name;
-
-        // Add form changed detection for header inputs
-        document.getElementById('headerProductCode').addEventListener('input', function() {
-            formChanged = true;
-        });
-
-        document.getElementById('headerProductName').addEventListener('input', function() {
-            formChanged = true;
-        });
-
-        // Populate form fields
-        document.getElementById('productPrice').value = productData.price;
-        document.getElementById('productDiscount').value = productData.discount;
+        headerProductCode.value = productData.code;
+        headerProductName.value = productData.name;
+        priceInput.value = productData.price;
+        discountInput.value = productData.discount;
         groupSelect.value = productData.group;
         makerSelect.value = productData.maker;
-
-        // Display carousels
-        const carouselList = document.getElementById('carouselList');
+        mainProductImage.src = `media/`+productData.id+`.png`;
+        
         carouselList.innerHTML = '';
         productData.carousels.forEach(carousel => {
             const div = document.createElement('div');
@@ -188,9 +160,6 @@ document.addEventListener('DOMContentLoaded', function() {
             div.textContent = carousel;
             carouselList.appendChild(div);
         });
-
-        // Display promo codes
-        const promoList = document.getElementById('promoList');
         promoList.innerHTML = '';
         productData.promos.forEach(promo => {
             const div = document.createElement('div');
@@ -199,11 +168,6 @@ document.addEventListener('DOMContentLoaded', function() {
             promoList.appendChild(div);
         });
 
-        // Update the product image (in a real app, this would be dynamic)
-        //document.getElementById('mainProductImage').src = `https://via.placeholder.com/600x400?text=${encodeURIComponent(productData.name)}`;
-
-        // -----------------------------------------
-        // Add click handlers for info items
         document.querySelectorAll('.info-promo .info-item').forEach(item => {
             item.addEventListener('click', function() {
                 const code = this.textContent.substring(0, 3);
@@ -218,8 +182,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Function to save product data
-    function saveProductData() {
+    function saveProductData() {// Function to save product data
         const formData = {
             id: currentProductId,
             // Update these to use header inputs instead
@@ -246,23 +209,171 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    
-
-    // Update showConfirmation function to ensure modal is visible
-    function showConfirmation() {
+    function showConfirmation() {// Update showConfirmation function to ensure modal is visible
         const saveConfirmation = document.getElementById('saveConfirmation');
         saveConfirmation.style.display = 'flex';
 
-        // Auto-hide after 2 seconds
-        setTimeout(() => {
+        setTimeout(() => {// Auto-hide after 2 seconds
             saveConfirmation.style.display = 'none';
         }, 2000);
     }
-
-    // Function to show unsaved changes modal
-    function showUnsavedChangesModal() {
+    
+    function showUnsavedChangesModal() {// Function to show unsaved changes modal
         unsavedChangesModal.style.display = 'flex';
     }
 
+//HOTKEYS------------------------------------------------------------------------------------------------
+    document.addEventListener('keydown', function(event) {//SAVE HOTKEY
+        if (event.ctrlKey && event.key.toLowerCase() === 's') {
+            event.preventDefault(); // Prevent browser "Save" dialog
+            saveProductData();
+            formChanged = false;
+            showConfirmation();
+        }
+    });
     
+//EVENT LISTENERS------------------------------------------------------------------------------------------------
+    headerProductCode.addEventListener('input', function() {
+        formChanged = true;
+    });
+
+    headerProductName.addEventListener('input', function() {
+        formChanged = true;
+    });
+
+    sidePrevBtn.addEventListener('click', function() {
+        handleNavigation('prev');
+    });
+
+    sideNextBtn.addEventListener('click', function() {
+        handleNavigation('next');
+    });
+
+    productForm.addEventListener('input', function() {
+        formChanged = true;
+    });
+
+    productForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveProductData();
+        formChanged = false;
+
+        if (pendingNavigationDirection) {
+            navigateProduct(pendingNavigationDirection);
+            pendingNavigationDirection = null;
+        } else {
+            showConfirmation();
+        }
+    });
+
+    cancelBtn.addEventListener('click', function() {
+        cancelConfirmationModal.style.display = 'flex';
+    });
+
+    confirmCancelBtn.addEventListener('click', function() {
+        loadProductData(currentProductId);
+        cancelConfirmationModal.style.display = 'none';
+    });
+
+    cancelRevertBtn.addEventListener('click', function() {
+        cancelConfirmationModal.style.display = 'none';
+    });
+
+    window.addEventListener('click', function(e) {
+        if (e.target === cancelConfirmationModal) {
+            cancelConfirmationModal.style.display = 'none';
+        }
+    });
+
+    closeBtn.addEventListener('click', function() {
+        saveConfirmation.style.display = 'none';
+    });
+
+    window.addEventListener('click', function(e) {
+        if (e.target === saveConfirmation) {
+            saveConfirmation.style.display = 'none';
+        }
+    });
+
+    saveAndContinueBtn.addEventListener('click', function() {
+        saveProductData();
+        formChanged = false;
+        navigateProduct(pendingNavigationDirection);
+        pendingNavigationDirection = null;
+        unsavedChangesModal.style.display = 'none';
+    });
+
+    discardAndContinueBtn.addEventListener('click', function() {
+        formChanged = false;
+        navigateProduct(pendingNavigationDirection);
+        pendingNavigationDirection = null;
+        unsavedChangesModal.style.display = 'none';
+    });
+
+    cancelNavigationBtn.addEventListener('click', function() {
+        pendingNavigationDirection = null;
+        unsavedChangesModal.style.display = 'none';
+    });
+
+    saveBtn.addEventListener('click', function(e) {
+        e.preventDefault(); // Prevent default form submission
+        saveProductData();
+        formChanged = false;
+        showConfirmation();
+    });
+
+    discountInput.addEventListener('input', function() {
+        const price = parseFloat(priceInput.value) || 0;
+        const discount = parseFloat(discountInput.value) || 0;
+        if (price > 0 && discount >= 0 && discount <= 100) {
+            finalPriceInput.value = (price - (price * (discount / 100))).toFixed(2);
+        }
+    });
+
+
+    finalPriceInput.addEventListener('input', function() {
+        const price = parseFloat(priceInput.value) || 0;
+        const finalPrice = parseFloat(finalPriceInput.value) || 0;
+        if (price > 0 && finalPrice >= 0 && finalPrice <= price) {
+            discountInput.value = (((price - finalPrice) / price) * 100).toFixed(2);
+        }
+    });
+
+    deleteBtn.addEventListener('click', function() {
+        deleteConfirmationModal.style.display = 'flex';
+    });
+
+    confirmDeleteBtn.addEventListener('click', function() {
+        const productIndex = products.findIndex(p => p.id === currentProductId);
+        if (productIndex !== -1) {
+            products.splice(productIndex, 1);
+            if (currentProductId > 1) {
+                currentProductId--;
+                loadProductData(currentProductId);
+            } else if (products.length > 0) {
+                loadProductData(products[0].id);
+            }
+            updateNavigationState();
+        }
+        deleteConfirmationModal.style.display = 'none';
+    });
+
+    cancelDeleteBtn.addEventListener('click', function() {
+        deleteConfirmationModal.style.display = 'none';
+    });
+
+    changeImageBtn.addEventListener('click', function() {
+        imageInput.click();
+    });
+
+    imageInput.addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                mainProductImage.src = event.target.result;
+                formChanged = true;
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    });
 });
