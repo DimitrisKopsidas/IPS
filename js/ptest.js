@@ -44,6 +44,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const carouselList = document.getElementById('carouselList');
     const promoList = document.getElementById('promoList');
 
+    // Image Preview Modal functionality
+    const imagePreviewModal = document.getElementById('imagePreviewModal');
+    const previewImage = document.getElementById('previewImage');
+    const closeModal = document.querySelector('.preview-close-modal');
+
     // State variables
     let currentProductId = 1;
     let formChanged = false;
@@ -374,6 +379,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 formChanged = true;
             };
             reader.readAsDataURL(e.target.files[0]);
+        }
+    });
+
+    mainProductImage.addEventListener('click', function() {
+        imagePreviewModal.style.display = 'flex';
+        previewImage.src = this.src;
+    });
+
+    closeModal.addEventListener('click', function() {
+        imagePreviewModal.style.display = 'none';
+    });
+
+    imagePreviewModal.addEventListener('click', function(e) {
+        if (e.target === this) {
+            imagePreviewModal.style.display = 'none';
+        }
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && imagePreviewModal.style.display === 'flex') {
+            imagePreviewModal.style.display = 'none';
         }
     });
 });
