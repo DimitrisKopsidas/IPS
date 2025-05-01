@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const saveAndContinueBtn = document.getElementById('saveAndContinueBtn');
     const discardAndContinueBtn = document.getElementById('discardAndContinueBtn');
     const cancelNavigationBtn = document.getElementById('cancelNavigationBtn');
+    const createNewProductBtn = document.getElementById('createNewProductBtn');
 
     // Image elements
     const imageInput = document.getElementById('imageInput');
@@ -198,15 +199,30 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function saveProductData() {// Function to save product data
+        // Add validation
+        if (!headerProductCode.value.trim()) {
+            alert('Product Code is required');
+            headerProductCode.focus();
+            return;
+        }
+
+        if (!headerProductName.value.trim()) {
+            alert('Product Name is required');
+            headerProductName.focus();
+            return;
+        }
+
         const formData = {
             id: currentProductId,
-            // Update these to use header inputs instead
-            name: document.getElementById('headerProductName').value,
-            code: document.getElementById('headerProductCode').value,
+            name: headerProductName.value.trim(),
+            code: headerProductCode.value.trim(),
             group: groupSelect.value,
             maker: makerSelect.value,
-            price: document.getElementById('productPrice').value,
-            discount: parseInt(document.getElementById('productDiscount').value)
+            price: parseFloat(priceInput.value) || 0,
+            discount: parseInt(discountInput.value) || 0,
+            notes: productNotes.value.trim(),
+            carousels: [],
+            promos: []
         };
 
         console.log('Saving product data:', formData);
@@ -235,6 +251,31 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function showUnsavedChangesModal() {// Function to show unsaved changes modal
         unsavedChangesModal.style.display = 'flex';
+    }
+
+    function createNewProduct() {
+        headerProductCode.value = "";
+        headerProductName.value = "New Product";
+        priceInput.value = "0";
+        discountInput.value = "0";
+        finalPriceInput.value = "0";
+        groupSelect.value = groups[0];
+        makerSelect.value = makers[0];
+        productNotes.value = "";
+        mainProductImage.src = "media/98.png";
+        
+        // Clear carousel and promo lists
+        carouselList.innerHTML = '';
+        promoList.innerHTML = '';
+    
+        // Update navigation state
+        updateNavigationState();
+        
+        // Set focus to product code
+        headerProductCode.focus();
+        
+        // Reset form changed flag
+        formChanged = false;
     }
 
 //HOTKEYS------------------------------------------------------------------------------------------------
@@ -313,7 +354,11 @@ document.addEventListener('DOMContentLoaded', function() {
     saveAndContinueBtn.addEventListener('click', function() {
         saveProductData();
         formChanged = false;
-        navigateProduct(pendingNavigationDirection);
+        if (pendingNavigationDirection === 'new') {
+            createNewProduct();
+        } else {
+            navigateProduct(pendingNavigationDirection);
+        }
         pendingNavigationDirection = null;
         unsavedChangesModal.style.display = 'none';
     });
@@ -418,4 +463,12 @@ document.addEventListener('DOMContentLoaded', function() {
         this.style.height = (this.scrollHeight) + 'px';
     });
     
+    createNewBtn.addEventListener('click', function() {
+        if (formChanged) {
+            pendingNavigationDirection = 'new';
+            showUnsavedChangesModal();
+        } else {
+            createNewProduct();
+        }
+    });
 });

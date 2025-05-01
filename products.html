@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product Administration</title>
-    <link rel="stylesheet" href="css/ptest.css">
+    <link rel="stylesheet" href="css/products.css">
 </head>
 <body>
     <nav class="top-nav">
@@ -26,15 +26,12 @@
         <div class="header-container">
             <div class="title-section">
                 <div class="product-header">
-                    <input type="text" id="headerProductCode" class="header-input code" value="WH-2023-PRO">
-                    <input type="text" id="headerProductName" class="header-input name" value="Premium Wireless Headphones">
+                    <input type="number" id="headerProductCode" class="header-input code">
+                    <input type="text" id="headerProductName" class="header-input name">
                 </div>
             </div>
             <div class="navigation-buttons">
-                <!-- Create New+ button -->
-                <a href="create-new.html" class="btn btn-new">Create New+</a>
-                <!-- Previous and Next buttons -->
-
+                <button id="createNewBtn" class="btn btn-new">Create New+</button>
             </div>
         </div>
         
@@ -171,7 +168,7 @@
         </button>
     </div>
 
-<script type="module" src="js/ptest.js"></script>
+<script type="module" src="js/products.js"></script>
 
 </body>
 </html>
