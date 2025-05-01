@@ -26,8 +26,8 @@
         <div class="header-container">
             <div class="title-section">
                 <div class="product-header">
-                    <input type="number" id="headerProductCode" class="header-input code">
-                    <input type="text" id="headerProductName" class="header-input name">
+                    <input type="number" id="headerProductCode" class="header-input code" placeholder="0000">
+                    <input type="text" id="headerProductName" class="header-input name" placeholder="Enter Product Name">
                 </div>
             </div>
             <div class="navigation-buttons">
@@ -149,6 +149,18 @@
             <div class="modal-buttons">
                 <button id="confirmCancelBtn" class="btn btn-secondary">Yes, Revert Changes</button>
                 <button id="cancelRevertBtn" class="btn btn-outline">No, Keep Editing</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="warningModal" class="confirmation-modal">
+        <div class="modal-content warning-modal">
+            <span class="close-btn">&times;</span>
+            <div class="warning-icon">⚠️</div>
+            <h3>Warning</h3>
+            <p id="warningMessage"></p>
+            <div class="modal-buttons">
+                <button id="warningOkBtn" class="btn btn-primary">OK</button>
             </div>
         </div>
     </div>

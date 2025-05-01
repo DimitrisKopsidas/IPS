@@ -777,3 +777,25 @@ select:focus {
     border-color: #4a6fa5;
     box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.2);
 }
+
+/* Warning modal styles */
+.warning-modal {
+    border-top: 4px solid #ffc107;
+}
+
+.warning-icon {
+    color: #ffc107;
+    font-size: 48px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.warning-modal h3 {
+    color: #856404;
+    margin-bottom: 10px;
+}
+
+.warning-modal p {
+    color: #856404;
+    margin-bottom: 20px;
+}

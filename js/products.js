@@ -57,6 +57,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentProductId = 1;
     let formChanged = false;
     let pendingNavigationDirection = null;
+    let validForInsert = true;
 
     // Predefined data arrays
     const groups = ["Audio", "Electronics", "Photography", "Home Appliances"];
@@ -198,45 +199,33 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function saveProductData() {// Function to save product data
-        // Add validation
+    function showWarningModal(message) {
+        const warningModal = document.getElementById('warningModal');
+        const warningMessage = document.getElementById('warningMessage');
+        warningMessage.textContent = message;
+        warningModal.style.display = 'flex';
+    }
+
+    function saveProductData() {
         if (!headerProductCode.value.trim()) {
-            alert('Product Code is required');
+            showWarningModal('Product Code is required');
             headerProductCode.focus();
+            validForInsert = false;
             return;
         }
 
         if (!headerProductName.value.trim()) {
-            alert('Product Name is required');
+            showWarningModal('Product Name is required');
             headerProductName.focus();
+            validForInsert = false;
             return;
         }
 
-        const formData = {
-            id: currentProductId,
-            name: headerProductName.value.trim(),
-            code: headerProductCode.value.trim(),
-            group: groupSelect.value,
-            maker: makerSelect.value,
-            price: parseFloat(priceInput.value) || 0,
-            discount: parseInt(discountInput.value) || 0,
-            notes: productNotes.value.trim(),
-            carousels: [],
-            promos: []
-        };
-
-        console.log('Saving product data:', formData);
-
-        // In a real app, this would be sent to the server
-        // Update our local sample data for demonstration purposes
-        const productIndex = products.findIndex(p => p.id === currentProductId);
-        if (productIndex !== -1) {
-            // Keep carousels and promos the same in our demo
-            formData.carousels = products[productIndex].carousels;
-            formData.promos = products[productIndex].promos;
-
-            // Update the product in our sample array
-            products[productIndex] = formData;
+        if (priceInput.value==0) {
+            showWarningModal('Product Price is required');
+            priceInput.focus();
+            validForInsert = false;
+            return;
         }
     }
 
@@ -255,7 +244,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function createNewProduct() {
         headerProductCode.value = "";
-        headerProductName.value = "New Product";
+        headerProductName.value = "";
         priceInput.value = "0";
         discountInput.value = "0";
         finalPriceInput.value = "0";
@@ -275,7 +264,7 @@ document.addEventListener('DOMContentLoaded', function() {
         headerProductCode.focus();
         
         // Reset form changed flag
-        formChanged = false;
+        formChanged = true;
     }
 
 //HOTKEYS------------------------------------------------------------------------------------------------
@@ -284,7 +273,9 @@ document.addEventListener('DOMContentLoaded', function() {
             event.preventDefault(); // Prevent browser "Save" dialog
             saveProductData();
             formChanged = false;
-            showConfirmation();
+            if (validForInsert){
+                showConfirmation();
+            }
         }
     });
     
@@ -379,7 +370,9 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault(); // Prevent default form submission
         saveProductData();
         formChanged = false;
-        showConfirmation();
+        if (validForInsert){
+            showConfirmation();
+        }
     });
 
     discountInput.addEventListener('input', function() {
@@ -469,6 +462,21 @@ document.addEventListener('DOMContentLoaded', function() {
             showUnsavedChangesModal();
         } else {
             createNewProduct();
+        }
+    });
+
+    // Add event listeners for the warning modal
+    document.getElementById('warningOkBtn').addEventListener('click', function() {
+        document.getElementById('warningModal').style.display = 'none';
+    });
+
+    document.querySelector('#warningModal .close-btn').addEventListener('click', function() {
+        document.getElementById('warningModal').style.display = 'none';
+    });
+
+    document.getElementById('warningModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.style.display = 'none';
         }
     });
 });
