@@ -227,6 +227,7 @@ document.addEventListener('DOMContentLoaded', function() {
             validForInsert = false;
             return;
         }
+        validForInsert = true;
     }
 
     function showConfirmation() {// Update showConfirmation function to ensure modal is visible
