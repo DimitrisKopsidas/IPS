@@ -1,6 +1,6 @@
 /*TO DO
 1)DISABLE BUTTON ON CREATE NEW
-2)
+2)COPY GROUPS FUNCTIONALITY FOR MAKERS
 */
 
 import {fillDropdown,initiateHotkeys} from "./common.js";
@@ -266,6 +266,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.location.href = `carousel/${code}.html`;
             });
         });
+
+        const groupData = groups.find(g => g.name === productData.group);
+        if (groupData) {
+            document.getElementById('groupSearch').value = 
+                `${groupData.code} - ${groupData.name}`;
+            document.getElementById('productGroup').value = groupData.name;
+        }
     }
 
     function showWarningModal(message) {
@@ -831,4 +838,62 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    // Add to your initialization section
+    function initializeGroupSearch() {
+        const groupSearch = document.getElementById('groupSearch');
+        const groupDropdown = document.getElementById('groupDropdown');
+        const productGroup = document.getElementById('productGroup');
+
+        // Initial population of dropdown
+        updateGroupDropdown(groups);
+
+        // Show dropdown on focus
+        groupSearch.addEventListener('focus', () => {
+            groupDropdown.classList.add('active');
+            updateGroupDropdown(groups);
+        });
+
+        // Filter as user types
+        groupSearch.addEventListener('input', () => {
+            const searchValue = groupSearch.value.trim();
+            const filteredGroups = groups.filter(group => 
+                group.code.toString().includes(searchValue)
+            );
+            updateGroupDropdown(filteredGroups);
+        });
+
+        // Hide dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!groupSearch.contains(e.target) && !groupDropdown.contains(e.target)) {
+                groupDropdown.classList.remove('active');
+            }
+        });
+
+        function updateGroupDropdown(filteredGroups) {
+            groupDropdown.innerHTML = '';
+            
+            filteredGroups.forEach(group => {
+                const option = document.createElement('div');
+                option.className = 'group-option';
+                option.innerHTML = `
+                    <span class="code">${group.code}</span>
+                    <span class="name">${group.name}</span>
+                `;
+                
+                option.addEventListener('click', () => {
+                    groupSearch.value = `${group.code} - ${group.name}`;
+                    productGroup.value = group.name;
+                    groupDropdown.classList.remove('active');
+                });
+                
+                groupDropdown.appendChild(option);
+            });
+            
+            groupDropdown.classList.add('active');
+        }
+    }
+
+    // Call initialization
+    initializeGroupSearch();
 });

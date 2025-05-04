@@ -1224,3 +1224,63 @@ select:focus {
     border-color: #ddd;
 }
 
+/* Add group select styles */
+.group-select-container {
+    position: relative;
+    width: 100%;
+}
+
+.group-search {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.group-search:focus {
+    outline: none;
+    border-color: #4a6fa5;
+    box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.2);
+}
+
+.group-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    max-height: 300px;
+    overflow-y: auto;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    z-index: 1000;
+}
+
+.group-dropdown.active {
+    display: block;
+}
+
+.group-option {
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+}
+
+.group-option:hover {
+    background-color: #f0f4f8;
+}
+
+.group-option .code {
+    color: #4a6fa5;
+    font-weight: 600;
+    margin-right: 10px;
+}
+
+.group-option .name {
+    color: #333;
+}
+
