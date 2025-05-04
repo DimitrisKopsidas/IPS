@@ -1,3 +1,8 @@
+/*TO DO
+1)DISABLE BUTTON ON CREATE NEW
+2)
+*/
+
 import {fillDropdown,initiateHotkeys} from "./common.js";
 
 
@@ -58,9 +63,73 @@ document.addEventListener('DOMContentLoaded', function() {
     let formChanged = false;
     let pendingNavigationDirection = null;
     let validForInsert = true;
+    let currentSort = { field: 'code', direction: 'asc' };
 
     // Predefined data arrays
-    const groups = ["Audio", "Electronics", "Photography", "Home Appliances"];
+    const groups = [
+        {
+            id: 1,
+            name: "Audio",
+            code: 100
+        },
+        {
+            id: 2,
+            name: "Electronics",
+            code: 200
+        },
+        {
+            id: 3,
+            name: "Photography",
+            code: 201
+        },
+        {
+            id: 4,
+            name: "Home Appliances",
+            code: 300
+        },
+        {
+            id: 5,
+            name: "Accessories",
+            code: 400
+        },
+        {
+            id: 5,
+            name: "Accessories",
+            code: 401
+        },{
+            id: 5,
+            name: "Accessories",
+            code: 402
+        },{
+            id: 5,
+            name: "Accessories",
+            code: 403
+        },{
+            id: 5,
+            name: "Accessories",
+            code: 404
+        },{
+            id: 5,
+            name: "Accessories",
+            code: 405
+        },{
+            id: 5,
+            name: "Accessories",
+            code: 406
+        },{
+            id: 5,
+            name: "Accessories",
+            code: 407
+        },{
+            id: 5,
+            name: "Accessories",
+            code: 408
+        },{
+            id: 5,
+            name: "Accessories",
+            code: 409
+        },
+    ];
     const makers = ["SoundTech", "VisionTech", "OptikPro", "HomeEase"];
     const products = [
         {
@@ -479,5 +548,287 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.target === this) {
             this.style.display = 'none';
         }
+    });
+
+
+
+
+
+
+
+
+
+    
+    // Add to your initialization code
+    document.querySelector('label[for="productGroup"]').addEventListener('click', function(e) {
+        e.preventDefault();
+        showGroupsModal();
+    });
+
+    // Add these functions
+    function showGroupsModal() {
+        const modal = document.getElementById('groupsModal');
+        modal.style.display = 'flex';
+        document.body.classList.add('modal-open');
+        sortGroups('code'); // Initial sort by code
+        updateGroupsList();
+    }
+
+    function updateGroupsList() {
+        const groupsList = document.getElementById('groupsList');
+        groupsList.innerHTML = '';
+        
+        groups.forEach((group) => {
+            const item = document.createElement('div');
+            item.className = 'group-item';
+            item.innerHTML = `
+                <input type="number" 
+                       class="groups-input code" 
+                       value="${group.code}"
+                       data-original-code="${group.code}">
+                <input type="text" 
+                       class="groups-input name" 
+                       value="${group.name}"
+                       data-original-name="${group.name}">
+                <button class="groups-btn-delete-item" title="Delete group">🗑️</button>
+            `;
+            groupsList.appendChild(item);
+        });
+
+        // Add delete functionality
+        document.querySelectorAll('.groups-btn-delete-item').forEach((btn, index) => {
+            btn.addEventListener('click', function() {
+                if (confirm('Are you sure you want to delete this group?')) {
+                    groups.splice(index, 1);
+                    fillDropdown(groups, groupSelect);
+                    updateGroupsList();
+                }
+            });
+        });
+    }
+
+    // Add these event listeners
+    document.querySelector('.groups-close').addEventListener('click', function() {
+        document.getElementById('groupsModal').style.display = 'none';
+        document.body.classList.remove('modal-open');
+    });
+
+    document.getElementById('saveGroupBtn').addEventListener('click', function() {
+        showSaveNotification(); 
+    });
+
+    // Add this function
+    function showSaveNotification() {
+        const notification = document.querySelector('.groups-save-notification');
+        notification.style.display = 'block';
+        
+        setTimeout(() => {
+            notification.style.display = 'none';
+        }, 3000);
+    }
+
+    // Add escape key handler if not already present
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('groupsModal');
+            if (modal.style.display === 'flex') {
+                modal.style.display = 'none';
+                document.body.classList.remove('modal-open');
+            }
+        }
+    });
+
+    // Add these functions
+    function sortGroups(field) {
+        const direction = field === currentSort.field && currentSort.direction === 'asc' ? 'desc' : 'asc';
+        currentSort = { field, direction };
+
+        groups.sort((a, b) => {
+            let compareA = field === 'code' ? parseInt(a.code) : a.name.toLowerCase();
+            let compareB = field === 'code' ? parseInt(b.code) : b.name.toLowerCase();
+
+            if (direction === 'asc') {
+                return compareA > compareB ? 1 : -1;
+            } else {
+                return compareA < compareB ? 1 : -1;
+            }
+        });
+
+        updateGroupsList();
+        updateSortButtons();
+    }
+
+    function updateSortButtons() {
+        const codeBtn = document.getElementById('sortByCode');
+        const nameBtn = document.getElementById('sortByName');
+        
+        codeBtn.classList.remove('active');
+        nameBtn.classList.remove('active');
+        
+        const activeBtn = currentSort.field === 'code' ? codeBtn : nameBtn;
+        activeBtn.classList.add('active');
+        
+        codeBtn.textContent = `Sort by Code ${currentSort.field === 'code' ? 
+            (currentSort.direction === 'asc' ? '↓' : '↑') : '↓'}`;
+        nameBtn.textContent = `Sort by Name ${currentSort.field === 'name' ? 
+            (currentSort.direction === 'asc' ? '↓' : '↑') : '↓'}`;
+    }
+
+    // Add these event listeners
+    document.getElementById('sortByCode').addEventListener('click', function() {
+        sortGroups('code');
+    });
+
+    document.getElementById('sortByName').addEventListener('click', function() {
+        sortGroups('name');
+    });
+
+    // Add to your initialization section
+    function initializeSearch() {
+        const searchCode = document.getElementById('searchGroupCode');
+        const searchName = document.getElementById('searchGroupName');
+
+        searchCode.addEventListener('input', filterGroups);
+        searchName.addEventListener('input', filterGroups);
+    }
+
+    function filterGroups() {
+        const codeFilter = document.getElementById('searchGroupCode').value.toLowerCase();
+        const nameFilter = document.getElementById('searchGroupName').value.toLowerCase();
+        
+        const filteredGroups = groups.filter(group => {
+            const matchesCode = group.code.toString().includes(codeFilter);
+            const matchesName = group.name.toLowerCase().includes(nameFilter);
+            return matchesCode && matchesName;
+        });
+        
+        displayFilteredGroups(filteredGroups);
+    }
+
+    function displayFilteredGroups(filteredGroups) {
+        const groupsList = document.getElementById('groupsList');
+        groupsList.innerHTML = '';
+        
+        filteredGroups.forEach(group => {
+            const item = document.createElement('div');
+            item.className = 'group-item';
+            item.innerHTML = `
+                <input type="number" 
+                       class="groups-input code" 
+                       value="${group.code}"
+                       data-original-code="${group.code}">
+                <input type="text" 
+                       class="groups-input name" 
+                       value="${group.name}"
+                       data-original-name="${group.name}">
+                <button class="groups-btn-delete-item" title="Delete group">🗑️</button>
+            `;
+            groupsList.appendChild(item);
+        });
+
+        // Reattach delete handlers
+        attachDeleteHandlers();
+    }
+
+    function attachDeleteHandlers() {
+        document.querySelectorAll('.groups-btn-delete-item').forEach((btn, index) => {
+            btn.addEventListener('click', function() {
+                if (confirm('Are you sure you want to delete this group?')) {
+                    const groupItem = this.closest('.group-item');
+                    const code = groupItem.querySelector('.groups-input.code').value;
+                    const groupIndex = groups.findIndex(g => g.code.toString() === code);
+                    if (groupIndex !== -1) {
+                        groups.splice(groupIndex, 1);
+                        fillDropdown(groups, groupSelect);
+                        filterGroups(); // Refresh the filtered list
+                    }
+                }
+            });
+        });
+    }
+
+    // Update showGroupsModal to initialize search
+    function showGroupsModal() {
+        const modal = document.getElementById('groupsModal');
+        modal.style.display = 'flex';
+        document.body.classList.add('modal-open');
+        
+        // Clear search fields
+        document.getElementById('searchGroupCode').value = '';
+        document.getElementById('searchGroupName').value = '';
+        
+        updateGroupsList();
+    }
+
+    // Call initialization
+    initializeSearch();
+
+    // Modify or add this event listener
+    document.getElementById('addGroupBtn').addEventListener('click', function() {
+        const code = document.getElementById('newGroupCode').value.trim();
+        const name = document.getElementById('newGroupName').value.trim();
+        
+        if (!code || !name) {
+            showWarningModal('Both code and name are required');
+            return;
+        }
+
+        // Create new group object
+        const newGroup = {
+            id: groups.length + 1,
+            code: parseInt(code),
+            name: name
+        };
+
+        // Add to beginning of groups array
+        groups.unshift(newGroup);
+        
+        // Add the new item to the top of the list
+        const groupsList = document.getElementById('groupsList');
+        const item = document.createElement('div');
+        item.className = 'group-item new-group';
+        item.innerHTML = `
+            <input type="number" 
+                   class="groups-input code" 
+                   value="${newGroup.code}"
+                   data-original-code="${newGroup.code}">
+            <input type="text" 
+                   class="groups-input name" 
+                   value="${newGroup.name}"
+                   data-original-name="${newGroup.name}">
+            <button class="groups-btn-delete-item" title="Delete group">🗑️</button>
+        `;
+
+        // Insert at the beginning of the list
+        if (groupsList.firstChild) {
+            groupsList.insertBefore(item, groupsList.firstChild);
+        } else {
+            groupsList.appendChild(item);
+        }
+
+        // Clear input fields
+        document.getElementById('newGroupCode').value = '';
+        document.getElementById('newGroupName').value = '';
+
+        // Update dropdown
+        fillDropdown(groups, groupSelect);
+
+        // Remove highlight after animation
+        setTimeout(() => {
+            item.classList.remove('new-group');
+        }, 5000);
+
+        // Attach delete handler to new item
+        item.querySelector('.groups-btn-delete-item').addEventListener('click', function() {
+            if (confirm('Are you sure you want to delete this group?')) {
+                const code = item.querySelector('.groups-input.code').value;
+                const groupIndex = groups.findIndex(g => g.code.toString() === code);
+                if (groupIndex !== -1) {
+                    groups.splice(groupIndex, 1);
+                    item.remove();
+                    fillDropdown(groups, groupSelect);
+                }
+            }
+        });
     });
 });

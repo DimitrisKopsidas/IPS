@@ -61,14 +61,14 @@
                 <form id="productForm">
                     <div class="form-row">
                         <div class="form-group half">
-                            <label for="productGroup">Group:</label>
+                            <label for="productGroup" class="clickable">Group:</label>
                             <select id="productGroup" name="group" required>
                                 <!-- Options will be populated dynamically -->
                             </select>
                         </div>
                         
                         <div class="form-group half">
-                            <label for="productMaker">Maker:</label>
+                            <label for="productMaker" class="clickable">Maker:</label>
                             <select id="productMaker" name="maker" required>
                                 <!-- Options will be populated dynamically -->
                             </select>
@@ -169,6 +169,55 @@
     <div id="imagePreviewModal" class="preview-modal">
         <span class="preview-close-modal">&times;</span>
         <img class="preview-modal-content" id="previewImage">
+    </div>
+
+    <!-- Groups Management Modal -->
+    <div id="groupsModal" class="groups-modal">
+        <div class="groups-modal-content">
+            <span class="groups-close">&times;</span>
+            <h3>Manage Groups</h3>
+            
+            <!-- Combined search and sort controls -->
+            <div class="groups-controls-row">
+                <div class="groups-search-row">
+                    <input type="number" 
+                           id="searchGroupCode" 
+                           class="groups-search code" 
+                           placeholder="Search">
+                    <input type="text" 
+                           id="searchGroupName" 
+                           class="groups-search name" 
+                           placeholder="Search">
+                </div>
+                🔎
+                <div class="groups-sort-controls">
+                    <button id="sortByCode" class="groups-btn-sort">Sort by Code ↓</button>
+                    <button id="sortByName" class="groups-btn-sort">Sort by Name ↓</button>
+                </div>
+            </div>
+
+            
+            
+            <div class="group-item">
+                <input type="number" class="groups-input code" id="newGroupCode" value="" placeholder="Code">
+                <input type="text" class="groups-input name" id="newGroupName" value="" placeholder="Group Name">
+                <button class="groups-btn-save-item" id="addGroupBtn" title="Add group">➕</button>
+            </div>
+            
+            <div class="groups-list" id="groupsList">
+                
+            </div>
+            <!-- <h4>+ New Group</h4>
+            <div class="groups-input-row">
+                <input type="number" id="newGroupCode" class="groups-input code" placeholder="Code" autocomplete="off">
+                <input type="text" id="newGroupName" class="groups-input name" placeholder="Name" autocomplete="off">
+                <button id="addGroupBtn" class="groups-btn groups-btn-add">Add Group +</button>
+            </div> -->
+            <button id="saveGroupBtn" class="groups-btn groups-btn-save">Save Changes</button>
+            <div class="groups-save-notification" style="display: none;">
+                <p>✓ Groups data saved and exported successfully!</p>
+            </div>
+        </div>
     </div>
 
     <div class="side-navigation">
