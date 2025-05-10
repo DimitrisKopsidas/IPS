@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const priceInput = document.getElementById('productPrice');
     const discountInput = document.getElementById('productDiscount');
     const finalPriceInput = document.getElementById('productFinalPrice');
+    const groupCodeInput = document.getElementById('groupCodeInput');
 
     // Modal elements
     const saveConfirmation = document.getElementById('saveConfirmation');
@@ -93,40 +94,40 @@ document.addEventListener('DOMContentLoaded', function() {
             code: 400
         },
         {
-            id: 5,
-            name: "Accessories",
+            id: 6,
+            name: "Accessories1",
             code: 401
         },{
-            id: 5,
-            name: "Accessories",
+            id: 7,
+            name: "Accessories2",
             code: 402
         },{
-            id: 5,
-            name: "Accessories",
+            id: 8,
+            name: "Accessories3",
             code: 403
         },{
-            id: 5,
-            name: "Accessories",
+            id: 9,
+            name: "Accessories4",
             code: 404
         },{
-            id: 5,
-            name: "Accessories",
+            id: 10,
+            name: "Accessories5",
             code: 405
         },{
-            id: 5,
-            name: "Accessories",
+            id: 11,
+            name: "Accessories6",
             code: 406
         },{
-            id: 5,
-            name: "Accessories",
+            id: 12,
+            name: "Accessories7",
             code: 407
         },{
-            id: 5,
+            id: 13,
             name: "Accessories",
             code: 408
         },{
-            id: 5,
-            name: "Accessories",
+            id: 14,
+            name: "Accessories8",
             code: 409
         },
     ];
@@ -136,7 +137,7 @@ document.addEventListener('DOMContentLoaded', function() {
             id: 1,
             name: "Premium Wireless Headphones",
             code: 100,
-            group: "Audio",
+            group: "Photography",
             maker: "SoundTech",
             price: 199.99,
             discount: 0,
@@ -273,6 +274,13 @@ document.addEventListener('DOMContentLoaded', function() {
         //         `${groupData.code} - ${groupData.name}`;
         //     document.getElementById('productGroup').value = groupData.name;
         // }
+
+        // Update group code input
+        const groupData = groups.find(g => g.name === productData.group);
+        if (groupData) {
+            groupCodeInput.value = groupData.code;
+            productGroup.value = groupData.name;
+        }
     }
 
     function showWarningModal(message) {
@@ -325,10 +333,11 @@ document.addEventListener('DOMContentLoaded', function() {
         priceInput.value = "0";
         discountInput.value = "0";
         finalPriceInput.value = "0";
-        groupSelect.value = groups[0];
-        makerSelect.value = makers[0];
+        groupSelect.value = '';
+        makerSelect.value = '';
         productNotes.value = "";
         mainProductImage.src = "media/98.png";
+        groupCodeInput.value = "";
         
         // Clear carousel and promo lists
         carouselList.innerHTML = '';
@@ -844,6 +853,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-   
+    // Add to your initialization section
+    document.getElementById('groupCodeInput').addEventListener('input', function() {
+        // Limit to 3 digits and numbers only
+        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3);
+        
+        const enteredCode = this.value;
+        
+        // Find matching groups that start with entered code
+        const matchingGroup = groups.find(group => 
+            group.code.toString().startsWith(enteredCode)
+        );
+
+        // Update dropdown selection if match found
+        if (matchingGroup) {
+            productGroup.value = matchingGroup.name;
+        }
+    });
     
 });
