@@ -1284,3 +1284,38 @@ select:focus {
     color: #333;
 }
 
+/* Update group select wrapper styles */
+.group-select-wrapper {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+    align-items: center;
+}
+
+#groupCodeInput {
+    width: 15%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    text-align: center;
+    font-weight: 600;
+    color: #4a6fa5;
+}
+
+#productGroup {
+    width: 85%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+/* Remove spinner arrows from number input */
+.group-code-input::-webkit-inner-spin-button,
+.group-code-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+
