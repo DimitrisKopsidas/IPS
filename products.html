@@ -62,13 +62,9 @@
                     <div class="form-row">
                         <div class="form-group half">
                             <label for="productGroup" class="clickable">Group:</label>
-                            <div class="group-select-container">
-                                <input type="text" id="groupSearch" class="group-search" placeholder="Search by code...">
-                                <div class="group-dropdown" id="groupDropdown">
-                                    <!-- Groups will be populated here -->
-                                </div>
-                            </div>
-                            <input type="hidden" id="productGroup" name="group" required>
+                            <select id="productGroup" name="group" required>
+                                <!-- Options will be populated dynamically -->
+                            </select>
                         </div>
                         
                         <div class="form-group half">
@@ -122,6 +118,10 @@
             <p>Changes saved successfully!</p>
         </div>
     </div>
+
+    <div class="groups-save-notification" style="display: none;">
+                <p>✓ Groups data saved and exported successfully!</p>
+            </div>
     
     <div id="unsavedChangesModal" class="confirmation-modal">
         <div class="modal-content">
@@ -218,9 +218,7 @@
                 <button id="addGroupBtn" class="groups-btn groups-btn-add">Add Group +</button>
             </div> -->
             <button id="saveGroupBtn" class="groups-btn groups-btn-save">Save Changes</button>
-            <div class="groups-save-notification" style="display: none;">
-                <p>✓ Groups data saved and exported successfully!</p>
-            </div>
+            
         </div>
     </div>
 
