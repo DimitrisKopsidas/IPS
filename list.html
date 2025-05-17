@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product Listing</title>
     <link rel="stylesheet" href="css/list.css">
-    <link rel="stylesheet" href="css/navigation.css">
     <script src="js/list.js"></script>
 </head>
 <body>
@@ -24,5 +23,42 @@
             </ul>
         </div>
     </nav>
+
+    <div class="container">
+        <div class="filters-section">
+            <div class="filter-group">
+                <label for="codeFilter">Code:</label>
+                <input type="number" id="codeFilter" class="filter-input" placeholder="Enter code">
+            </div>
+            <div class="filter-group">
+                <label for="nameFilter">Name:</label>
+                <input type="text" id="nameFilter" class="filter-input" placeholder="Enter name">
+            </div>
+            <div class="filter-group">
+                <label for="groupFilter">Group:</label>
+                <select id="groupFilter" class="filter-input">
+                    <option value="">All Groups</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="makerFilter">Maker:</label>
+                <select id="makerFilter" class="filter-input">
+                    <option value="">All Makers</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="makerFilter">Items per page:</label>
+                <select id="itemsPerPage" class="filter-input">
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                </select>
+            </div>
+            
+        </div>
+        <div id="productList" class="product-list">
+            <!-- Products here -->
+        </div>
+    </div>
 </body>
 </html>

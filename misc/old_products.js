@@ -1,43 +1,104 @@
-// In a real app, you would fetch this data from an API
-document.addEventListener('DOMContentLoaded', function() {
-    // Example of dynamic data loading
-    const product = {
-        name: "Premium Wireless Headphones",
-        price: 199.99,
-        description: "High-quality wireless headphones with active noise cancellation, 30-hour battery life, and premium sound quality. Perfect for music lovers and professionals alike.",
-        sku: "WH-2023-PRO",
-        availability: "In Stock (25 units)",
-        specs: [
-            "Bluetooth 5.0",
-            "40mm dynamic drivers",
-            "IPX4 water resistance",
-            "Built-in microphone",
-            "Touch controls"
-        ],
-        imageUrl: "https://via.placeholder.com/600x400?text=Premium+Headphones"
-    };
+Function to display products
+    function displayProducts(productList) {
+        const productListContainer = document.getElementById('productList');
+        productListContainer.innerHTML = '';
+        
+        productList.forEach(product => {
+            const productCard = document.createElement('div');
+            productCard.className = 'product-card';
+            productCard.dataset.id = product.id;
+            
+            // Generate stars based on rating
+            const stars = '★'.repeat(Math.floor(product.rating)) + 
+                          (product.rating % 1 >= 0.5 ? '½' : '') + 
+                          '☆'.repeat(5 - Math.ceil(product.rating));
+            
+            // Different layout for computer products
+            if (product.category === 'computers') {
+                productCard.classList.add('with-image');
+                
+                productCard.innerHTML = `
+                    <div class="product-image">
+                        <img src="${product.imageUrl}" alt="${product.name}">
+                    </div>
+                    <div class="product-info">
+                        <div class="product-category">${product.category}</div>
+                        <div class="product-name">${product.name}</div>
+                        <div class="product-price">$${product.price.toFixed(2)}</div>
+                        <div class="product-rating">${stars} (${product.rating})</div>
+                        <div class="product-description">${product.description}</div>
+                    </div>
+                `;
+            } else {
+                // Standard layout for non-computer products
+                productCard.innerHTML = `
+                    <div class="product-info">
+                        <div class="product-category">${product.category}</div>
+                        <div class="product-name">${product.name}</div>
+                        <div class="product-price">$${product.price.toFixed(2)}</div>
+                        <div class="product-rating">${stars} (${product.rating})</div>
+                        <div class="product-description">${product.description}</div>
+                    </div>
+                `;
+            }
+            
+            productCard.addEventListener('click', function() {
+                // In a real app, this would navigate to the product detail page
+                window.location.href = `product-details.html?id=${product.id}`;
+            });
+            
+            productListContainer.appendChild(productCard);
+        });
+    }
     
-    // Populate the product data
-    document.getElementById('productName').textContent = product.name;
-    document.getElementById('productPrice').textContent = `$${product.price.toFixed(2)}`;
-    document.getElementById('productDescription').textContent = product.description;
-    document.getElementById('productSKU').textContent = product.sku;
-    document.getElementById('productAvailability').textContent = product.availability;
+    // Initial display of all products
+    displayProducts(products);
     
-    const specsList = document.querySelector('#productSpecs ul');
-    specsList.innerHTML = product.specs.map(spec => `<li>${spec}</li>`).join('');
+    // Filter functionality
+    document.getElementById('categoryFilter').addEventListener('change', filterProducts);
+    document.getElementById('searchInput').addEventListener('input', filterProducts);
+    document.getElementById('sortFilter').addEventListener('change', filterProducts);
     
-    document.getElementById('mainProductImage').src = product.imageUrl;
-    document.getElementById('mainProductImage').alt = product.name;
+    function filterProducts() {
+        const categoryValue = document.getElementById('categoryFilter').value;
+        const searchValue = document.getElementById('searchInput').value.toLowerCase();
+        const sortValue = document.getElementById('sortFilter').value;
+        
+        // Filter products by category and search term
+        let filteredProducts = products.filter(product => {
+            const matchesCategory = categoryValue === '' || product.category === categoryValue;
+            const matchesSearch = searchValue === '' || 
+                                 product.name.toLowerCase().includes(searchValue) || 
+                                 product.description.toLowerCase().includes(searchValue);
+            
+            return matchesCategory && matchesSearch;
+        });
+        
+        // Sort products
+        switch(sortValue) {
+            case 'price-low':
+                filteredProducts.sort((a, b) => a.price - b.price);
+                break;
+            case 'price-high':
+                filteredProducts.sort((a, b) => b.price - a.price);
+                break;
+            case 'newest':
+                // In a real app, you would sort by date
+                break;
+            case 'popular':
+                filteredProducts.sort((a, b) => b.rating - a.rating);
+                break;
+        }
+        
+        displayProducts(filteredProducts);
+    }
     
-    // Button event handlers
-    document.getElementById('addToCartBtn').addEventListener('click', function() {
-        alert(`${product.name} added to cart!`);
-        // In a real app: Add to cart logic
+    // Pagination functionality (simplified)
+    const pageBtns = document.querySelectorAll('.page-btn');
+    pageBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            pageBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            // In a real app, this would fetch the appropriate page of products
+        });
     });
-    
-    document.getElementById('wishlistBtn').addEventListener('click', function() {
-        alert(`${product.name} added to wishlist!`);
-        // In a real app: Add to wishlist logic
-    });
-});
