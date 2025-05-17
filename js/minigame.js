@@ -4,6 +4,7 @@
 //3)SLICE SIZE ACCORDING TO CHANCE
 //4)DISPLAY DEATHDATE
 
+
   // props.items.push({ label: 'four' });
   // props.items.push({ label: 'five' });
 
@@ -33,11 +34,11 @@ var text3=document.getElementById('text3');
 var prizeimage=document.getElementById('prizeimage');
 var winningitemimage="media/"+winningitemindex+".png";
 var carouselurl="carousel.html";
-
+var overlay=new Image();
+overlay.src='media/overlay.svg';//INITIALIZE OVERLAY AS IMAGE
 
 window.onload = () => {
-  var overlay=new Image();
-  overlay.src='media/overlay.svg';//INITIALIZE OVERLAY AS IMAGE
+
   const props = {//INITIALIZE WHEEL
     items: //BACKEND FUNCTION NEEDED HERE
     [        

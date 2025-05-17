@@ -79,9 +79,18 @@
                         
                         <div class="form-group half">
                             <label for="productMaker" class="clickable">Maker:</label>
-                            <select id="productMaker" name="maker" required>
-                                <!-- Options will be populated dynamically -->
-                            </select>
+                            <div class="group-select-wrapper">
+                                <input type="text" 
+                                       id="makerCodeInput" 
+                                       class="group-code-input" 
+                                       maxlength="3" 
+                                       pattern="\d*"
+                                       placeholder="000"
+                                       oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                                <select id="productMaker" name="maker" required>
+                                    <!-- Options will be populated dynamically -->
+                                </select>
+                            </div>
                         </div>
                     </div>
                     
@@ -230,6 +239,47 @@
             <button id="saveGroupBtn" class="groups-btn groups-btn-save">Save Changes</button>
             
         </div>
+    </div>
+
+    <!-- Makers Management Modal -->
+    <div id="makersModal" class="groups-modal">
+        <div class="groups-modal-content">
+            <span class="makers-close">&times;</span>
+            <h3>Manage Makers</h3>
+            
+            <!-- Combined search and sort controls -->
+            <div class="groups-controls-row">
+                <div class="groups-search-row">
+                    <input type="number" 
+                           id="searchMakerCode" 
+                           class="groups-search code" 
+                           placeholder="Search">
+                    <input type="text" 
+                           id="searchMakerName" 
+                           class="groups-search name" 
+                           placeholder="Search">
+                </div>
+                🔎
+                <div class="groups-sort-controls">
+                    <button id="sortMakerByCode" class="groups-btn-sort">Sort by Code ↓</button>
+                    <button id="sortMakerByName" class="groups-btn-sort">Sort by Name ↓</button>
+                </div>
+            </div>
+            
+            <div class="group-item">
+                <input type="number" class="groups-input code" id="newMakerCode" placeholder="Code">
+                <input type="text" class="groups-input name" id="newMakerName" placeholder="Maker Name">
+                <button class="groups-btn-save-item" id="addMakerBtn" title="Add maker">➕</button>
+            </div>
+            
+            <div class="groups-list" id="makersList"></div>
+            
+            <button id="saveMakerBtn" class="groups-btn groups-btn-save">Save Changes</button>
+        </div>
+    </div>
+
+    <div class="makers-save-notification" style="display: none;">
+        <p>✓ Makers data saved and exported successfully!</p>
     </div>
 
     <div class="side-navigation">

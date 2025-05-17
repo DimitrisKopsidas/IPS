@@ -1318,4 +1318,58 @@ select:focus {
     margin: 0;
 }
 
+.makers-save-notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #28a745;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    display: none;
+    animation: slideIn 0.3s ease-out;
+    z-index: 2001;
+}
 
+.makers-close {
+    position: absolute;
+    right: 20px;
+    top: 15px;
+    font-size: 28px;
+    font-weight: bold;
+    color: #666;
+    cursor: pointer;
+}
+
+.makers-close:hover {
+    color: #333;
+}
+
+
+
+#makerCodeInput {
+    width: 15%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    text-align: center;
+    font-weight: 600;
+    color: #4a6fa5;
+}
+
+#makerGroup {
+    width: 85%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+/* Remove spinner arrows from number input */
+.maker-code-input::-webkit-inner-spin-button,
+.maker-code-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}

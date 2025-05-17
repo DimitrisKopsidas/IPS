@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const discountInput = document.getElementById('productDiscount');
     const finalPriceInput = document.getElementById('productFinalPrice');
     const groupCodeInput = document.getElementById('groupCodeInput');
+    const makerCodeInput = document.getElementById('makerCodeInput');
 
     // Modal elements
     const saveConfirmation = document.getElementById('saveConfirmation');
@@ -131,7 +132,12 @@ document.addEventListener('DOMContentLoaded', function() {
             code: 409
         },
     ];
-    const makers = ["SoundTech", "VisionTech", "OptikPro", "HomeEase"];
+    const makers = [
+        { id: 1, code: 100, name: "SoundTech" },
+        { id: 2, code: 200, name: "VisionTech" },
+        { id: 3, code: 300, name: "OptikPro" },
+        { id: 4, code: 400, name: "HomeEase" }
+    ];
     const products = [
         {
             id: 1,
@@ -281,6 +287,13 @@ document.addEventListener('DOMContentLoaded', function() {
             groupCodeInput.value = groupData.code;
             productGroup.value = groupData.name;
         }
+
+        // Update maker code input
+        const makerData = makers.find(m => m.name === productData.maker);
+        if (makerData) {
+            makerCodeInput.value = makerData.code;
+            productMaker.value = makerData.name;
+        }
     }
 
     function showWarningModal(message) {
@@ -338,6 +351,7 @@ document.addEventListener('DOMContentLoaded', function() {
         productNotes.value = "";
         mainProductImage.src = "media/98.png";
         groupCodeInput.value = "";
+        makerCodeInput.value = "";
         
         // Clear carousel and promo lists
         carouselList.innerHTML = '';
@@ -868,6 +882,246 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update dropdown selection if match found
         if (matchingGroup) {
             productGroup.value = matchingGroup.name;
+        }
+    });
+    
+    // Add to your initialization section
+    let makerSort = { field: 'code', direction: 'asc' };
+
+    // Add maker management functions
+    function showMakersModal() {
+        const modal = document.getElementById('makersModal');
+        modal.style.display = 'flex';
+        document.body.classList.add('modal-open');
+        sortMakers('code');
+        updateMakersList();
+    }
+
+    function updateMakersList() {
+        const makersList = document.getElementById('makersList');
+        makersList.innerHTML = '';
+        
+        makers.forEach((maker) => {
+            const item = document.createElement('div');
+            item.className = 'group-item';
+            item.innerHTML = `
+                <input type="number" 
+                       class="groups-input code" 
+                       value="${maker.code}"
+                       data-original-code="${maker.code}">
+                <input type="text" 
+                       class="groups-input name" 
+                       value="${maker.name}"
+                       data-original-name="${maker.name}">
+                <button class="groups-btn-delete-item" title="Delete maker">🗑️</button>
+            `;
+            makersList.appendChild(item);
+        });
+
+        attachMakerDeleteHandlers();
+    }
+
+    function sortMakers(field) {
+        const direction = field === makerSort.field && makerSort.direction === 'asc' ? 'desc' : 'asc';
+        makerSort = { field, direction };
+
+        makers.sort((a, b) => {
+            let compareA = field === 'code' ? parseInt(a.code) : a.name.toLowerCase();
+            let compareB = field === 'code' ? parseInt(b.code) : b.name.toLowerCase();
+
+            if (direction === 'asc') {
+                return compareA > compareB ? 1 : -1;
+            } else {
+                return compareA < compareB ? 1 : -1;
+            }
+        });
+
+        updateMakersList();
+        updateMakerSortButtons();
+    }
+
+    function updateMakerSortButtons() {
+        const codeBtn = document.getElementById('sortMakerByCode');
+        const nameBtn = document.getElementById('sortMakerByName');
+        
+        codeBtn.classList.remove('active');
+        nameBtn.classList.remove('active');
+        
+        const activeBtn = makerSort.field === 'code' ? codeBtn : nameBtn;
+        activeBtn.classList.add('active');
+        
+        codeBtn.textContent = `Sort by Code ${makerSort.field === 'code' ? 
+            (makerSort.direction === 'asc' ? '↓' : '↑') : '↓'}`;
+        nameBtn.textContent = `Sort by Name ${makerSort.field === 'name' ? 
+            (makerSort.direction === 'asc' ? '↓' : '↑') : '↓'}`;
+    }
+
+    function filterMakers() {
+        const codeFilter = document.getElementById('searchMakerCode').value.toLowerCase();
+        const nameFilter = document.getElementById('searchMakerName').value.toLowerCase();
+        
+        const filteredMakers = makers.filter(maker => {
+            const matchesCode = maker.code.toString().includes(codeFilter);
+            const matchesName = maker.name.toLowerCase().includes(nameFilter);
+            return matchesCode && matchesName;
+        });
+        
+        displayFilteredMakers(filteredMakers);
+    }
+
+    function displayFilteredMakers(filteredMakers) {
+        const makersList = document.getElementById('makersList');
+        makersList.innerHTML = '';
+        
+        filteredMakers.forEach(maker => {
+            const item = document.createElement('div');
+            item.className = 'group-item';
+            item.innerHTML = `
+                <input type="number" 
+                       class="groups-input code" 
+                       value="${maker.code}"
+                       data-original-code="${maker.code}">
+                <input type="text" 
+                       class="groups-input name" 
+                       value="${maker.name}"
+                       data-original-name="${maker.name}">
+                <button class="groups-btn-delete-item" title="Delete maker">🗑️</button>
+            `;
+            makersList.appendChild(item);
+        });
+
+        attachMakerDeleteHandlers();
+    }
+
+    function attachMakerDeleteHandlers() {
+        document.querySelectorAll('#makersList .groups-btn-delete-item').forEach((btn) => {
+            btn.addEventListener('click', function() {
+                if (confirm('Are you sure you want to delete this maker?')) {
+                    const makerItem = this.closest('.group-item');
+                    const code = makerItem.querySelector('.groups-input.code').value;
+                    const makerIndex = makers.findIndex(m => m.code.toString() === code);
+                    if (makerIndex !== -1) {
+                        makers.splice(makerIndex, 1);
+                        fillDropdown(makers, makerSelect);
+                        filterMakers();
+                    }
+                }
+            });
+        });
+    }
+
+    function showMakerSaveNotification() {
+        const notification = document.querySelector('.makers-save-notification');
+        notification.style.display = 'block';
+        
+        setTimeout(() => {
+            notification.style.display = 'none';
+        }, 3000);
+    }
+
+    // Add these event listeners
+    document.querySelector('label[for="productMaker"]').addEventListener('click', function(e) {
+        e.preventDefault();
+        showMakersModal();
+    });
+
+    document.querySelector('.makers-close').addEventListener('click', function() {
+        document.getElementById('makersModal').style.display = 'none';
+        document.body.classList.remove('modal-open');
+    });
+
+    document.getElementById('saveMakerBtn').addEventListener('click', function() {
+        showMakerSaveNotification();
+        document.getElementById('makersModal').style.display = 'none';
+        document.body.classList.remove('modal-open');
+    });
+
+    document.getElementById('addMakerBtn').addEventListener('click', function() {
+        const code = document.getElementById('newMakerCode').value.trim();
+        const name = document.getElementById('newMakerName').value.trim();
+        
+        if (!code || !name) {
+            showWarningModal('Both code and name are required');
+            return;
+        }
+
+        const newMaker = {
+            id: makers.length + 1,
+            code: parseInt(code),
+            name: name
+        };
+
+        makers.unshift(newMaker);
+        
+        const makersList = document.getElementById('makersList');
+        const item = document.createElement('div');
+        item.className = 'group-item new-group';
+        item.innerHTML = `
+            <input type="number" 
+                   class="groups-input code" 
+                   value="${newMaker.code}"
+                   data-original-code="${newMaker.code}">
+            <input type="text" 
+                   class="groups-input name" 
+                   value="${newMaker.name}"
+                   data-original-name="${newMaker.name}">
+            <button class="groups-btn-delete-item" title="Delete maker">🗑️</button>
+        `;
+
+        if (makersList.firstChild) {
+            makersList.insertBefore(item, makersList.firstChild);
+        } else {
+            makersList.appendChild(item);
+        }
+
+        document.getElementById('newMakerCode').value = '';
+        document.getElementById('newMakerName').value = '';
+
+        fillDropdown(makers, makerSelect);
+
+        setTimeout(() => {
+            item.classList.remove('new-group');
+        }, 3000);
+
+        attachMakerDeleteHandlers();
+    });
+
+    document.getElementById('sortMakerByCode').addEventListener('click', () => sortMakers('code'));
+    document.getElementById('sortMakerByName').addEventListener('click', () => sortMakers('name'));
+
+    document.getElementById('searchMakerCode').addEventListener('input', filterMakers);
+    document.getElementById('searchMakerName').addEventListener('input', filterMakers);
+    
+    // Add to your initialization section
+    makerCodeInput.addEventListener('input', function() {
+        // Limit to 3 digits and numbers only
+        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3);
+        
+        const enteredCode = this.value;
+        
+        // Find matching makers that start with entered code
+        const matchingMaker = makers.find(maker => 
+            maker.code.toString().startsWith(enteredCode)
+        );
+
+        // Update dropdown selection if match found
+        if (matchingMaker) {
+            productMaker.value = matchingMaker.name;
+        }
+    });
+    
+    // Add to your initialization section
+    document.getElementById('productGroup').addEventListener('change', function() {
+        const selectedGroup = groups.find(g => g.name === this.value);
+        if (selectedGroup) {
+            groupCodeInput.value = selectedGroup.code;
+        }
+    });
+
+    document.getElementById('productMaker').addEventListener('change', function() {
+        const selectedMaker = makers.find(m => m.name === this.value);
+        if (selectedMaker) {
+            makerCodeInput.value = selectedMaker.code;
         }
     });
     

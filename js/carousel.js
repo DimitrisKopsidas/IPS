@@ -7,11 +7,12 @@
 //1)DIV TO DISPLAY PRICE AND DISCOUNT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //2)IMPLEMENT WAIT TIME TO PREVENT ABUSE
 
+
 //USER DEFINED VARIABLES
 var autoplaywait =1000;//DB
 var autoplayspeed = 3000;//DB
 var media = ["media/2.png","media/3.png","media/4.png"];//BACKEND
-var countforminigame=5;//DB
+var countforminigame=4;//DB
 
 //PROGRAM VARIABLES
 var prevslide=0;
