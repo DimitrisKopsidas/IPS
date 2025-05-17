@@ -4,52 +4,63 @@ document.addEventListener('DOMContentLoaded', function() {
     const statusIcon = document.getElementById('statusIcon');
     const resultMessage = document.getElementById('resultMessage');
     const discountDetails = document.getElementById('discountDetails');
-    const copyCodeBtn = document.getElementById('copyCodeBtn');
     const applyCodeBtn = document.getElementById('applyCodeBtn');
+    const verificationModal = document.getElementById('verificationModal');
     
     // Sample list of valid promo codes (in a real app, these would be verified server-side)
     const validPromoCodes = {
-        'WELCOME25': {
+        'q1': {
+            product: 'Playstation 2',
+            group: 'Gaming',
+            maker: 'Sony',
             discount: '25%',
-            description: 'Get 25% off on your first purchase.',
             expiry: '2025-12-31'
         },
-        'SUMMER2025': {
-            discount: '15%',
-            description: 'Summer sale: 15% off on all products.',
-            expiry: '2025-08-31'
+        'q2': {
+            product: '',
+            group: 'Handheld',
+            maker: 'Sony',
+            discount: '25%',
+            expiry: '2025-12-31'
         },
-        'FREESHIP': {
-            discount: 'Free Shipping',
-            description: 'Free standard shipping on orders over $50.',
-            expiry: '2025-06-30'
+        'q3': {
+            product: '',
+            group: '',
+            maker: 'Nintendo',
+            discount: '25%',
+            expiry: '2025-12-31'
         },
-        'LOYALTY10': {
-            discount: '10%',
-            description: 'Special 10% discount for loyal customers.',
-            expiry: '2025-10-15'
-        }
+        'q4': {
+            product: '',
+            group: 'Console',
+            maker: '',
+            discount: '25%',
+            expiry: '2025-12-31'
+        },
+        'q5': {
+            product: '',
+            group: 'Console',
+            maker: '',
+            discount: '25%',
+            expiry: '2025-1-1'
+        },
     };
     
     // Handle promo code verification
     promoForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        
         const promoCode = document.getElementById('promoCode').value.trim();
         
         // Reset previous result
         resultContainer.classList.add('hidden');
-        
-        // Simple validation - ensure code is not empty
         if (!promoCode) {
             showError('Please enter a promo code');
             return;
         }
-        
         // Simulate server verification with a slight delay
         setTimeout(() => {
             verifyPromoCode(promoCode);
-        }, 800);
+        }, 500);
     });
     
     // Verify the promo code against our sample list
@@ -82,33 +93,42 @@ document.addEventListener('DOMContentLoaded', function() {
         const expiryDate = new Date(promoInfo.expiry);
         const formattedDate = formatDate(expiryDate);
         
-        discountDetails.innerHTML = `
+        if(promoInfo.product!=''){
+            discountDetails.innerHTML = `
             <p><strong>${promoInfo.discount} Discount</strong></p>
-            <p>${promoInfo.description}</p>
-            <p>Valid until ${formattedDate}</p>
-        `;
-        
-        resultContainer.classList.remove('hidden');
-        
-        // Enable action buttons
-        copyCodeBtn.disabled = false;
-        applyCodeBtn.disabled = false;
-        
-        // Set up button handlers
-        copyCodeBtn.onclick = function() {
-            navigator.clipboard.writeText(code)
-                .then(() => {
-                    const originalText = this.textContent;
-                    this.textContent = 'Copied!';
-                    setTimeout(() => {
-                        this.textContent = originalText;
-                    }, 2000);
-                });
-        };
-        
+            <p>${promoInfo.product}</p>
+            <p>Valid until ${formattedDate}</p>`;
+        }else if ((promoInfo.group!='')&&(promoInfo.product=='')&&(promoInfo.maker!='')){
+            discountDetails.innerHTML = `
+            <p><strong>${promoInfo.discount} Discount</strong></p>
+            <p>For group: ${promoInfo.group} and maker: ${promoInfo.maker}</p>
+            <p>Valid until ${formattedDate}</p>`;
+        }else if ((promoInfo.group!='')&&(promoInfo.product=='')){
+            discountDetails.innerHTML = `
+            <p><strong>${promoInfo.discount} Discount</strong></p>
+            <p>For group: ${promoInfo.group}</p>
+            <p>Valid until ${formattedDate}</p>`;
+        }else if (promoInfo.maker!=''&&(promoInfo.product=='')){
+            discountDetails.innerHTML = `
+            <p><strong>${promoInfo.discount} Discount</strong></p>
+            <p>For maker: ${promoInfo.maker}</p>
+            <p>Valid until ${formattedDate}</p>`;
+        }
+
+        resultContainer.classList.remove('hidden');        
         applyCodeBtn.onclick = function() {
-            alert(`Promo code ${code} applied to your cart! You will receive ${promoInfo.discount} off.`);
-            // In a real app: Would redirect to cart or apply via AJAX
+            verificationModal.style.display = 'flex';
+            
+            document.getElementById('confirmApplyBtn').onclick = function() {//APPLY
+                verificationModal.style.display = 'none';
+                // Here you would make the API call to apply the code and remove it from database
+                delete validPromoCodes[code]; // Remove code from valid codes
+                resultContainer.classList.add('hidden');
+            };
+            
+            document.getElementById('cancelApplyBtn').onclick = function() {//CANCEL
+                verificationModal.style.display = 'none';
+            };
         };
     }
     
@@ -119,15 +139,20 @@ document.addEventListener('DOMContentLoaded', function() {
         resultMessage.textContent = 'Invalid Promo Code';
         discountDetails.innerHTML = `<p>${message}</p>`;
         resultContainer.classList.remove('hidden');
-        
-        // Disable action buttons
-        copyCodeBtn.disabled = true;
-        applyCodeBtn.disabled = true;
+        applyCodeBtn.style.display = 'none';
     }
     
     // Format date to a readable string
     function formatDate(date) {
         const options = { year: 'numeric', month: 'long', day: 'numeric' };
-        return date.toLocaleDateString('en-US', options);
+        return date.toLocaleDateString('en-GB', options);
     }
+    
+    // Add click handler to close modal when clicking outside
+    document.addEventListener('click', function(event) {
+        const verificationModal = document.getElementById('verificationModal');
+        if (event.target === verificationModal) {
+            verificationModal.style.display = 'none';
+        }
+    });
 });

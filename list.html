@@ -6,58 +6,23 @@
     <title>Product Listing</title>
     <link rel="stylesheet" href="css/list.css">
     <link rel="stylesheet" href="css/navigation.css">
+    <script src="js/list.js"></script>
 </head>
 <body>
     <nav class="top-nav">
-        <ul>
-            <li><a href="admin.html">Admin</a></li>
-            <li><a href="products.html">Products</a></li>
-            <li><a href="carousels.html">Carousels</a></li>
-            <li><a href="promos.html">Promos</a></li>
-            <li><a href="check.html">Check</a></li>
-        </ul>
+        <div class="nav-content">
+            <div class="app-brand">
+                <img src="media/logo.webp" alt="Crystal" class="app-logo">
+                <span class="app-name">Crystal</span>
+            </div>
+            <ul>
+                <li><a href="admin.html">Admin</a></li>
+                <li><a href="products.html">Products</a></li>
+                <li><a href="carousels.html">Carousels</a></li>
+                <li><a href="promos.html">Promos</a></li>
+                <li><a href="check.html">Check</a></li>
+            </ul>
+        </div>
     </nav>
-    <div class="container">
-        <h1>Our Products</h1>
-        
-        <!-- Filter and Search Section -->
-        <div class="filter-section">
-            <div class="filter-group">
-                <select class="filter-dropdown" id="categoryFilter">
-                    <option value="">All Categories</option>
-                    <option value="audio">Audio</option>
-                    <option value="computers">Computers</option>
-                    <option value="accessories">Accessories</option>
-                    <option value="wearables">Wearables</option>
-                </select>
-                
-                <select class="filter-dropdown" id="sortFilter">
-                    <option value="popular">Most Popular</option>
-                    <option value="price-low">Price: Low to High</option>
-                    <option value="price-high">Price: High to Low</option>
-                    <option value="newest">Newest First</option>
-                </select>
-            </div>
-            
-            <div class="filter-group">
-                <input type="text" class="search-box" placeholder="Search products..." id="searchInput">
-            </div>
-        </div>
-        
-        <!-- Product List -->
-        <div class="product-list" id="productList">
-            <!-- Products will be added dynamically -->
-        </div>
-        
-        <!-- Pagination -->
-        <div class="pagination">
-            <button class="page-btn active">1</button>
-            <button class="page-btn">2</button>
-            <button class="page-btn">3</button>
-            <button class="page-btn">→</button>
-        </div>
-    </div>
-    
-    <script src="js/list.js"></script>
 </body>
 </html>
