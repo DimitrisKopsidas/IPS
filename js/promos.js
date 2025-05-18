@@ -3,21 +3,19 @@ document.addEventListener('DOMContentLoaded', function() {
         {
             id: 1,
             code: 100,
-            name: "Playstation 2",
-            group: "Gaming",
-            maker: "Sony",
-            price: 199.99,
+            productName: "Playstation 2",
+            productGroup: "Modern",
+            productMaker: "Sony",
             discount: 0,
-            finalprice: 199.99,
             notes: "The PS2 is the best-selling video game console of all time with over 155 million units sold worldwide!",
-            carouselCount: 2,
+            promosIssued: 2,
             promosCount: 0,
         },
         {
             id: 2,
             code: 101,
             name: "Atari 2600",
-            group: "Gaming",
+            group: "Old School",
             maker: "Atari",
             price: 299.99,
             discount: 15,
@@ -31,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function() {
             id: 3,
             code: 102,
             name: "Sega Genesis",
-            group: "Gaming",
+            group: "Retro",
             maker: "Sega",
             price: 189.99,
             discount: 0,
@@ -45,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
             id: 4,
             code: 103,
             name: "Nintendo 64",
-            group: "Gaming",
+            group: "Retro",
             maker: "Nintendo",
             price: 249.99,
             discount: 10,
@@ -59,7 +57,7 @@ document.addEventListener('DOMContentLoaded', function() {
             id: 5,
             code: 104,
             name: "Nintendo Entertainment System",
-            group: "Gaming",
+            group: "Old School",
             maker: "Nintendo",
             price: 179.99,
             discount: 5,
@@ -73,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
             id: 6,
             code: 105,
             name: "PlayStation",
-            group: "Gaming",
+            group: "Retro",
             maker: "Sony",
             price: 159.99,
             discount: 0,
@@ -88,7 +86,7 @@ document.addEventListener('DOMContentLoaded', function() {
             code: 106,
             name: "Super Nintendo Entertainment System",
             group: "Gaming",
-            maker: "Nintendo",
+            maker: "Retro",
             price: 199.99,
             discount: 20,
             finalprice: 159.99,
@@ -99,13 +97,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     ];
     
-    // Display products with pagination and images
+    // Add pagination state
+    const state = {
+        currentPage: 1,
+        itemsPerPage: 2,
+        filteredProducts: []
+    };
+
+    // Update display products function to handle pagination
     function displayProducts(filteredProducts = products) {
-        const itemsPerPage = parseInt(document.getElementById('itemsPerPage').value) || 2;
+        state.filteredProducts = filteredProducts;
+        state.itemsPerPage = parseInt(document.getElementById('itemsPerPage').value) || 2;
+        
+        const startIndex = (state.currentPage - 1) * state.itemsPerPage;
+        const endIndex = startIndex + state.itemsPerPage;
         const productList = document.getElementById('productList');
+        
         productList.innerHTML = '';
 
-        filteredProducts.slice(0, itemsPerPage).forEach(product => {
+        filteredProducts.slice(startIndex, endIndex).forEach(product => {
             const productCard = document.createElement('div');
             productCard.className = 'product-card';
             productCard.style.cursor = 'pointer';
@@ -144,13 +154,81 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             productList.appendChild(productCard);
         });
+
+        updateNavigationButtons();
     }
 
-    // Add event listener for items per page change
-    document.getElementById('itemsPerPage').addEventListener('change', () => {
-        displayProducts();
+    // Add navigation function
+    function updateNavigationButtons() {
+        const prevBtn = document.getElementById('sidePrevBtn');
+        const nextBtn = document.getElementById('sideNextBtn');
+        
+        const totalPages = Math.ceil(state.filteredProducts.length / state.itemsPerPage);
+        
+        // Update button visibility
+        if (totalPages <= 1) {
+            prevBtn.style.display = 'none';
+            nextBtn.style.display = 'none';
+            return;
+        }
+
+        prevBtn.style.display = 'flex';
+        nextBtn.style.display = 'flex';
+        
+        // Update button states
+        prevBtn.disabled = state.currentPage === 1;
+        nextBtn.disabled = state.currentPage === totalPages;
+    }
+
+    // Add navigation event handlers
+    document.getElementById('sidePrevBtn').addEventListener('click', () => {
+        if (state.currentPage > 1) {
+            state.currentPage--;
+            displayProducts(state.filteredProducts);
+        }
     });
 
+    document.getElementById('sideNextBtn').addEventListener('click', () => {
+        const totalPages = Math.ceil(state.filteredProducts.length / state.itemsPerPage);
+        if (state.currentPage < totalPages) {
+            state.currentPage++;
+            displayProducts(state.filteredProducts);
+        }
+    });
+
+    // Update filter function
+    function filterProducts() {
+        const selectedGroup = document.getElementById('groupFilter').value;
+        const selectedMaker = document.getElementById('makerFilter').value;
+        const searchCode = document.getElementById('codeFilter').value.toLowerCase();
+        const searchName = document.getElementById('nameFilter').value.toLowerCase();
+        
+        state.currentPage = 1; // Reset to first page when filtering
+        
+        const filteredProducts = products.filter(product => {
+            const matchesGroup = selectedGroup === 'Unknown' || product.group === selectedGroup;
+            const matchesMaker = selectedMaker === 'Unknown' || product.maker === selectedMaker;
+            const matchesCode = searchCode === '' || product.code.toString().includes(searchCode);
+            const matchesName = searchName === '' || product.name.toLowerCase().includes(searchName);
+            
+            return matchesGroup && matchesMaker && matchesCode && matchesName;
+        });
+
+        displayProducts(filteredProducts);
+    }
+
+    // Update itemsPerPage event listener
+    document.getElementById('itemsPerPage').addEventListener('change', () => {
+        state.currentPage = 1; // Reset to first page when changing items per page
+        filterProducts();
+    });
+
+    // Add event listeners for filters
+    document.getElementById('groupFilter').addEventListener('change', filterProducts);
+    document.getElementById('makerFilter').addEventListener('change', filterProducts);
+    document.getElementById('codeFilter').addEventListener('input', filterProducts);
+    document.getElementById('nameFilter').addEventListener('input', filterProducts);
+
     // Initial display
-    displayProducts();
+    filterProducts();
 });
