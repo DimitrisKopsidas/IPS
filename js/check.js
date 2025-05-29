@@ -85,6 +85,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Display success message and discount details
     function showSuccess(promoInfo, code) {
+        applyCodeBtn.style.display = 'block';
         statusIcon.className = 'status-icon success';
         statusIcon.innerHTML = '✓';
         resultMessage.textContent = 'Valid Promo Code!';
