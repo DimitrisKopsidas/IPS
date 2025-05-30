@@ -1,0 +1,4 @@
+DELETE FROM user;
+DELETE FROM device;
+DELETE FROM type;
+DELETE FROM maker;

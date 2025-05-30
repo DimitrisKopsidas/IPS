@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product Listing</title>
     <link rel="stylesheet" href="css/promos.css">
-    <script src="js/promos.js"></script>
+    <script src="js/promos.js" type="module"></script>
+    <script src="js/navigation.js"></script>
+    <script src="node/list.js" type="module"></script>
 </head>
 <body>
     <nav class="top-nav">
@@ -65,11 +67,12 @@
                 </select>
             </div>
             <div class="filter-group">
-                <label for="makerFilter">Items per page:</label>
-                <select id="itemsPerPage" class="filter-input">
-                    <option value="2">2</option>
-                    <option value="4">4</option>
-                    <option value="50">50</option>
+                <label for="promoTypeFilter">Promo Type:</label>
+                <select id="promoTypeFilter" class="filter-input">
+                    <option value="All">All Types</option>
+                    <option value="Product">Product</option>
+                    <option value="Group">Group</option>
+                    <option value="Maker">Maker</option>
                 </select>
             </div>
             

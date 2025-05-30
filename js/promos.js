@@ -78,21 +78,20 @@ document.addEventListener('DOMContentLoaded', function() {
             carouselCount: 3
         }
     ];
-    
-    // Add pagination state
     const state = {
         currentPage: 1,
-        itemsPerPage: 2,
         filteredProducts: []
     };
 
-    // Update display promos function to handle pagination
+    let navigation;
+
+    // Update display function to use fixed number of items
     function displayProducts(filteredProducts = promos) {
         state.filteredProducts = filteredProducts;
-        state.itemsPerPage = parseInt(document.getElementById('itemsPerPage').value) || 2;
+        const itemsPerPage = navigation.getItemsPerPage();
         
-        const startIndex = (state.currentPage - 1) * state.itemsPerPage;
-        const endIndex = startIndex + state.itemsPerPage;
+        const startIndex = (state.currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
         const productList = document.getElementById('productList');
         
         productList.innerHTML = '';
@@ -134,46 +133,11 @@ document.addEventListener('DOMContentLoaded', function() {
             productList.appendChild(productCard);
         });
 
-        updateNavigationButtons();
+        navigation.updateNavigation();
     }
 
-    // Add navigation function
-    function updateNavigationButtons() {
-        const prevBtn = document.getElementById('sidePrevBtn');
-        const nextBtn = document.getElementById('sideNextBtn');
-        
-        const totalPages = Math.ceil(state.filteredProducts.length / state.itemsPerPage);
-        
-        // Update button visibility
-        if (totalPages <= 1) {
-            prevBtn.style.display = 'none';
-            nextBtn.style.display = 'none';
-            return;
-        }
-
-        prevBtn.style.display = 'flex';
-        nextBtn.style.display = 'flex';
-        
-        // Update button states
-        prevBtn.disabled = state.currentPage === 1;
-        nextBtn.disabled = state.currentPage === totalPages;
-    }
-
-    // Add navigation event handlers
-    document.getElementById('sidePrevBtn').addEventListener('click', () => {
-        if (state.currentPage > 1) {
-            state.currentPage--;
-            displayProducts(state.filteredProducts);
-        }
-    });
-
-    document.getElementById('sideNextBtn').addEventListener('click', () => {
-        const totalPages = Math.ceil(state.filteredProducts.length / state.itemsPerPage);
-        if (state.currentPage < totalPages) {
-            state.currentPage++;
-            displayProducts(state.filteredProducts);
-        }
-    });
+    // Initialize navigation
+    navigation = initializeNavigation(state, displayProducts);
 
     // Update filter function
     function filterProducts() {
@@ -181,32 +145,32 @@ document.addEventListener('DOMContentLoaded', function() {
         const selectedMaker = document.getElementById('makerFilter').value;
         const searchCode = document.getElementById('codeFilter').value.toLowerCase();
         const searchName = document.getElementById('productNameFilter').value.toLowerCase();
+        const promoType = document.getElementById('promoTypeFilter').value;
         
         state.currentPage = 1; // Reset to first page when filtering
         
-        const filteredProducts = promos.filter(promos => {
-            const matchesGroup = selectedGroup === 'Unknown' || promos.productGroup === selectedGroup;
-            const matchesMaker = selectedMaker === 'Unknown' || promos.productMaker === selectedMaker;
-            const matchesCode = searchCode === '' || promos.code.toString().includes(searchCode);
-            const matchesName = searchName === '' || promos.name.toLowerCase().includes(searchName);
+        const filteredProducts = promos.filter(promo => {
+            const matchesGroup = selectedGroup === 'Unknown' || promo.productGroup === selectedGroup;
+            const matchesMaker = selectedMaker === 'Unknown' || promo.productMaker === selectedMaker;
+            const matchesCode = searchCode === '' || promo.code.toString().includes(searchCode);
+            const matchesName = searchName === '' || promo.productName.toLowerCase().includes(searchName);
+            const matchesType = promoType === 'All' || 
+                (promoType === 'Product' && promo.productName) ||
+                (promoType === 'Group' && promo.productGroup && !promo.productName) ||
+                (promoType === 'Maker' && promo.productMaker && !promo.productName && !promo.productGroup);
             
-            return matchesGroup && matchesMaker && matchesCode && matchesName;
+            return matchesGroup && matchesMaker && matchesCode && matchesName && matchesType;
         });
 
         displayProducts(filteredProducts);
     }
-
-    // Update itemsPerPage event listener
-    document.getElementById('itemsPerPage').addEventListener('change', () => {
-        state.currentPage = 1; // Reset to first page when changing items per page
-        filterProducts();
-    });
 
     // Add event listeners for filters
     document.getElementById('groupFilter').addEventListener('change', filterProducts);
     document.getElementById('makerFilter').addEventListener('change', filterProducts);
     document.getElementById('codeFilter').addEventListener('input', filterProducts);
     document.getElementById('productNameFilter').addEventListener('input', filterProducts);
+    document.getElementById('promoTypeFilter').addEventListener('change', filterProducts);
 
     // Initial display
     filterProducts();
