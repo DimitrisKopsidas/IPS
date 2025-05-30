@@ -7,7 +7,14 @@
     <link rel="stylesheet" href="css/promos.css">
     <script src="js/promos.js" type="module"></script>
     <script src="js/navigation.js"></script>
-    <script src="node/list.js" type="module"></script>
+    <script type="module">
+        import { fetchTypes } from './js/dbService.js';
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const types = await fetchTypes();
+            console.log('Loaded types:', types);
+        });
+    </script>
 </head>
 <body>
     <nav class="top-nav">
