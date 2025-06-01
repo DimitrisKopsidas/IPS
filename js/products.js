@@ -1,3 +1,6 @@
+//TODO : FIX PAGE OVERFLOW BUG !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
 import { fetchProducts, fetchMakers, fetchTypes } from './dbService.js';
 
 document.addEventListener('DOMContentLoaded', async () => {

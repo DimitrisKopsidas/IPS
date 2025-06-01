@@ -5,17 +5,13 @@
 
 //TO DO
 //1)DIV TO DISPLAY PRICE AND DISCOUNT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//2)IMPLIMENT WAIT TIME TO PREVENT ABUSE
-
-import { fetchProducts, fetchMakers, fetchTypes, fetchCarouselImages } from './dbService.js';
-
-
+//2)IMPLEMENT WAIT TIME TO PREVENT ABUSE
 
 
 //USER DEFINED VARIABLES
 var autoplaywait =1000;//DB
 var autoplayspeed = 3000;//DB
-var media = [];//BACKEND
+var media = ["media/2.png","media/3.png","media/4.png"];//BACKEND
 var countforminigame=4;//DB
 
 //PROGRAM VARIABLES
@@ -29,39 +25,21 @@ var url="minigame.html";
 var actionwindow=autoplaywait+2000;
 
 //CAROUSEL CREATION AND ATTRIBUTES
-document.addEventListener('DOMContentLoaded', async () => {
-    let products = [];
-
-    try {
-        // Get storefront from URL parameters
-        const params = new URLSearchParams(window.location.search);
-        const storefront = params.get('url') || 'default';
-        
-        // Fetch carousel images using storefront parameter
-        products = await fetchCarouselImages(storefront);
-        console.log('Loaded carousel products for storefront:', storefront, products);
-        
-        var car = document.querySelector('.carousel');
-        var flkty = new Flickity(car, { 
-            wrapAround: true,
-            prevNextButtons: false,
-            pageDots: false,
-            autoPlay: autoplayspeed,
-            pauseAutoPlayOnHover: true
-        });
-        
-        // Append cells using products from database
-        products.forEach((productId, index) => {
-            const imgPath = `media/${productId}.png`;
-            flkty.insert(makeCell(imgPath, index));
-        });
-
-        // Update media length for minigame logic
-        media = products;
-
-    } catch (error) {
-        console.error('Error loading carousel images:', error);
-    }
+document.addEventListener('DOMContentLoaded', function() {
+  var car = document.querySelector('.carousel');
+  var flkty = new Flickity(car, { 
+      wrapAround: true, //ENDLESS LOOP
+      prevNextButtons: false, //LEFT-RIGHT BUTTONS
+      pageDots: false, //BOTTOM CELL DOTS 
+      autoPlay: autoplayspeed, //AUTOPLAY SCROLLING
+      pauseAutoPlayOnHover: true //STOP AUTOPLAY ON MOUSE HOVER
+  });
+  
+  //APPEND CELLS TO CAROUSEL
+  for (let i = 0; i< media.length;i++){
+    var imgpath = media[i];
+    flkty.insert(makeCell(imgpath,i))
+  }
   
   //RESTART AUTOPLAY AFTER INTERACTION
   car.addEventListener('click', function() {
@@ -95,12 +73,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 });
 
-// Update makeCell function to handle product data
-function makeCell(img, index) {
-    var cell = document.createElement('div');
-    cell.className = 'carousel-cell';
-    cell.innerHTML = `<img src="${img}" onerror="this.src='media/404.png'">`;
-    return cell;
+//CREATE CELLS
+function makeCell(img){
+  var cell = document.createElement('div');
+  cell.className='carousel-cell';
+  cell.innerHTML = '<img src="'+img+'">';
+  return cell;
 }
 
 //LISTEN FOR BACK SWIPES

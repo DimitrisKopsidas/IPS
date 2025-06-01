@@ -1,5 +1,5 @@
 INSERT INTO USER(username,password) VALUES ("Admin","1212"),("Admin2","1313");
-INSERT INTO DEVICE(code,name,location,lastping,url) VALUES (100,"Rasp1","Storefront",NOW(),"Rasp1Storefront");
+INSERT INTO DEVICE(code,name,location,lastping,url) VALUES (100,"Rasp1","Storefront",NOW(),"1945417153498972");
 INSERT INTO MAKER(code,name) VALUES (100,"Dell"),(200,"Sony"),(300,"Intel"),(400,"Nvidia"),(500,"Razer");
 INSERT INTO TYPE(code,name) VALUES (10,"Console"),("20","Monitor"),("30","CPU"),("31","GPU"),("33","SSD"),("40","Peripheral");
 INSERT INTO PRODUCT (CODE, NAME, TYPE, MAKER, PRICE, DISCOUNT, FINALPRICE, NOTES) VALUES

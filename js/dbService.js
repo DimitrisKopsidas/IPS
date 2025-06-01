@@ -45,3 +45,20 @@ async function fetchProductsParts() {
     }
 }
 export { fetchProductsParts };
+
+async function fetchCarouselImages(url) {
+    try {
+        const response = await fetch(`http://localhost:3000/api/getCarouselImages/${url}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Carousel images:', data);
+        return data;
+    } catch (error) {
+        console.error('Error fetching carousel images:', error);
+        return [];
+    }
+}
+
+export { fetchCarouselImages };
