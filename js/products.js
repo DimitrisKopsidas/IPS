@@ -1,115 +1,21 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const products = [
-        {
-            id: 1,
-            code: 100,
-            name: "Playstation 2",
-            group: "Modern",
-            maker: "Sony",
-            price: 199.99,
-            discount: 0,
-            finalprice: 199.99,
-            notes: "The PS2 is the best-selling video game console of all time with over 155 million units sold worldwide!",
-            carouselCount: 2,
-            promosCount: 0,
-        },
-        {
-            id: 2,
-            code: 101,
-            name: "Atari 2600",
-            group: "Old School",
-            maker: "Atari",
-            price: 299.99,
-            discount: 15,
-            finalprice: 254.99,
-            notes: "The famous 'E.T.' game for Atari 2600 was so bad that thousands of cartridges were buried in a New Mexico landfill!",
-            imageUrl: "media/2.png",
-            carouselCount: 1,
-            promosCount: 2,
-        },
-        {
-            id: 3,
-            code: 102,
-            name: "Sega Genesis",
-            group: "Retro",
-            maker: "Sega",
-            price: 189.99,
-            discount: 0,
-            finalprice: 189.99,
-            notes: "Sonic the Hedgehog was created because Sega wanted a mascot that could run fast to show off the Genesis's processing power!",
-            imageUrl: "media/3.png",
-            carouselCount: 3,
-            promosCount: 1,
-        },
-        {
-            id: 4,
-            code: 103,
-            name: "Nintendo 64",
-            group: "Retro",
-            maker: "Nintendo",
-            price: 249.99,
-            discount: 10,
-            finalprice: 224.99,
-            notes: "The N64's controller was the first to feature an analog stick as standard, revolutionizing 3D gaming!",
-            imageUrl: "media/4.png",
-            carouselCount: 4,
-            promosCount: 2,
-        },
-        {
-            id: 5,
-            code: 104,
-            name: "Nintendo Entertainment System",
-            group: "Old School",
-            maker: "Nintendo",
-            price: 179.99,
-            discount: 5,
-            finalprice: 170.99,
-            notes: "The NES was originally released as the 'Famicom' in Japan, and the cartridges were a different shape!",
-            imageUrl: "media/5.png",
-            carouselCount: 2,
-            promosCount: 1,
-        },
-        {
-            id: 6,
-            code: 105,
-            name: "PlayStation",
-            group: "Retro",
-            maker: "Sony",
-            price: 159.99,
-            discount: 0,
-            finalprice: 159.99,
-            notes: "The PlayStation was originally meant to be a Nintendo CD add-on until Sony and Nintendo's partnership fell apart!",
-            imageUrl: "media/6.png",
-            carouselCount: 3,
-            promosCount: 0,
-        },
-        {
-            id: 7,
-            code: 106,
-            name: "Super Nintendo Entertainment System",
-            group: "Gaming",
-            maker: "Retro",
-            price: 199.99,
-            discount: 20,
-            finalprice: 159.99,
-            notes: "The SNES's grey color in North America was changed because the Japanese Super Famicom's plastic would turn yellow over time!",
-            imageUrl: "media/7.png",
-            carouselCount: 5,
-            promosCount: 3,
-        }
-    ];
-    
-    // Add pagination state
+import { fetchProducts, fetchMakers, fetchTypes } from './dbService.js';
+
+document.addEventListener('DOMContentLoaded', async () => {
     const state = {
         currentPage: 1,
-        itemsPerPage: 2,
-        filteredProducts: []
+        filteredProducts: [],
+        itemsPerPage: 5 // Default items per page
     };
+    
+    let products = [];
+    let types = [];
+    let makers = [];
+    let navigation;
 
-    // Update display products function to handle pagination
+    // Define display function first
     function displayProducts(filteredProducts = products) {
         state.filteredProducts = filteredProducts;
-        state.itemsPerPage = parseInt(document.getElementById('itemsPerPage').value) || 2;
+        state.itemsPerPage = parseInt(document.getElementById('itemsPerPage').value) || 5;
         
         const startIndex = (state.currentPage - 1) * state.itemsPerPage;
         const endIndex = startIndex + state.itemsPerPage;
@@ -122,96 +28,55 @@ document.addEventListener('DOMContentLoaded', function() {
             productCard.className = 'product-card';
             productCard.style.cursor = 'pointer';
             productCard.addEventListener('click', () => {
-                window.location.href = `product.html?get=${product.id}`;
+                window.location.href = `product.html?get=${product.PRODUCT}`;
             });
             
             productCard.innerHTML = `
                 <div class="product-layout">
                     <div class="product-image">
-                        <img src="media/${product.id-1}.png" alt="${product.name}" onerror="this.src='media/404.png'">
+                        <img src="media/${product.PRODUCT}.png" alt="${product.NAME}" onerror="this.src='media/404.png'">
                     </div>
                     <div class="product-details">
                         <div class="product-header">
-                            <span class="product-code">${product.code}</span>
-                            <h2 class="product-name">${product.name}</h2>
+                            <span class="product-code">${product.CODE}</span>
+                            <h2 class="product-name">${product.NAME}</h2>
                         </div>
                         <div class="product-info">
                             <div class="info-row">
-                                <span class="product-group">Group: ${product.group}</span>
-                                <span class="product-maker">Maker: ${product.maker}</span>
+                                <span class="product-group">Group: ${product.TYPE}</span>
+                                <span class="product-maker">Maker: ${product.MAKER}</span>
                             </div>
                             <div class="info-row">
-                                <span class="product-price">Price: $${product.price}</span>
-                                <span class="product-discount">Discount: ${product.discount}%</span>
-                                <span class="product-final-price">Final: $${product.finalprice}</span>
+                                <span class="product-price">Price: $${product.PRICE}</span>
+                                <span class="product-discount">Discount: ${product.DISCOUNT*100}%</span>
+                                <span class="product-final-price">Final: $${product.FINALPRICE}</span>
                             </div>
-                            <p class="product-note">${product.notes}</p>
-                            <div class="product-stats">
-                                <span>Carousels: ${product.carouselCount}</span>
-                                <span>Promos: ${product.promosCount}</span>
-                            </div>
+                            <p class="product-note">${product.NOTES}</p>
                         </div>
                     </div>
                 </div>
             `;
             productList.appendChild(productCard);
         });
-
-        updateNavigationButtons();
+        navigation.updateNavigation();
     }
 
-    // Add navigation function
-    function updateNavigationButtons() {
-        const prevBtn = document.getElementById('sidePrevBtn');
-        const nextBtn = document.getElementById('sideNextBtn');
-        
-        const totalPages = Math.ceil(state.filteredProducts.length / state.itemsPerPage);
-        
-        // Update button visibility
-        if (totalPages <= 1) {
-            prevBtn.style.display = 'none';
-            nextBtn.style.display = 'none';
-            return;
-        }
+    // Initialize navigation before using it
+    navigation = initializeNavigation(state, displayProducts, state.itemsPerPage);
 
-        prevBtn.style.display = 'flex';
-        nextBtn.style.display = 'flex';
-        
-        // Update button states
-        prevBtn.disabled = state.currentPage === 1;
-        nextBtn.disabled = state.currentPage === totalPages;
-    }
-
-    // Add navigation event handlers
-    document.getElementById('sidePrevBtn').addEventListener('click', () => {
-        if (state.currentPage > 1) {
-            state.currentPage--;
-            displayProducts(state.filteredProducts);
-        }
-    });
-
-    document.getElementById('sideNextBtn').addEventListener('click', () => {
-        const totalPages = Math.ceil(state.filteredProducts.length / state.itemsPerPage);
-        if (state.currentPage < totalPages) {
-            state.currentPage++;
-            displayProducts(state.filteredProducts);
-        }
-    });
-
-    // Update filter function
     function filterProducts() {
-        const selectedGroup = document.getElementById('groupFilter').value;
-        const selectedMaker = document.getElementById('makerFilter').value;
         const searchCode = document.getElementById('codeFilter').value.toLowerCase();
         const searchName = document.getElementById('nameFilter').value.toLowerCase();
-        
+        const selectedGroup = document.getElementById('groupFilter').value;
+        const selectedMaker = document.getElementById('makerFilter').value;
+
         state.currentPage = 1; // Reset to first page when filtering
         
         const filteredProducts = products.filter(product => {
-            const matchesGroup = selectedGroup === 'Unknown' || product.group === selectedGroup;
-            const matchesMaker = selectedMaker === 'Unknown' || product.maker === selectedMaker;
-            const matchesCode = searchCode === '' || product.code.toString().includes(searchCode);
-            const matchesName = searchName === '' || product.name.toLowerCase().includes(searchName);
+            const matchesGroup = selectedGroup === 'All' || product.TYPE.toString() === selectedGroup;
+            const matchesMaker = selectedMaker === 'All' || product.MAKER.toString() === selectedMaker;
+            const matchesCode = searchCode === '' || product.CODE.toString().toLowerCase().includes(searchCode);
+            const matchesName = searchName === '' || product.NAME.toLowerCase().includes(searchName);
             
             return matchesGroup && matchesMaker && matchesCode && matchesName;
         });
@@ -219,6 +84,38 @@ document.addEventListener('DOMContentLoaded', function() {
         displayProducts(filteredProducts);
     }
 
+    try {
+        products = await fetchProducts();
+        types = await fetchTypes();
+        makers = await fetchMakers();
+        console.log('Loaded data:', { products, types, makers });
+        
+        // Populate filters after data is loaded
+        populateFilters();
+        // Initial display after everything is set up
+        filterProducts();
+    } catch (error) {
+        console.error('Error loading tables: ', error);
+    }
+
+    function populateFilters() {
+        const groupFilter = document.getElementById('groupFilter');
+        const makerFilter = document.getElementById('makerFilter');
+
+        types.forEach(type => {
+            const option = document.createElement('option');
+            option.value = type.TYPE;
+            option.textContent = type.CODE +" - "+type.NAME;
+            groupFilter.appendChild(option);
+        });
+        makers.forEach(maker => {
+            const option = document.createElement('option');
+            option.value = maker.MAKER;
+            option.textContent = maker.CODE +" - "+maker.NAME;
+            makerFilter.appendChild(option);
+        });
+    }    
+   
     // Update itemsPerPage event listener
     document.getElementById('itemsPerPage').addEventListener('change', () => {
         state.currentPage = 1; // Reset to first page when changing items per page
@@ -229,8 +126,5 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('groupFilter').addEventListener('change', filterProducts);
     document.getElementById('makerFilter').addEventListener('change', filterProducts);
     document.getElementById('codeFilter').addEventListener('input', filterProducts);
-    document.getElementById('nameFilter').addEventListener('input', filterProducts);
-
-    // Initial display
-    filterProducts();
+    document.getElementById('nameFilter').addEventListener('input', filterProducts);   
 });

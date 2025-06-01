@@ -14,36 +14,28 @@ const dbConfig = {
     // password: 'dimitriskopsidas',
     database: 'crystal_v1'
 };
-
 const pool = mysql.createPool(dbConfig);
-
 // Test connection on startup
 async function testConnection() {
     try {
         const connection = await pool.getConnection();
-        console.log('Database connection successful big boss');
+        console.log("Connected to the mainframe. I'm in!");
         connection.release();
     } catch (error) {
-        console.error('Database connection failed:', error);
+        console.error('Mainframe did not connect!', error);
         process.exit(1);
     }
 }
-
-// Test endpoint
-app.get('/api/test', async (req, res) => {
-    try {
-        const [rows] = await pool.query('SELECT 1');
-        res.json({ message: 'Database connection successful boss', data: rows });
-    } catch (error) {
-        console.error('Database error:', error);
-        res.status(500).json({ error: 'Database error' });
-    }
+const PORT = 3000;
+app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+    testConnection();
 });
 
 // Types endpoint with error logging
-app.get('/api/types', async (req, res) => {
+app.get('/api/getTypes', async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM type');
+        const [rows] = await pool.query('SELECT * FROM type ORDER BY CODE ASC');
         console.log('Retrieved types:', rows);
         res.json(rows);
     } catch (error) {
@@ -55,8 +47,45 @@ app.get('/api/types', async (req, res) => {
     }
 });
 
-const PORT = 3000;
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-    testConnection();
+app.get('/api/getMakers', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM maker ORDER BY CODE ASC');
+        console.log('Retrieved makers:', rows);
+        res.json(rows);
+    } catch (error) {
+        console.error('Error fetching makers:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to fetch makers',
+            details: error.message 
+        });
+    }
 });
+
+app.get('/api/getAllProducts', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM product');
+        console.log('Retrieved products:', rows);
+        res.json(rows);
+    } catch (error) {
+        console.error('Error fetching products:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to fetch products',
+            details: error.message 
+        });
+    }
+});
+
+app.get('/api/getParts', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM product WHERE type IN (3,4,5)');
+        console.log('Retrieved parts:', rows);
+        res.json(rows);
+    } catch (error) {
+        console.error('Error fetching parts:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to fetch parts',
+            details: error.message 
+        });
+    }
+});
+

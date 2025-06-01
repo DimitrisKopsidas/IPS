@@ -7,14 +7,7 @@
     <link rel="stylesheet" href="css/promos.css">
     <script src="js/promos.js" type="module"></script>
     <script src="js/navigation.js"></script>
-    <script type="module">
-        import { fetchTypes } from './js/dbService.js';
-        
-        document.addEventListener('DOMContentLoaded', async () => {
-            const types = await fetchTypes();
-            console.log('Loaded types:', types);
-        });
-    </script>
+    
 </head>
 <body>
     <nav class="top-nav">
@@ -57,29 +50,16 @@
             <div class="filter-group">
                 <label for="groupFilter">Group:</label>
                 <select id="groupFilter" class="filter-input">
-                    <option value="Unknown">Unknown</option>
-                    <option value="Modern">Modern</option>
-                    <option value="Old School">Old School</option>
-                    <option value="Retro">Retro</option>
                 </select>
             </div>
             <div class="filter-group">
                 <label for="makerFilter">Maker:</label>
                 <select id="makerFilter" class="filter-input">
-                    <option value="Unknown">Unknown</option>
-                    <option value="Sony">Sony</option>
-                    <option value="Atari">Atari</option>
-                    <option value="Sega">Sega</option>
-                    <option value="Nintendo">Nintendo</option>
                 </select>
             </div>
             <div class="filter-group">
                 <label for="promoTypeFilter">Promo Type:</label>
                 <select id="promoTypeFilter" class="filter-input">
-                    <option value="All">All Types</option>
-                    <option value="Product">Product</option>
-                    <option value="Group">Group</option>
-                    <option value="Maker">Maker</option>
                 </select>
             </div>
             

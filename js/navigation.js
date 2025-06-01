@@ -1,9 +1,8 @@
-function initializeNavigation(state, displayCallback) {
+function initializeNavigation(state, displayCallback, itemsPerPage) {
     // Update navigation function
     function updateNavigationButtons() {
         const prevBtn = document.getElementById('sidePrevBtn');
         const nextBtn = document.getElementById('sideNextBtn');
-        const itemsPerPage = 5;
         
         const totalPages = Math.ceil(state.filteredProducts.length / itemsPerPage);
         
@@ -29,7 +28,6 @@ function initializeNavigation(state, displayCallback) {
     });
 
     document.getElementById('sideNextBtn').addEventListener('click', () => {
-        const itemsPerPage = 5;
         const totalPages = Math.ceil(state.filteredProducts.length / itemsPerPage);
         if (state.currentPage < totalPages) {
             state.currentPage++;

@@ -1,4 +1,8 @@
+import { fetchMakers, fetchTypes } from './dbService.js';
+
 document.addEventListener('DOMContentLoaded', function() {
+    let navigation;
+    let itemsPerPage = 5; // Fixed number of items per page
     const promos = [
         {
             id: 1,
@@ -83,12 +87,9 @@ document.addEventListener('DOMContentLoaded', function() {
         filteredProducts: []
     };
 
-    let navigation;
-
     // Update display function to use fixed number of items
     function displayProducts(filteredProducts = promos) {
         state.filteredProducts = filteredProducts;
-        const itemsPerPage = navigation.getItemsPerPage();
         
         const startIndex = (state.currentPage - 1) * itemsPerPage;
         const endIndex = startIndex + itemsPerPage;
@@ -110,7 +111,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="product-header">
                             <span class="product-code">${promo.code}</span>
                             <h2 class="product-name">${promo.productName}</h2>
-                            <span class="product-discount">Discount: ${promo.discount}%</span>
+                            <span class="product-discount"><b>Discount: ${promo.discount}%</b></span>
                         </div>
                         <div class="product-info">
                             <div class="info-row">
@@ -137,7 +138,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Initialize navigation
-    navigation = initializeNavigation(state, displayProducts);
+    navigation = initializeNavigation(state, displayProducts,itemsPerPage);
 
     // Update filter function
     function filterProducts() {
