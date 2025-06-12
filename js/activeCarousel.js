@@ -2,10 +2,12 @@
 //1)WAIT PER IMAGE
 //2)HAND GIF "SWIPE ME" THAT APPEARS ON STANDARD INTERVALS
 //3)TIME OF WATCHING PER ITEM 
+//4)IMPLIMENT LASTPING
 
 //TO DO
 //1)DIV TO DISPLAY PRICE AND DISCOUNT !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //2)IMPLIMENT WAIT TIME TO PREVENT ABUSE
+
 
 import { fetchProducts, fetchMakers, fetchTypes, fetchCarouselImages } from './dbService.js';
 
@@ -21,7 +23,6 @@ var countforminigame=4;//DB
 //PROGRAM VARIABLES
 var prevslide=0;
 var currentslide;
-var onclickindex;
 var actionflag=0;
 var actioncount=1;
 var timeoutID;
@@ -35,11 +36,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         // Get storefront from URL parameters
         const params = new URLSearchParams(window.location.search);
-        const storefront = params.get('url') || 'default';
+        const connectkey = params.get('connectkey') || 'default';
         
         // Fetch carousel images using storefront parameter
-        products = await fetchCarouselImages(storefront);
-        console.log('Loaded carousel products for storefront:', storefront, products);
+        products = await fetchCarouselImages(connectkey);
         
         var car = document.querySelector('.carousel');
         var flkty = new Flickity(car, { 
