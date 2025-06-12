@@ -26,17 +26,18 @@ var currentslide;
 var actionflag=0;
 var actioncount=1;
 var timeoutID;
-var url="minigame.html";
+var minigameURL;
 var actionwindow=autoplaywait+2000;
+let products = [];
 
 //CAROUSEL CREATION AND ATTRIBUTES
 document.addEventListener('DOMContentLoaded', async () => {
-    let products = [];
-
+    
     try {
         // Get storefront from URL parameters
         const params = new URLSearchParams(window.location.search);
-        const connectkey = params.get('connectkey') || 'default';
+        const connectkey = params.get('connectkey')/* || 'default'*/;
+        minigameURL = `minigame.html?connectkey=${connectkey}`;
         
         // Fetch carousel images using storefront parameter
         products = await fetchCarouselImages(connectkey);
@@ -51,13 +52,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
         
         // Append cells using products from database
-        products.forEach((productId, index) => {
-            const imgPath = `media/${productId}.png`;
-            flkty.insert(makeCell(imgPath, index));
+        products.forEach((product) => {
+            flkty.insert(makeCell(product));
         });
 
         // Update media length for minigame logic
-        media = products;
+        media = products.map(p => p.PRODUCT);
 
     } catch (error) {
         console.error('Error loading carousel images:', error);
@@ -96,10 +96,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // Update makeCell function to handle product data
-function makeCell(img, index) {
+function makeCell(product) {
     var cell = document.createElement('div');
     cell.className = 'carousel-cell';
-    cell.innerHTML = `<img src="${img}" onerror="this.src='media/404.png'">`;
+    
+    // Add product image
+    const imgElement = document.createElement('img');
+    imgElement.src = `media/${product.PRODUCT}.png`;
+    imgElement.onerror = () => imgElement.src = 'media/404.png';
+    
+    // Add product info overlay
+    const infoOverlay = document.createElement('div');
+    infoOverlay.className = 'product-info-overlay';
+    
+    infoOverlay.innerHTML = `
+        <div class="product-title">${product.NAME || 'Product Name'}</div>
+        <div class="product-price">Price: $${product.PRICE || '0.00'}</div>
+        <div class="product-discount">Discount: ${(product.DISCOUNT * 100) || '0'}%</div>
+    `;
+    
+    cell.appendChild(imgElement);
+    cell.appendChild(infoOverlay);
+    
     return cell;
 }
 
@@ -129,6 +147,6 @@ function minigameListener(current,prev){
   
   console.log("Flag:"+actionflag+" Count:"+actioncount);
   if(actioncount==(countforminigame)){
-    window.location.href = url;
+    window.location.href = minigameURL;
   }
 }

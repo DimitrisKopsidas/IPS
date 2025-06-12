@@ -37,7 +37,7 @@ var carouselurl="carousel.html";
 var overlay=new Image();
 overlay.src='media/overlay.svg';//INITIALIZE OVERLAY AS IMAGE
 
-window.onload = () => {
+document.addEventListener('DOMContentLoaded', async () => {
 
   const props = {//INITIALIZE WHEEL
     items: //BACKEND FUNCTION NEEDED HERE
@@ -46,54 +46,55 @@ window.onload = () => {
       {label: '20%'},
       {label: '30%'},
     ],
-    onRest: onwheelstop,
+    onRest: onStop,
     overlayImage: overlay,
   };
   const container = document.querySelector('.wheel-wrapper');
   window.wheel = new Wheel(container, props);
-  changepageoninactivity();
-  const spinleft=function(){//SPIN WHEEL AND DISABLE ITSELF AND OTHER SEPARATOR ACTIVATION
+  changePageOnInactivity();
+
+  const spinLeft=function(){//SPIN WHEEL AND DISABLE ITSELF AND OTHER SEPARATOR ACTIVATION
     wheel.spinToItem(winningitemindex,spinduration,false,revolutions,1,null);
-    rightsep.removeEventListener('mouseover',spinright);
-    leftsep.removeEventListener('mouseover',spinleft);
+    rightsep.removeEventListener('mouseover',spinRight);
+    leftsep.removeEventListener('mouseover',spinLeft);
     wheelstartbyseparator=1;
     console.log("left");
   }
-  const spinright=function(){//SPIN WHEEL AND DISABLE ITSELF AND OTHER SEPARATOR ACTIVATION
+  const spinRight=function(){//SPIN WHEEL AND DISABLE ITSELF AND OTHER SEPARATOR ACTIVATION
     wheel.spinToItem(winningitemindex,spinduration,false,revolutions,-1,null);
-    leftsep.removeEventListener('mouseover',spinleft);
-    rightsep.removeEventListener('mouseover',spinright);
+    leftsep.removeEventListener('mouseover',spinLeft);
+    rightsep.removeEventListener('mouseover',spinRight);
     wheelstartbyseparator=1;
     console.log("right");
   }
-  leftsep.addEventListener('mouseover',spinleft);
-  rightsep.addEventListener('mouseover',spinright);
+  leftsep.addEventListener('mouseover',spinLeft);
+  rightsep.addEventListener('mouseover',spinRight);
 
-  function onwheelstop(){
+  function onStop(){
     if(wheelstartbyseparator==1){
-      changepageononwheelstop();
-      displayprize();
+      changePageOnStop();
+      displayPrize();
     }
   }
-  function changepageononwheelstop() {
+  function changePageOnStop() {
     setTimeout(function() {
       if(onstopchangedelay!=0)
         window.location.href = carouselurl;
     }, onstopchangedelay);
   }
-  function changepageoninactivity() {
+  function changePageOnInactivity() {
     setTimeout(function() {
       if((wheelstartbyseparator==0)&&(inactivitychangedelay!=0)){
         window.location.href = carouselurl;
       }
     }, inactivitychangedelay);
   }
-  function displayprize(){
+  function displayPrize(){
     prizeimage.src=winningitemimage;
     text1.innerHTML="Συγχαρητήρια κέρδισες έκπτωση "+props.items[winningitemindex].label+" για το :";
     text2.innerHTML="Φωτογράφισε τον κωδικό και εξαργύρωσε τον εντός του καταστήματος!";
     text3.innerHTML=promocode;
   }
-};
+});
 
 

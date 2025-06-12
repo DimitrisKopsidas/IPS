@@ -53,7 +53,11 @@ async function fetchCarouselImages(url) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
-        console.log('Params:',url,' Carousel images:', data);
+        console.log('Carousel data:', {
+            url: url,
+            productsCount: data.length,
+            products: data
+        });
         return data;
     } catch (error) {
         console.error('Error fetching carousel images:', error);
