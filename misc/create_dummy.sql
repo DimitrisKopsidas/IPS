@@ -1,4 +1,4 @@
-INSERT INTO USER(username,password) VALUES ("Admin","1212"),("Admin2","1313");
+INSERT INTO USER(username,password) VALUES ("Admin","1234");
 INSERT INTO DEVICE(code,name,location,lastping,connectkey) VALUES (100,"Rasp1","Storefront",NOW(),"1234");
 INSERT INTO MAKER(code,name) VALUES (100,"Dell"),(200,"Sony"),(300,"Intel"),(400,"Nvidia"),(500,"Razer");
 INSERT INTO TYPE(code,name) VALUES (10,"Console"),("20","Monitor"),("30","CPU"),("31","GPU"),("33","SSD"),("40","Peripheral");
@@ -10,8 +10,8 @@ INSERT INTO PRODUCT (CODE, NAME, TYPE, MAKER, PRICE, DISCOUNT, FINALPRICE, NOTES
 (1005, 'Razer BlackShark V2'		, 6, 5, 129.99, 0.15, 110.49, 'Esports headset'),
 (1006, 'Ultrasharp U2723QE'			, 2, 1, 650.00, 0.1, 585.00, '4K professional monitor'),
 (1007, 'INZONE M9'					, 2, 2, 899.99, 0.1, 809.99, 'Sony 4K gaming monitor'),
-(1008, 'Xeon Platinum 8490H'		, 3, 3, 7900.00, 0.05, 7505.00, 'Data center processor'),
-(1009, 'GeForce RTX 4080'			, 4, 4, 1199.00, 0.1, 1079.10, 'High-end gaming GPU'),
+(1008, 'Xeon Platinum 8490H'		, 3, 3, 7900.00, 0, 7900.00, 'Data center processor'),
+(1009, 'GeForce RTX 4080'			, 4, 4, 1199.00, 0, 1199.00, 'High-end gaming GPU'),
 (1010, 'Razer Basilisk V3 Pro'		, 6, 5, 159.99, 0.15, 135.99, 'Customizable gaming mouse'),
 (1011, 'Inspiron 16 Plus'			, 1, 1, 1200.00, 0.1, 1080.00, 'Everyday performance laptop'),
 (1012, 'PlayStation VR2'			, 1, 2, 549.99, 0.1, 494.99, 'Immersive VR headset for console'),

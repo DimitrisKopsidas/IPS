@@ -8,7 +8,6 @@ async function fetchTypes() {
         return [];
     }
 }
-export { fetchTypes };
 
 async function fetchMakers() {
     try {
@@ -20,9 +19,8 @@ async function fetchMakers() {
         return [];
     }
 }
-export { fetchMakers };
 
-async function fetchProducts() {
+async function fetchAllProducts() {
     try {
         const response = await fetch('http://localhost:3000/api/getAllProducts');
         const data = await response.json();
@@ -32,29 +30,16 @@ async function fetchProducts() {
         return [];
     }
 }
-export { fetchProducts };
 
-async function fetchProductsParts() {
+async function fetchCarouselImages(connectkey) {
     try {
-        const response = await fetch('http://localhost:3000/api/getParts');
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        console.error('Error fetching products parts:', error);
-        return [];
-    }
-}
-export { fetchProductsParts };
-
-async function fetchCarouselImages(url) {
-    try {
-        const response = await fetch(`http://localhost:3000/api/getCarouselImages/${url}`);
+        const response = await fetch(`http://localhost:3000/api/getCarouselImages/${connectkey}`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
-        console.log('Carousel data:', {
-            url: url,
+        console.log('Carousel products:', {
+            connectkey: connectkey,
             productsCount: data.length,
             products: data
         });
@@ -65,4 +50,44 @@ async function fetchCarouselImages(url) {
     }
 }
 
-export { fetchCarouselImages };
+async function fetchCarouselSettings(connectkey) {
+    try {
+        const response = await fetch(`http://localhost:3000/api/getCarouselSettings/${connectkey}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Carousel settings:', {
+            connectkey: connectkey,
+            settings: data
+        });
+        return data;
+    } catch (error) {
+        console.error('Error fetching carousel settings:', error);
+        return [];
+    }
+}
+
+async function updateDeviceLastPing(connectKey) {
+    try {
+        console.log('Updating last ping for device:', connectKey);
+        const response = await fetch(`http://localhost:3000/api/updateDeviceLastPing/${connectKey}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+    } catch (error) {
+        console.error('Error updating device last ping:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+export { 
+    fetchTypes,
+    fetchMakers, 
+    fetchAllProducts,
+    fetchCarouselImages,
+    fetchCarouselSettings,
+    updateDeviceLastPing
+};

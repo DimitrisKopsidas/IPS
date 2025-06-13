@@ -75,27 +75,13 @@ app.get('/api/getAllProducts', async (req, res) => {
     }
 });
 
-app.get('/api/getParts', async (req, res) => {
+app.get('/api/getCarouselImages/:connectkey', async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM product WHERE type IN (3,4,5)');
-        console.log('Retrieved parts:', rows);
-        res.json(rows);
-    } catch (error) {
-        console.error('Error fetching parts:', error.message);
-        res.status(500).json({ 
-            error: 'Failed to fetch parts',
-            details: error.message 
-        });
-    }
-});
-
-app.get('/api/getCarouselImages/:url', async (req, res) => {
-    try {
-        const url = req.params.url;
-        const [rows] = await pool.query('CALL getCarouselImages(?)', [url]);
+        const connectkey = req.params.connectkey;
+        const [rows] = await pool.query('CALL getCarouselImages(?)', [connectkey]);
         
         // Return all columns from the first result set
-        console.log(`Retrieved carousel data for URL ${url}:`, rows[0]);
+        console.log(`Retrieved carousel product data for connectKey ${connectkey}:`, rows[0]);
         res.json(rows[0]);
     } catch (error) {
         console.error('Error fetching carousel images:', error.message);
@@ -106,3 +92,35 @@ app.get('/api/getCarouselImages/:url', async (req, res) => {
     }
 });
 
+app.get('/api/getCarouselSettings/:connectkey', async (req, res) => {
+    try {
+        const connectkey = req.params.connectkey;
+        const [rows] = await pool.query('CALL getCarouselSettings(?)', [connectkey]);
+        
+        // Return all columns from the first result set
+        console.log(`Retrieved carousel settings for connectKey ${connectkey}:`, rows[0]);
+        res.json(rows[0]);
+    } catch (error) {
+        console.error('Error fetching carousel settings:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to fetch carousel settings',
+            details: error.message 
+        });
+    }
+});
+
+app.get('/api/updateDeviceLastPing/:connectKey', async (req, res) => {
+    try {
+        const connectKey = req.params.connectKey;
+        const [result] = await pool.query('CALL UpdateDeviceLastPing(?)', [connectKey]);
+        
+        console.log(`Updated last ping for device ${connectKey}`);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error updating device last ping:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to update device last ping',
+            details: error.message 
+        });
+    }
+});
