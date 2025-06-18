@@ -75,10 +75,10 @@ app.get('/api/getAllProducts', async (req, res) => {
     }
 });
 
-app.get('/api/getCarouselImages/:connectkey', async (req, res) => {
+app.get('/api/GetCarouselProducts/:connectkey', async (req, res) => {
     try {
         const connectkey = req.params.connectkey;
-        const [rows] = await pool.query('CALL getCarouselImages(?)', [connectkey]);
+        const [rows] = await pool.query('CALL GetCarouselProducts(?)', [connectkey]);
         
         // Return all columns from the first result set
         console.log(`Retrieved carousel product data for connectKey ${connectkey}:`, rows[0]);
@@ -95,7 +95,7 @@ app.get('/api/getCarouselImages/:connectkey', async (req, res) => {
 app.get('/api/getCarouselSettings/:connectkey', async (req, res) => {
     try {
         const connectkey = req.params.connectkey;
-        const [rows] = await pool.query('CALL getCarouselSettings(?)', [connectkey]);
+        const [rows] = await pool.query('CALL GetCarouselSettings(?)', [connectkey]);
         
         // Return all columns from the first result set
         console.log(`Retrieved carousel settings for connectKey ${connectkey}:`, rows[0]);
@@ -124,3 +124,59 @@ app.get('/api/updateDeviceLastPing/:connectKey', async (req, res) => {
         });
     }
 });
+
+app.get('/api/getMinigameSettings/:connectkey', async (req, res) => {
+    try {
+        const connectkey = req.params.connectkey;
+        const [rows] = await pool.query('CALL GetMinigameSettings(?)', [connectkey]);
+        
+        // Return all columns from the first result set
+        console.log(`Retrieved minigame settings for connectKey ${connectkey}:`, rows[0]);
+        res.json(rows[0]);
+    } catch (error) {
+        console.error('Error fetching minigame settings:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to fetch minigame settings',
+            details: error.message 
+        });
+    }
+});
+
+app.get('/api/getMinigamePromos/:connectkey', async (req, res) => {
+    try {
+        const connectkey = req.params.connectkey;
+        const [rows] = await pool.query('CALL GetMinigamePromos(?)', [connectkey]);
+        
+        // Return all columns from the first result set
+        console.log(`Retrieved minigame promos for connectKey ${connectkey}:`, rows[0]);
+        res.json(rows[0]);
+    } catch (error) {
+        console.error('Error fetching minigame promos:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to fetch minigame promos',
+            details: error.message 
+        });
+    }
+});
+
+app.get('/api/insertIssuedPromo/:connectKey/:redeemCode/:promoId', async (req, res) => {
+    try {
+        const connectKey = req.params.connectKey;
+        const redeemCode = req.params.redeemCode;
+        const promoId = req.params.promoId;
+
+        const [result] = await pool.query('CALL InsertIssuedPromo(?, ?, ?)', 
+            [connectKey, redeemCode, promoId]);
+        
+        console.log(`Inserted promo record for device ${connectKey} with code ${redeemCode}`);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error inserting issued promo:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to insert issued promo',
+            details: error.message 
+        });
+    }
+});
+
+

@@ -2,10 +2,12 @@
 //1)WAIT PER IMAGE
 //2)HAND GIF "SWIPE ME" THAT APPEARS ON STANDARD INTERVALS
 //3)TIME OF WATCHING PER ITEM 
-//4)IMPLEMENT COOLDOWN TO PREVENT ABUSE
+
+//LOW PRIO
+//1)IMPLEMENT BACK SWIPE
 
 
-import { fetchCarouselImages, fetchCarouselSettings, updateDeviceLastPing } from './dbService.js';
+import { fetchCarouselProducts, fetchCarouselSettings, updateDeviceLastPing } from './dbService.js';
 
 var car;
 var flkty
@@ -25,12 +27,10 @@ let settings = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
-      
-
         const params = new URLSearchParams(window.location.search);
         const connectkey = params.get('connectkey')/* || 'default'*/;
 
-        products = await fetchCarouselImages(connectkey);
+        products = await fetchCarouselProducts(connectkey);
         settings = await fetchCarouselSettings(connectkey);
 
         minigameURL = `minigame.html?connectkey=${connectkey}`;

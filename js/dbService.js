@@ -31,9 +31,9 @@ async function fetchAllProducts() {
     }
 }
 
-async function fetchCarouselImages(connectkey) {
+async function fetchCarouselProducts(connectkey) {
     try {
-        const response = await fetch(`http://localhost:3000/api/getCarouselImages/${connectkey}`);
+        const response = await fetch(`http://localhost:3000/api/GetCarouselProducts/${connectkey}`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -83,11 +83,75 @@ async function updateDeviceLastPing(connectKey) {
     }
 }
 
+async function fetchMinigameSettings(connectkey) {
+    try {
+        const response = await fetch(`http://localhost:3000/api/getMinigameSettings/${connectkey}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Minigame settings:', {
+            connectkey: connectkey,
+            settings: data
+        });
+        return data;
+    } catch (error) {
+        console.error('Error fetching minigame settings:', error);
+        return [];
+    }
+}
+
+async function fetchMinigamePromos(connectkey) {
+    try {
+        const response = await fetch(`http://localhost:3000/api/getMinigamePromos/${connectkey}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Minigame promos:', {
+            connectkey: connectkey,
+            promos: data
+        });
+        return data;
+    } catch (error) {
+        console.error('Error fetching minigame promos:', error);
+        return [];
+    }
+}
+
+async function insertIssuedPromo(connectKey, redeemCode, promoId) {
+    try {
+        console.log('Inserting issued promo:', {
+            connectKey,
+            redeemCode,
+            promoId
+        });
+
+        const response = await fetch(
+            `http://localhost:3000/api/insertIssuedPromo/${connectKey}/${redeemCode}/${promoId}`
+        );
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Promo insertion result:', data);
+        return data;
+    } catch (error) {
+        console.error('Error inserting issued promo:', error);
+        return { success: false, error: error.message };
+    }
+}
+
 export { 
     fetchTypes,
     fetchMakers, 
     fetchAllProducts,
-    fetchCarouselImages,
+    fetchCarouselProducts,
     fetchCarouselSettings,
-    updateDeviceLastPing
+    updateDeviceLastPing,
+    fetchMinigameSettings,
+    fetchMinigamePromos,
+    insertIssuedPromo
 };
