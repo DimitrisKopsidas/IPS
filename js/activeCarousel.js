@@ -24,11 +24,13 @@ var actionwindow;
 var media = [];
 let products = [];
 let settings = [];
+let state;
+let connectkey;
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         const params = new URLSearchParams(window.location.search);
-        const connectkey = params.get('connectkey')/* || 'default'*/;
+        connectkey = params.get('connectkey')/* || 'default'*/;
 
         products = await fetchCarouselProducts(connectkey);
         settings = await fetchCarouselSettings(connectkey);
@@ -38,6 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         autoplayspeed = settings[0].SPEED;
         countforminigame = settings[0].GAMECOUNT;
         actionwindow = autoplaywait + 2000;
+        state = settings[0].STATE;
         
         car = document.querySelector('.carousel');
         flkty = new Flickity(car, { 
@@ -92,14 +95,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     },actionwindow)   
   })
 
-
   //LISTENER FOR CELL IN FOCUS
-  flkty.on('change', function(index) {
+  flkty.on('change', async function(index) {
     currentslide=index;
     backSwipeListener(currentslide,prevslide);
     minigameListener(currentslide,prevslide);
     prevslide=index;
-
+    settings = await fetchCarouselSettings(connectkey);
+    if (settings[0].STATE !== state) {
+            location.reload();
+    };
   });
 });
 

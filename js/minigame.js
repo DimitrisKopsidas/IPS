@@ -46,8 +46,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     promos = await fetchMinigamePromos(connectkey);
     revolutions = settings[0].revolutions;
     spinDuration = settings[0].spinduration;
-    // onStopChangeDelay = settings[0].onstoptime;
-    // inactivityChangeDelay = settings[0].inactivitytime;
+    onStopChangeDelay = settings[0].onstoptime;
+    inactivityChangeDelay = settings[0].inactivitytime;
     carouselURL = `activeCarousel.html?connectkey=${connectkey}`;
 
     // Load overlay first
