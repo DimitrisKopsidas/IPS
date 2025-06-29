@@ -30,7 +30,7 @@ async function fetchAllProducts() {
         return [];
     }
 }
-
+//CAROUSEL
 async function fetchCarouselProducts(connectkey) {
     try {
         const response = await fetch(`http://localhost:3000/api/GetCarouselProducts/${connectkey}`);
@@ -82,7 +82,7 @@ async function updateDeviceLastPing(connectKey) {
         return { success: false, error: error.message };
     }
 }
-
+//MINIGAME
 async function fetchMinigameSettings(connectkey) {
     try {
         const response = await fetch(`http://localhost:3000/api/getMinigameSettings/${connectkey}`);
@@ -143,6 +143,60 @@ async function insertIssuedPromo(connectKey, redeemCode, promoId) {
         return { success: false, error: error.message };
     }
 }
+//CHECK
+async function updateRedeemed(redeemCode) {
+    try {
+        console.log('Updating redeem code:', redeemCode);
+        const response = await fetch(`http://localhost:3000/api/updateRedeemed/${redeemCode}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Redeem code update result:', data);
+        return data;
+    } catch (error) {
+        console.error('Error updating redeem code:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+async function getPromoStatus(codeToCheck) {
+    try {
+        console.log('Checking promo status for code:', codeToCheck);
+        const response = await fetch(`http://localhost:3000/api/getPromoStatus/${codeToCheck}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Promo status result:', data);
+        return data.status;
+    } catch (error) {
+        console.error('Error checking promo status:', error);
+        return -1; // Error state
+    }
+}
+
+async function getPromoData(code) {
+    try {
+        console.log('Fetching promo data for code:', code);
+        const response = await fetch(`http://localhost:3000/api/getPromoData/${code}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Promo data result:', data);
+        return data;
+    } catch (error) {
+        console.error('Error fetching promo data:', error);
+        return null;
+    }
+}
 
 export { 
     fetchTypes,
@@ -153,5 +207,8 @@ export {
     updateDeviceLastPing,
     fetchMinigameSettings,
     fetchMinigamePromos,
-    insertIssuedPromo
+    insertIssuedPromo,
+    updateRedeemed,
+    getPromoStatus,
+    getPromoData 
 };

@@ -1,55 +1,19 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const promoForm = document.getElementById('promoForm');
+import { getPromoStatus, getPromoData, updateRedeemed } from './dbService.js';
+
+const promoForm = document.getElementById('promoForm');
     const resultContainer = document.getElementById('resultContainer');
     const statusIcon = document.getElementById('statusIcon');
     const resultMessage = document.getElementById('resultMessage');
     const discountDetails = document.getElementById('discountDetails');
     const applyCodeBtn = document.getElementById('applyCodeBtn');
     const verificationModal = document.getElementById('verificationModal');
-    
-    // Sample list of valid promo codes (in a real app, these would be verified server-side)
-    const validPromoCodes = {
-        'q1': {
-            product: 'Playstation 2',
-            group: 'Gaming',
-            maker: 'Sony',
-            discount: '25%',
-            expiry: '2025-12-31'
-        },
-        'q2': {
-            product: '',
-            group: 'Handheld',
-            maker: 'Sony',
-            discount: '25%',
-            expiry: '2025-12-31'
-        },
-        'q3': {
-            product: '',
-            group: '',
-            maker: 'Nintendo',
-            discount: '25%',
-            expiry: '2025-12-31'
-        },
-        'q4': {
-            product: '',
-            group: 'Console',
-            maker: '',
-            discount: '25%',
-            expiry: '2025-12-31'
-        },
-        'q5': {
-            product: '',
-            group: 'Console',
-            maker: '',
-            discount: '25%',
-            expiry: '2025-1-1'
-        },
-    };
-    
-    // Handle promo code verification
+    let promoCode;
+
+document.addEventListener('DOMContentLoaded', async () => {
+    // USER INPUT
     promoForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        const promoCode = document.getElementById('promoCode').value.trim();
+        promoCode = document.getElementById('promoCode').value.trim();
         
         // Reset previous result
         resultContainer.classList.add('hidden');
@@ -63,75 +27,104 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 500);
     });
     
-    // Verify the promo code against our sample list
-    function verifyPromoCode(code) {
-        const promoInfo = validPromoCodes[code];
-        
-        if (promoInfo) {
-            // Valid promo code
-            const currentDate = new Date();
-            const expiryDate = new Date(promoInfo.expiry);
+    // PROMO CHECK
+    async function verifyPromoCode(promoCode) {
+        try {
+            const status = await getPromoStatus(promoCode);
             
-            if (currentDate > expiryDate) {
-                showError(`This promo code expired on ${formatDate(expiryDate)}`);
-            } else {
-                showSuccess(promoInfo, code);
+            switch (status) {
+                case 0:
+                    showError('This promo code does not exist');
+                    break;
+                case 1:
+                    // Valid and not redeemed - fetch full promo data
+                    const promoData = await getPromoData(promoCode);
+                    if (promoData) {
+                        showSuccess(promoData, promoCode);
+                    } else {
+                        showError('Error fetching promotion details');
+                    }
+                    break;
+                case 2:
+                    showError('This promo code has expired');
+                    break;
+                case 3:
+                    showError('This promo code has already been redeemed');
+                    break;
+                default:
+                    showError('Error checking promo code');
             }
-        } else {
-            // Invalid promo code
-            showError('This promo code is invalid or has already been used');
+        } catch (error) {
+            console.error('Error verifying promo code:', error);
+            showError('Error checking promo code');
         }
     }
     
-    // Display success message and discount details
-    function showSuccess(promoInfo, code) {
+    // DISPLAY INFO ON SUCCESS
+    function showSuccess(promoData, code) {
         applyCodeBtn.style.display = 'block';
         statusIcon.className = 'status-icon success';
         statusIcon.innerHTML = '✓';
         resultMessage.textContent = 'Valid Promo Code!';
         
-        // Format expiry date
-        const expiryDate = new Date(promoInfo.expiry);
+        // Calculate expiry date based on ISSUEDATE and DAYSTOLIVE
+        const issueDate = new Date(promoData.ISSUEDATE);
+        const expiryDate = new Date(issueDate.getTime() + (promoData.DAYSTOLIVE * 24 * 60 * 60 * 1000));
         const formattedDate = formatDate(expiryDate);
         
-        if(promoInfo.product!=''){
+        // Display promo details based on type
+        if (promoData.PRODUCT) {
             discountDetails.innerHTML = `
-            <p><strong>${promoInfo.discount} Discount</strong></p>
-            <p>${promoInfo.product}</p>
+            <p><strong>${promoData.DISCOUNT * 100}% Discount</strong></p>
+            <p>${promoData.PRODUCT}</p>
             <p>Valid until ${formattedDate}</p>`;
-        }else if ((promoInfo.group!='')&&(promoInfo.product=='')&&(promoInfo.maker!='')){
+        } else if (promoData.TYPE && promoData.MAKER) {
             discountDetails.innerHTML = `
-            <p><strong>${promoInfo.discount} Discount</strong></p>
-            <p>For group: ${promoInfo.group} and maker: ${promoInfo.maker}</p>
+            <p><strong>${promoData.DISCOUNT * 100}% Discount</strong></p>
+            <p>For type: ${promoData.TYPE} and maker: ${promoData.MAKER}</p>
             <p>Valid until ${formattedDate}</p>`;
-        }else if ((promoInfo.group!='')&&(promoInfo.product=='')){
+        } else if (promoData.TYPE) {
             discountDetails.innerHTML = `
-            <p><strong>${promoInfo.discount} Discount</strong></p>
-            <p>For group: ${promoInfo.group}</p>
+            <p><strong>${promoData.DISCOUNT * 100}% Discount</strong></p>
+            <p>For type: ${promoData.TYPE}</p>
             <p>Valid until ${formattedDate}</p>`;
-        }else if (promoInfo.maker!=''&&(promoInfo.product=='')){
+        } else if (promoData.MAKER) {
             discountDetails.innerHTML = `
-            <p><strong>${promoInfo.discount} Discount</strong></p>
-            <p>For maker: ${promoInfo.maker}</p>
+            <p><strong>${promoData.DISCOUNT * 100}% Discount</strong></p>
+            <p>For maker: ${promoData.MAKER}</p>
             <p>Valid until ${formattedDate}</p>`;
         }
 
+        applyPromoCode();
+    }
+
+    async function applyPromoCode() {
         resultContainer.classList.remove('hidden');        
         applyCodeBtn.onclick = function() {
             verificationModal.style.display = 'flex';
             
-            document.getElementById('confirmApplyBtn').onclick = function() {//APPLY
-                verificationModal.style.display = 'none';
-                // Here you would make the API call to apply the code and remove it from database
-                delete validPromoCodes[code]; // Remove code from valid codes
-                resultContainer.classList.add('hidden');
+            document.getElementById('confirmApplyBtn').onclick = async function() {
+                try {
+                    const response = await updateRedeemed(promoCode);
+                    if (response.success) {
+                        verificationModal.style.display = 'none';
+                        resultContainer.classList.add('hidden');
+                        showSuccess('Promo code successfully applied!');
+                    } else {
+                        showError('Failed to apply promo code');
+                    }
+                } catch (error) {
+                    console.error('Error applying promo code:', error);
+                    showError('Failed to apply promo code');
+                }
             };
             
-            document.getElementById('cancelApplyBtn').onclick = function() {//CANCEL
+            document.getElementById('cancelApplyBtn').onclick = function() {
                 verificationModal.style.display = 'none';
             };
         };
     }
+
     
     // Display error message
     function showError(message) {
@@ -156,4 +149,6 @@ document.addEventListener('DOMContentLoaded', function() {
             verificationModal.style.display = 'none';
         }
     });
+
+
 });

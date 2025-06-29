@@ -85,6 +85,8 @@
     padding: 20px;
     margin-top: 25px;
     text-align: center;
+    width: 100%;       /* Ensure container takes full width */
+    box-sizing: border-box;
 }
 
 .result-container.hidden {
@@ -123,41 +125,16 @@
 }
 
 .promo-actions {
+    display: flex;
     justify-content: center;
     margin-top: 20px;
+    width: 100%;
 }
 
-.promo-info h3 {
-    color: #0077cc;
-    margin-top: 0;
-    margin-bottom: 15px;
-}
-
-.promo-info ul {
-    padding-left: 20px;
-    margin-bottom: 30px;
-}
-
-.promo-info li {
-    margin-bottom: 10px;
-    color: #555;
-}
-
-.customer-support {
-    background-color: white;
-    padding: 15px;
-    border-radius: 6px;
-    text-align: center;
-}
-
-.support-link {
-    color: #0077cc;
-    text-decoration: none;
-    font-weight: 600;
-}
-
-.support-link:hover {
-    text-decoration: underline;
+#applyCodeBtn {
+    width: 30%;
+    min-width: 150px; /* Prevents button from becoming too narrow */
+    margin: 0 auto;   /* Centers the button */
 }
 
 /* Animation for result appearance */

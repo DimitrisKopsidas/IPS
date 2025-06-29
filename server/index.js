@@ -74,7 +74,7 @@ app.get('/api/getAllProducts', async (req, res) => {
         });
     }
 });
-
+//CAROUSEL
 app.get('/api/GetCarouselProducts/:connectkey', async (req, res) => {
     try {
         const connectkey = req.params.connectkey;
@@ -124,7 +124,7 @@ app.get('/api/updateDeviceLastPing/:connectKey', async (req, res) => {
         });
     }
 });
-
+//MINIGAME
 app.get('/api/getMinigameSettings/:connectkey', async (req, res) => {
     try {
         const connectkey = req.params.connectkey;
@@ -174,6 +174,54 @@ app.get('/api/insertIssuedPromo/:connectKey/:redeemCode/:promoId', async (req, r
         console.error('Error inserting issued promo:', error.message);
         res.status(500).json({ 
             error: 'Failed to insert issued promo',
+            details: error.message 
+        });
+    }
+});
+//CHECK
+app.get('/api/updateRedeemed/:redeemCode', async (req, res) => {
+    try {
+        const redeemCode = req.params.redeemCode;
+        const [result] = await pool.query('CALL UpdateRedeemed(?)', [redeemCode]);
+        
+        console.log(`Updated redeem code: ${redeemCode} as redeemed`);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error updating redeem code:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to update redeem code',
+            details: error.message 
+        });
+    }
+});
+
+app.get('/api/getPromoStatus/:codeToCheck', async (req, res) => {
+    try {
+        const codeToCheck = req.params.codeToCheck;
+        const [rows] = await pool.query('CALL GetPromoStatus(?)', [codeToCheck]);
+        
+        console.log(`Checked promo code ${codeToCheck}, status:`, rows[0][0].status);
+        res.json(rows[0][0]);
+    } catch (error) {
+        console.error('Error checking promo status:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to check promo status',
+            details: error.message 
+        });
+    }
+});
+
+app.get('/api/getPromoData/:code', async (req, res) => {
+    try {
+        const code = req.params.code;
+        const [rows] = await pool.query('CALL GetPromoData(?)', [code]);
+        
+        console.log(`Retrieved promo data for code ${code}:`, rows[0][0]);
+        res.json(rows[0][0]);
+    } catch (error) {
+        console.error('Error fetching promo data:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to fetch promo data',
             details: error.message 
         });
     }
