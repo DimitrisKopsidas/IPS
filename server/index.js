@@ -32,48 +32,6 @@ app.listen(PORT, () => {
     testConnection();
 });
 
-// Types endpoint with error logging
-app.get('/api/getTypes', async (req, res) => {
-    try {
-        const [rows] = await pool.query('SELECT * FROM type ORDER BY CODE ASC');
-        console.log('Retrieved types:', rows);
-        res.json(rows);
-    } catch (error) {
-        console.error('Error fetching types:', error.message);
-        res.status(500).json({ 
-            error: 'Failed to fetch types',
-            details: error.message 
-        });
-    }
-});
-
-app.get('/api/getMakers', async (req, res) => {
-    try {
-        const [rows] = await pool.query('SELECT * FROM maker ORDER BY CODE ASC');
-        console.log('Retrieved makers:', rows);
-        res.json(rows);
-    } catch (error) {
-        console.error('Error fetching makers:', error.message);
-        res.status(500).json({ 
-            error: 'Failed to fetch makers',
-            details: error.message 
-        });
-    }
-});
-
-app.get('/api/getAllProducts', async (req, res) => {
-    try {
-        const [rows] = await pool.query('SELECT * FROM product');
-        console.log('Retrieved products:', rows);
-        res.json(rows);
-    } catch (error) {
-        console.error('Error fetching products:', error.message);
-        res.status(500).json({ 
-            error: 'Failed to fetch products',
-            details: error.message 
-        });
-    }
-});
 //CAROUSEL
 app.get('/api/GetCarouselProducts/:connectkey', async (req, res) => {
     try {

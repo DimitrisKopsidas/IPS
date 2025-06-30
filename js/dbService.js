@@ -1,35 +1,3 @@
-async function fetchTypes() {
-    try {
-        const response = await fetch('http://localhost:3000/api/getTypes');
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        console.error('Error fetching types:', error);
-        return [];
-    }
-}
-
-async function fetchMakers() {
-    try {
-        const response = await fetch('http://localhost:3000/api/getMakers');
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        console.error('Error fetching makers:', error);
-        return [];
-    }
-}
-
-async function fetchAllProducts() {
-    try {
-        const response = await fetch('http://localhost:3000/api/getAllProducts');
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        console.error('Error fetching products:', error);
-        return [];
-    }
-}
 //CAROUSEL
 async function fetchCarouselProducts(connectkey) {
     try {
