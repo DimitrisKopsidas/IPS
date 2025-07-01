@@ -187,14 +187,14 @@ app.get('/api/getPromoData/:code', async (req, res) => {
 
 app.get('/api/getFilteredProducts/:type/:maker', async (req, res) => {
     try {
-        const type = req.params.type;
-        const maker = req.params.maker;
+        const type = !req.params.type || req.params.type === 'All' ? null : req.params.type;
+        const maker = !req.params.maker || req.params.maker === 'All' ? null : req.params.maker;
 
         const [rows] = await pool.query('CALL GetFilteredProducts(?, ?)', [type, maker]);
         
         console.log('Retrieved filtered products:', {
-            typeFilter: type || 'All',
-            makerFilter: maker || 'All',
+            typeFilter: type || 'NULL',
+            makerFilter: maker || 'NULL',
             count: rows[0].length
         });
         
@@ -203,6 +203,40 @@ app.get('/api/getFilteredProducts/:type/:maker', async (req, res) => {
         console.error('Error fetching filtered products:', error.message);
         res.status(500).json({ 
             error: 'Failed to fetch filtered products',
+            details: error.message 
+        });
+    }
+});
+
+app.get('/api/getTypes', async (req, res) => {
+    try {
+        const [rows] = await pool.query('CALL GetTypes()');
+        console.log('Retrieved types:', {
+            count: rows[0].length,
+            types: rows[0]
+        });
+        res.json(rows[0]);
+    } catch (error) {
+        console.error('Error fetching types:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to fetch types',
+            details: error.message 
+        });
+    }
+});
+
+app.get('/api/getMakers', async (req, res) => {
+    try {
+        const [rows] = await pool.query('CALL GetMakers()');
+        console.log('Retrieved makers:', {
+            count: rows[0].length,
+            makers: rows[0]
+        });
+        res.json(rows[0]);
+    } catch (error) {
+        console.error('Error fetching makers:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to fetch makers',
             details: error.message 
         });
     }

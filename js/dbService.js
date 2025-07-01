@@ -193,10 +193,43 @@ async function fetchFilteredProducts(type = 'All', maker = 'All') {
     }
 }
 
+async function fetchTypes() {
+    try {
+        const response = await fetch('http://localhost:3000/api/getTypes');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Types data:', {
+            count: data.length,
+            types: data
+        });
+        return data;
+    } catch (error) {
+        console.error('Error fetching types:', error);
+        return [];
+    }
+}
+
+async function fetchMakers() {
+    try {
+        const response = await fetch('http://localhost:3000/api/getMakers');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Makers data:', {
+            count: data.length,
+            makers: data
+        });
+        return data;
+    } catch (error) {
+        console.error('Error fetching makers:', error);
+        return [];
+    }
+}
+
 export { 
-    fetchTypes,
-    fetchMakers, 
-    fetchAllProducts,
     fetchCarouselProducts,
     fetchCarouselSettings,
     updateDeviceLastPing,
@@ -206,5 +239,7 @@ export {
     updateRedeemed,
     getPromoStatus,
     getPromoData,
-    fetchFilteredProducts 
+    fetchFilteredProducts,
+    fetchTypes,
+    fetchMakers
 };

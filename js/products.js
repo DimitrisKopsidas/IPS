@@ -1,7 +1,7 @@
 //TODO : FIX PAGE OVERFLOW BUG !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
-import { fetchProducts, fetchMakers, fetchTypes } from './dbService.js';
+import { fetchFilteredProducts, fetchMakers, fetchTypes } from './dbService.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     const state = {
@@ -10,9 +10,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         itemsPerPage: 5 // Default items per page
     };
     
-    let products = [];
-    let types = [];
-    let makers = [];
+    let products = fetchFilteredProducts('All', 'All'); // Initial fetch with default filters
+    let types = fetchTypes(); 
+    let makers = fetchMakers(); 
     let navigation;
 
     // Define display function first
@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             productCard.innerHTML = `
                 <div class="product-layout">
                     <div class="product-image">
-                        <img src="media/${product.PRODUCT}.png" alt="${product.NAME}" onerror="this.src='media/404.png'">
+                        <img src="media/${product.ID}.png" alt="${product.NAME}" onerror="this.src='media/404.png'">
                     </div>
                     <div class="product-details">
                         <div class="product-header">
@@ -67,54 +67,83 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize navigation before using it
     navigation = initializeNavigation(state, displayProducts, state.itemsPerPage);
 
-    function filterProducts() {
-        const searchCode = document.getElementById('codeFilter').value.toLowerCase();
-        const searchName = document.getElementById('nameFilter').value.toLowerCase();
-        const selectedGroup = document.getElementById('groupFilter').value;
-        const selectedMaker = document.getElementById('makerFilter').value;
+    async function filterProducts() {
+        try {
+            const searchCode = document.getElementById('codeFilter').value.toLowerCase();
+            const searchName = document.getElementById('nameFilter').value.toLowerCase();
+            const selectedType = document.getElementById('groupFilter').value;
+            const selectedMaker = document.getElementById('makerFilter').value;
 
-        state.currentPage = 1; // Reset to first page when filtering
-        
-        const filteredProducts = products.filter(product => {
-            const matchesGroup = selectedGroup === 'All' || product.TYPE.toString() === selectedGroup;
-            const matchesMaker = selectedMaker === 'All' || product.MAKER.toString() === selectedMaker;
-            const matchesCode = searchCode === '' || product.CODE.toString().toLowerCase().includes(searchCode);
-            const matchesName = searchName === '' || product.NAME.toLowerCase().includes(searchName);
+            state.currentPage = 1; // Reset to first page when filtering
             
-            return matchesGroup && matchesMaker && matchesCode && matchesName;
-        });
+            // First get filtered products from server based on type and maker
+            const serverFilteredProducts = await fetchFilteredProducts(selectedType, selectedMaker);
+            
+            // Then apply client-side filtering for code and name
+            const finalFiltered = serverFilteredProducts.filter(product => {
+                const matchesCode = searchCode === '' || 
+                                  product.CODE.toString().toLowerCase().includes(searchCode);
+                const matchesName = searchName === '' || 
+                                  product.NAME.toLowerCase().includes(searchName);
+                
+                return matchesCode && matchesName;
+            });
 
-        displayProducts(filteredProducts);
+            displayProducts(finalFiltered);
+        } catch (error) {
+            console.error('Error applying filters:', error);
+            const productList = document.getElementById('productList');
+            productList.innerHTML = `
+                <div class="error-message">
+                    <p>Failed to load filtered products. Please try again.</p>
+                    <button onclick="window.location.reload()">Retry</button>
+                </div>
+            `;
+        }
     }
 
     try {
-        products = await fetchProducts();
+        // Get initial products without filters
+        products = await fetchFilteredProducts('All', 'All');
+        // Get types and makers for dropdowns
         types = await fetchTypes();
         makers = await fetchMakers();
-        console.log('Loaded data:', { products, types, makers });
+        
+        console.log('Loaded data:', { 
+            productsCount: products.length,
+            typesCount: types.length,
+            makersCount: makers.length 
+        });
         
         // Populate filters after data is loaded
         populateFilters();
-        // Initial display after everything is set up
-        filterProducts();
+        // Initial display showing all products
+        displayProducts(products);
     } catch (error) {
-        console.error('Error loading tables: ', error);
+        console.error('Error loading initial data:', error);
     }
 
     function populateFilters() {
         const groupFilter = document.getElementById('groupFilter');
         const makerFilter = document.getElementById('makerFilter');
 
+        // Clear existing options except "All"
+        groupFilter.innerHTML = '<option value="All">All</option>';
+        makerFilter.innerHTML = '<option value="All">All</option>';
+
+        // Add type options
         types.forEach(type => {
             const option = document.createElement('option');
-            option.value = type.TYPE;
-            option.textContent = type.CODE +" - "+type.NAME;
+            option.value = type.NAME;  // Changed from type.TYPE to type.NAME
+            option.textContent = `${type.CODE} - ${type.NAME}`;
             groupFilter.appendChild(option);
         });
+
+        // Add maker options
         makers.forEach(maker => {
             const option = document.createElement('option');
-            option.value = maker.MAKER;
-            option.textContent = maker.CODE +" - "+maker.NAME;
+            option.value = maker.NAME;  // Changed from maker.MAKER to maker.NAME
+            option.textContent = `${maker.CODE} - ${maker.NAME}`;
             makerFilter.appendChild(option);
         });
     }    
