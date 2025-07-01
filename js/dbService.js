@@ -166,6 +166,33 @@ async function getPromoData(code) {
     }
 }
 
+async function fetchFilteredProducts(type = 'All', maker = 'All') {
+    try {
+        // Encode parameters to handle special characters
+        const encodedType = encodeURIComponent(type);
+        const encodedMaker = encodeURIComponent(maker);
+        
+        const response = await fetch(`http://localhost:3000/api/getFilteredProducts/${encodedType}/${encodedMaker}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Filtered products:', {
+            type,
+            maker,
+            count: data.length,
+            products: data
+        });
+        
+        return data;
+    } catch (error) {
+        console.error('Error fetching filtered products:', error);
+        return [];
+    }
+}
+
 export { 
     fetchTypes,
     fetchMakers, 
@@ -178,5 +205,6 @@ export {
     insertIssuedPromo,
     updateRedeemed,
     getPromoStatus,
-    getPromoData 
+    getPromoData,
+    fetchFilteredProducts 
 };
