@@ -4,9 +4,11 @@
 */
 
 import {fillDropdown,initiateHotkeys} from "./common.js";
+import { fetchFilteredProducts, fetchMakers, fetchTypes } from './dbService.js';
 
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async () => {
+    // #region Initial Setup
     // Form references
     const productForm = document.getElementById('productForm');
     const groupSelect = document.getElementById('productGroup');
@@ -66,147 +68,30 @@ document.addEventListener('DOMContentLoaded', function() {
     let validForInsert = true;
     let currentSort = { field: 'code', direction: 'asc' };
     let makerSort = { field: 'code', direction: 'asc' };
+    // #endregion
+    // Get URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const productId = urlParams.get('id');
+    const selectedMaker = urlParams.get('maker');
+    const selectedType = urlParams.get('type');
 
-    // Predefined data arrays
-    const groups = [
-        {
-            id: 1,
-            name: "Audio",
-            code: 100
-        },
-        {
-            id: 2,
-            name: "Electronics",
-            code: 200
-        },
-        {
-            id: 3,
-            name: "Photography",
-            code: 201
-        },
-        {
-            id: 4,
-            name: "Home Appliances",
-            code: 300
-        },
-        {
-            id: 5,
-            name: "Accessories",
-            code: 400
-        },
-        {
-            id: 6,
-            name: "Accessories1",
-            code: 401
-        },{
-            id: 7,
-            name: "Accessories2",
-            code: 402
-        },{
-            id: 8,
-            name: "Accessories3",
-            code: 403
-        },{
-            id: 9,
-            name: "Accessories4",
-            code: 404
-        },{
-            id: 10,
-            name: "Accessories5",
-            code: 405
-        },{
-            id: 11,
-            name: "Accessories6",
-            code: 406
-        },{
-            id: 12,
-            name: "Accessories7",
-            code: 407
-        },{
-            id: 13,
-            name: "Accessories",
-            code: 408
-        },{
-            id: 14,
-            name: "Accessories8",
-            code: 409
-        },
-    ];
-    const makers = [
-        { id: 1, code: 100, name: "SoundTech" },
-        { id: 2, code: 200, name: "VisionTech" },
-        { id: 3, code: 300, name: "OptikPro" },
-        { id: 4, code: 400, name: "HomeEase" }
-    ];
-    const products = [
-        {
-            id: 1,
-            name: "Premium Wireless Headphones",
-            code: 100,
-            group: "Photography",
-            maker: "SoundTech",
-            price: 199.99,
-            discount: 0,
-            notes: "10 left",
-            carousels: [
-                "101 - Featured Products",
-                "102 - New Arrivals",
-                "103 - Best Sellers",
-                "104 - On Sale"
-            ],
-            promos: [
-                "200 - SUMMER25 - 25% off",
-                "100 - FREESHIP - Free shipping"
-            ]
-        },
-        {
-            id: 2,
-            name: "Ultra HD Smart TV",
-            code: 200,
-            group: "Electronics",
-            maker: "VisionTech",
-            price: 899.99,
-            discount: 10,
-            notes: "In stock",
-            carousels: [
-                "Featured Products",
-                "Best Sellers"
-            ],
-            promos: [
-                "BUNDLE10 - 10% off bundle"
-            ]
-        },
-        {
-            id: 3,
-            name: "Professional DSLR Camera",
-            code: 201,
-            group: "Photography",
-            maker: "OptikPro",
-            price: 1299.99,
-            discount: 5,
-            notes: "2 left",
-            carousels: [
-                "New Arrivals",
-                "Premium Products"
-            ],
-            promos: [
-                "FREESHIP - Free shipping",
-                "PHOTO25 - 25% off accessories"
-            ]
-        }
-    ];
+    // Update initial data loading
+    let products = await fetchFilteredProducts(selectedType, selectedMaker);
+    let makers = await fetchMakers();
+    let types = await fetchTypes();
 
+    // After loading data, find the specific product
+    const productData = products.find(p => p.ID.toString() === productId);
+    
+    if (productData) {
+        loadProductData(productData);
+    } else {
+        showWarningModal('Product not found');
+    }
 
-    fillDropdown(groups,groupSelect);
-    fillDropdown(makers,makerSelect);
-    initiateHotkeys(navigateProduct);
-
-    loadProductData(currentProductId);  // Load initial product data
-    updateNavigationState();
-    initializeSearch();
     
 
-//FUNCTIONS------------------------------------------------------------------------------------------------
+    //FUNCTIONS------------------------------------------------------------------------------------------------
     function handleNavigation(direction) {// Handle navigation with unsaved changes check
         if (formChanged) {
             pendingNavigationDirection = direction;

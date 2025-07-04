@@ -31,7 +31,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             productCard.className = 'product-card';
             productCard.style.cursor = 'pointer';
             productCard.addEventListener('click', () => {
-                window.location.href = `product.html?get=${product.PRODUCT}`;
+                // Get current filter values
+                const selectedType = document.getElementById('groupFilter').value;
+                const selectedMaker = document.getElementById('makerFilter').value;
+                
+                // Build query parameters
+                const params = new URLSearchParams({
+                    id: product.ID,
+                    maker: selectedMaker,
+                    type: selectedType,
+                });
+                
+                // Navigate with parameters
+                window.location.href = `product.html?${params.toString()}`;
             });
             
             productCard.innerHTML = `
