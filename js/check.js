@@ -7,6 +7,9 @@ const promoForm = document.getElementById('promoForm');
     const discountDetails = document.getElementById('discountDetails');
     const applyCodeBtn = document.getElementById('applyCodeBtn');
     const verificationModal = document.getElementById('verificationModal');
+    let issueDate;
+    let expiryDate;
+    let formattedDate;
     let promoCode;
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -39,6 +42,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 case 1:
                     // Valid and not redeemed - fetch full promo data
                     const promoData = await getPromoData(promoCode);
+                    issueDate = new Date(promoData.ISSUEDATE);
+                    expiryDate = new Date(issueDate.getTime() + (promoData.DAYSTOLIVE * 24 * 60 * 60 * 1000));
+                    formattedDate = formatDate(expiryDate);
                     if (promoData) {
                         showSuccess(promoData, promoCode);
                     } else {
@@ -66,11 +72,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         statusIcon.className = 'status-icon success';
         statusIcon.innerHTML = '✓';
         resultMessage.textContent = 'Valid Promo Code!';
-        
-        // Calculate expiry date based on ISSUEDATE and DAYSTOLIVE
-        const issueDate = new Date(promoData.ISSUEDATE);
-        const expiryDate = new Date(issueDate.getTime() + (promoData.DAYSTOLIVE * 24 * 60 * 60 * 1000));
-        const formattedDate = formatDate(expiryDate);
         
         // Display promo details based on type
         if (promoData.PRODUCT) {
@@ -108,8 +109,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const response = await updateRedeemed(promoCode);
                     if (response.success) {
                         verificationModal.style.display = 'none';
-                        resultContainer.classList.add('hidden');
-                        showSuccess('Promo code successfully applied!');
+                        
+                        // Update status icon to yellow
+                        statusIcon.className = 'status-icon applied';
+                        
+                        // Update message
+                        resultMessage.textContent = 'Promo Code Applied!';
+                        
+                        // Disable apply button
+                        applyCodeBtn.disabled = true;
+                        
+                        // Optionally update the button text
+                        applyCodeBtn.textContent = 'Applied to Cart';
                     } else {
                         showError('Failed to apply promo code');
                     }

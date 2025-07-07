@@ -17,14 +17,12 @@
 import {Wheel} from 'https://cdn.jsdelivr.net/npm/spin-wheel@5.0.2/dist/spin-wheel-esm.js';
 import { fetchMinigameSettings, fetchMinigamePromos, insertIssuedPromo } from './dbService.js';
 
-//USER DEFINED VARIABLES
+//DEFAULT SETTINGS
 var winningItemIndex=1;//BACKEND
 var revolutions=5;//DB
-var spinDuration=3001;//DB
-var onStopChangeDelay=0;//DB
-var inactivityChangeDelay=0;//DB
-
-
+var spinDuration=3000;//DB
+var onStopChangeDelay=30000;//DB
+var inactivityChangeDelay=20000;//DB
 
 //PROGRAM VARIABLES
 let connectkey;
@@ -150,6 +148,10 @@ function displayPrize() {
         prizeImage = `<img src="media/9998.jpg" alt="Prize" onerror="this.src='media/404.png'" class="prize-image">`;
         prizeText = `All products made by ${winningPromo.MAKERNAME}`;
         console.log('Maker prize:', winningPromo.MAKERNAME);
+    } else if (winningPromo.MAKERNAME && winningPromo.TYPENAME) {
+        prizeImage = `<img src="media/9998.jpg" alt="Prize" onerror="this.src='media/404.png'" class="prize-image">`;
+        prizeText = `All products made by ${winningPromo.MAKERNAME} in the ${winningPromo.TYPENAME} category.`;
+        console.log('Maker prize:', winningPromo.MAKERNAME);
     }
     
     prizeDisplay.innerHTML = `
@@ -183,17 +185,6 @@ function winningItemCalc() {
         
         // Generate random number between 0 and total chance
         const random = Math.random() * totalChance;
-        
-        // Debug logging
-        // console.log('Chance calculation:', {
-        //     totalChance,
-        //     randomValue: random,
-        //     availablePromos: promos.map(p => ({ 
-        //         id: p.ID,
-        //         chance: p.CHANCE,
-        //         discount: p.DISCOUNT
-        //     }))
-        // });
 
         // Find winning item based on cumulative probability
         let cumulative = 0;

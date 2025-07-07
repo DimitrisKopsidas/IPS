@@ -4,19 +4,18 @@ function initializeNavigation(state, displayCallback, itemsPerPage) {
         const prevBtn = document.getElementById('sidePrevBtn');
         const nextBtn = document.getElementById('sideNextBtn');
         
-        const totalPages = Math.ceil(state.filteredProducts.length / itemsPerPage);
+        const totalPages = Math.ceil(state.filteredProducts.length / state.itemsPerPage);
         
+        // Hide both buttons if there's only one page or no items
         if (totalPages <= 1) {
             prevBtn.style.display = 'none';
             nextBtn.style.display = 'none';
             return;
         }
 
-        prevBtn.style.display = 'flex';
-        nextBtn.style.display = 'flex';
-        
-        prevBtn.disabled = state.currentPage === 1;
-        nextBtn.disabled = state.currentPage === totalPages;
+        // Show buttons and update their state
+        prevBtn.style.display = state.currentPage > 1 ? 'flex' : 'none';
+        nextBtn.style.display = state.currentPage < totalPages ? 'flex' : 'none';
     }
 
     // Add navigation event handlers
@@ -28,7 +27,7 @@ function initializeNavigation(state, displayCallback, itemsPerPage) {
     });
 
     document.getElementById('sideNextBtn').addEventListener('click', () => {
-        const totalPages = Math.ceil(state.filteredProducts.length / itemsPerPage);
+        const totalPages = Math.ceil(state.filteredProducts.length / state.itemsPerPage);
         if (state.currentPage < totalPages) {
             state.currentPage++;
             displayCallback(state.filteredProducts);
@@ -37,6 +36,6 @@ function initializeNavigation(state, displayCallback, itemsPerPage) {
 
     return {
         updateNavigation: updateNavigationButtons,
-        getItemsPerPage: () => 5
+        getItemsPerPage: () => itemsPerPage
     };
 }

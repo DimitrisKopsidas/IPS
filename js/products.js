@@ -20,59 +20,72 @@ document.addEventListener('DOMContentLoaded', async () => {
         state.filteredProducts = filteredProducts;
         state.itemsPerPage = parseInt(document.getElementById('itemsPerPage').value) || 5;
         
+        // Calculate total pages and adjust current page if needed
+        const totalPages = Math.ceil(filteredProducts.length / state.itemsPerPage);
+        if (state.currentPage > totalPages) {
+            state.currentPage = Math.max(1, totalPages);
+        }
+        
         const startIndex = (state.currentPage - 1) * state.itemsPerPage;
-        const endIndex = startIndex + state.itemsPerPage;
+        const endIndex = Math.min(startIndex + state.itemsPerPage, filteredProducts.length);
         const productList = document.getElementById('productList');
         
         productList.innerHTML = '';
 
-        filteredProducts.slice(startIndex, endIndex).forEach(product => {
-            const productCard = document.createElement('div');
-            productCard.className = 'product-card';
-            productCard.style.cursor = 'pointer';
-            productCard.addEventListener('click', () => {
-                // Get current filter values
-                const selectedType = document.getElementById('groupFilter').value;
-                const selectedMaker = document.getElementById('makerFilter').value;
-                
-                // Build query parameters
-                const params = new URLSearchParams({
-                    id: product.ID,
-                    maker: selectedMaker,
-                    type: selectedType,
+        // Only process items if we have any
+        if (filteredProducts.length > 0) {
+            filteredProducts.slice(startIndex, endIndex).forEach(product => {
+                const productCard = document.createElement('div');
+                productCard.className = 'product-card';
+                productCard.style.cursor = 'pointer';
+                productCard.addEventListener('click', () => {
+                    // Get current filter values
+                    const selectedType = document.getElementById('groupFilter').value;
+                    const selectedMaker = document.getElementById('makerFilter').value;
+                    
+                    // Build query parameters
+                    const params = new URLSearchParams({
+                        id: product.ID,
+                        maker: selectedMaker,
+                        type: selectedType,
+                    });
+                    
+                    // Navigate with parameters
+                    window.location.href = `product.html?${params.toString()}`;
                 });
                 
-                // Navigate with parameters
-                window.location.href = `product.html?${params.toString()}`;
+                productCard.innerHTML = `
+                    <div class="product-layout">
+                        <div class="product-image">
+                            <img src="media/${product.ID}.png" alt="${product.NAME}" onerror="this.src='media/404.png'">
+                        </div>
+                        <div class="product-details">
+                            <div class="product-header">
+                                <span class="product-code">${product.CODE}</span>
+                                <h2 class="product-name">${product.NAME}</h2>
+                            </div>
+                            <div class="product-info">
+                                <div class="info-row">
+                                    <span class="product-group">Type: ${product.TYPE}</span>
+                                    <span class="product-maker">Maker: ${product.MAKER}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="product-price">Price: $${product.PRICE}</span>
+                                    <span class="product-discount">Discount: ${product.DISCOUNT*100}%</span>
+                                    <span class="product-final-price">Final: $${product.FINALPRICE}</span>
+                                </div>
+                                <p class="product-note">${product.NOTES}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                productList.appendChild(productCard);
             });
-            
-            productCard.innerHTML = `
-                <div class="product-layout">
-                    <div class="product-image">
-                        <img src="media/${product.ID}.png" alt="${product.NAME}" onerror="this.src='media/404.png'">
-                    </div>
-                    <div class="product-details">
-                        <div class="product-header">
-                            <span class="product-code">${product.CODE}</span>
-                            <h2 class="product-name">${product.NAME}</h2>
-                        </div>
-                        <div class="product-info">
-                            <div class="info-row">
-                                <span class="product-group">Group: ${product.TYPE}</span>
-                                <span class="product-maker">Maker: ${product.MAKER}</span>
-                            </div>
-                            <div class="info-row">
-                                <span class="product-price">Price: $${product.PRICE}</span>
-                                <span class="product-discount">Discount: ${product.DISCOUNT*100}%</span>
-                                <span class="product-final-price">Final: $${product.FINALPRICE}</span>
-                            </div>
-                            <p class="product-note">${product.NOTES}</p>
-                        </div>
-                    </div>
-                </div>
-            `;
-            productList.appendChild(productCard);
-        });
+        } else {
+            productList.innerHTML = '<div class="no-results">No products found</div>';
+        }
+
+        // Update navigation after processing items
         navigation.updateNavigation();
     }
 
@@ -171,4 +184,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('makerFilter').addEventListener('change', filterProducts);
     document.getElementById('codeFilter').addEventListener('input', filterProducts);
     document.getElementById('nameFilter').addEventListener('input', filterProducts);   
+
+    // Add click handler for Create New button
+    document.getElementById('createNewButton').addEventListener('click', () => {
+        // Navigate to product.html with new flag
+        const params = new URLSearchParams({
+            id: 'new'
+        });
+        window.location.href = `product.html?${params.toString()}`;
+    });
 });

@@ -113,6 +113,10 @@
     background-color: #dc3545;
 }
 
+.status-icon.applied {
+    background-color: #ffc107;  /* Yellow color for applied state */
+}
+
 .result-message {
     font-size: 18px;
     font-weight: 600;
@@ -135,6 +139,12 @@
     width: 30%;
     min-width: 150px; /* Prevents button from becoming too narrow */
     margin: 0 auto;   /* Centers the button */
+}
+
+#applyCodeBtn:disabled {
+    background-color: #ffc107;
+    cursor: not-allowed;
+    opacity: 0.8;
 }
 
 /* Animation for result appearance */
