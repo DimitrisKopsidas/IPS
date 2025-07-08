@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const state = {
         currentPage: 1,
         filteredProducts: [],
-        itemsPerPage: 5 // Default items per page
+        itemsPerPage: 20 // Default items per page
     };
     
     let products = fetchFilteredProducts('All', 'All'); // Initial fetch with default filters
@@ -191,6 +191,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         const params = new URLSearchParams({
             id: 'new'
         });
-        window.location.href = `product.html?${params.toString()}`;
+        window.location.href = `product.html?id=new`;
     });
 });

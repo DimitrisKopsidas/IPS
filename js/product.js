@@ -5,10 +5,7 @@
 
 import {fillDropdown,initiateHotkeys} from "./common.js";
 import { fetchFilteredProducts, fetchMakers, fetchTypes } from './dbService.js';
-
-
-document.addEventListener('DOMContentLoaded', async () => {
-    // #region Initial Setup
+// #region VARIABLE DECLARATION
     // Form references
     const productForm = document.getElementById('productForm');
     const groupSelect = document.getElementById('productGroup');
@@ -68,30 +65,465 @@ document.addEventListener('DOMContentLoaded', async () => {
     let validForInsert = true;
     let currentSort = { field: 'code', direction: 'asc' };
     let makerSort = { field: 'code', direction: 'asc' };
-    // #endregion
+
     // Get URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     const productId = urlParams.get('id');
     const selectedMaker = urlParams.get('maker');
     const selectedType = urlParams.get('type');
 
+    // Data tables
+    let products = [];
+    let makers = [];
+    let types = [];
+    // #endregion
+
+document.addEventListener('DOMContentLoaded', async () => {
     // Update initial data loading
-    let products = await fetchFilteredProducts(selectedType, selectedMaker);
-    let makers = await fetchMakers();
-    let types = await fetchTypes();
+    products = await fetchFilteredProducts(selectedType, selectedMaker);
+    makers = await fetchMakers();
+    types = await fetchTypes();
 
     // After loading data, find the specific product
     const productData = products.find(p => p.ID.toString() === productId);
     
     if (productData) {
         loadProductData(productData);
+    }else if (productId === 'new') {
+        console.log('Creating new product');
     } else {
         showWarningModal('Product not found');
     }
 
-    
+// #region EVENT LISTENERS
+    headerProductCode.addEventListener('input', function() {
+        formChanged = true;
+    });
 
-    //FUNCTIONS------------------------------------------------------------------------------------------------
+    headerProductName.addEventListener('input', function() {
+        formChanged = true;
+    });
+
+    sidePrevBtn.addEventListener('click', function() {
+        handleNavigation('prev');
+    });
+
+    sideNextBtn.addEventListener('click', function() {
+        handleNavigation('next');
+    });
+
+    productForm.addEventListener('input', function() {
+        formChanged = true;
+    });
+
+    productForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveProductData();
+        formChanged = false;
+
+        if (pendingNavigationDirection) {
+            navigateProduct(pendingNavigationDirection);
+            pendingNavigationDirection = null;
+        } else {
+            showConfirmation();
+        }
+    });
+
+    cancelBtn.addEventListener('click', function() {
+        cancelConfirmationModal.style.display = 'flex';
+    });
+
+    confirmCancelBtn.addEventListener('click', function() {
+        loadProductData(currentProductId);
+        cancelConfirmationModal.style.display = 'none';
+    });
+
+    cancelRevertBtn.addEventListener('click', function() {
+        cancelConfirmationModal.style.display = 'none';
+    });
+
+    window.addEventListener('click', function(e) {
+        if (e.target === cancelConfirmationModal) {
+            cancelConfirmationModal.style.display = 'none';
+        }
+    });
+
+    closeBtn.addEventListener('click', function() {
+        saveConfirmation.style.display = 'none';
+    });
+
+    window.addEventListener('click', function(e) {
+        if (e.target === saveConfirmation) {
+            saveConfirmation.style.display = 'none';
+        }
+    });
+
+    saveAndContinueBtn.addEventListener('click', function() {
+        saveProductData();
+        formChanged = false;
+        if (pendingNavigationDirection === 'new') {
+            createNewProduct();
+        } else {
+            navigateProduct(pendingNavigationDirection);
+        }
+        pendingNavigationDirection = null;
+        unsavedChangesModal.style.display = 'none';
+    });
+
+    discardAndContinueBtn.addEventListener('click', function() {
+        formChanged = false;
+        navigateProduct(pendingNavigationDirection);
+        pendingNavigationDirection = null;
+        unsavedChangesModal.style.display = 'none';
+    });
+
+    cancelNavigationBtn.addEventListener('click', function() {
+        pendingNavigationDirection = null;
+        unsavedChangesModal.style.display = 'none';
+    });
+
+    saveBtn.addEventListener('click', function(e) {
+        e.preventDefault(); // Prevent default form submission
+        saveProductData();
+        formChanged = false;
+        if (validForInsert){
+            showConfirmation();
+        }
+    });
+
+    discountInput.addEventListener('input', function() {
+        const price = parseFloat(priceInput.value) || 0;
+        const discount = parseFloat(discountInput.value) || 0;
+        if (price > 0 && discount >= 0 && discount <= 100) {
+            finalPriceInput.value = (price - (price * (discount / 100))).toFixed(2);
+        }
+    });
+
+    finalPriceInput.addEventListener('input', function() {
+        const price = parseFloat(priceInput.value) || 0;
+        const finalPrice = parseFloat(finalPriceInput.value) || 0;
+        if (price > 0 && finalPrice >= 0 && finalPrice <= price) {
+            discountInput.value = (((price - finalPrice) / price) * 100).toFixed(2);
+        }
+    });
+
+    deleteBtn.addEventListener('click', function() {
+        deleteConfirmationModal.style.display = 'flex';
+    });
+
+    confirmDeleteBtn.addEventListener('click', function() {
+        const productIndex = products.findIndex(p => p.id === currentProductId);
+        if (productIndex !== -1) {
+            products.splice(productIndex, 1);
+            if (currentProductId > 1) {
+                currentProductId--;
+                loadProductData(currentProductId);
+            } else if (products.length > 0) {
+                loadProductData(products[0].id);
+            }
+            updateNavigationState();
+        }
+        deleteConfirmationModal.style.display = 'none';
+    });
+
+    cancelDeleteBtn.addEventListener('click', function() {
+        deleteConfirmationModal.style.display = 'none';
+    });
+
+    changeImageBtn.addEventListener('click', function() {
+        imageInput.click();
+    });
+
+    imageInput.addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                mainProductImage.src = event.target.result;
+                formChanged = true;
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    });
+
+    mainProductImage.addEventListener('click', function() {
+        imagePreviewModal.style.display = 'flex';
+        previewImage.src = this.src;
+    });
+
+    closeModal.addEventListener('click', function() {
+        imagePreviewModal.style.display = 'none';
+    });
+
+    imagePreviewModal.addEventListener('click', function(e) {
+        if (e.target === this) {
+            imagePreviewModal.style.display = 'none';
+        }
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && imagePreviewModal.style.display === 'flex') {
+            imagePreviewModal.style.display = 'none';
+        }
+    });
+
+    productNotes.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
+    });
+    
+    createNewBtn.addEventListener('click', function() {
+        if (formChanged) {
+            pendingNavigationDirection = 'new';
+            showUnsavedChangesModal();
+            console.log('test');
+        } else {
+            createNewProduct();
+            console.log('tesmj njt2');
+        }
+    });
+
+    document.getElementById('warningOkBtn').addEventListener('click', function() {
+        document.getElementById('warningModal').style.display = 'none';
+    });
+
+    document.querySelector('#warningModal .close-btn').addEventListener('click', function() {
+        document.getElementById('warningModal').style.display = 'none';
+    });
+
+    document.getElementById('warningModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.style.display = 'none';
+        }
+    });
+
+        document.querySelector('label[for="productMaker"]').addEventListener('click', function(e) {
+        e.preventDefault();
+        showMakersModal();
+    });
+
+    document.querySelector('.makers-close').addEventListener('click', function() {
+        document.getElementById('makersModal').style.display = 'none';
+        document.body.classList.remove('modal-open');
+    });
+
+    document.getElementById('saveMakerBtn').addEventListener('click', function() {
+        showMakerSaveNotification();
+        document.getElementById('makersModal').style.display = 'none';
+        document.body.classList.remove('modal-open');
+    });
+
+    document.getElementById('addMakerBtn').addEventListener('click', function() {
+        const code = document.getElementById('newMakerCode').value.trim();
+        const name = document.getElementById('newMakerName').value.trim();
+        
+        if (!code || !name) {
+            showWarningModal('Both code and name are required');
+            return;
+        }
+
+        const newMaker = {
+            id: makers.length + 1,
+            code: parseInt(code),
+            name: name
+        };
+
+        makers.unshift(newMaker);
+        
+        const makersList = document.getElementById('makersList');
+        const item = document.createElement('div');
+        item.className = 'group-item new-group';
+        item.innerHTML = `
+            <input type="number" 
+                   class="groups-input code" 
+                   value="${newMaker.code}"
+                   data-original-code="${newMaker.code}">
+            <input type="text" 
+                   class="groups-input name" 
+                   value="${newMaker.name}"
+                   data-original-name="${newMaker.name}">
+            <button class="groups-btn-delete-item" title="Delete maker">🗑️</button>
+        `;
+
+        if (makersList.firstChild) {
+            makersList.insertBefore(item, makersList.firstChild);
+        } else {
+            makersList.appendChild(item);
+        }
+
+        document.getElementById('newMakerCode').value = '';
+        document.getElementById('newMakerName').value = '';
+
+        fillDropdown(makers, makerSelect);
+
+        setTimeout(() => {
+            item.classList.remove('new-group');
+        }, 3000);
+
+        attachMakerDeleteHandlers();
+    });
+
+    document.getElementById('sortMakerByCode').addEventListener('click', () => sortMakers('code'));
+    document.getElementById('sortMakerByName').addEventListener('click', () => sortMakers('name'));
+
+    document.getElementById('searchMakerCode').addEventListener('input', filterMakers);
+    document.getElementById('searchMakerName').addEventListener('input', filterMakers);
+    
+    makerCodeInput.addEventListener('input', function() {
+        // Limit to 3 digits and numbers only
+        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3);
+        
+        const enteredCode = this.value;
+        
+        // Find matching makers that start with entered code
+        const matchingMaker = makers.find(maker => 
+            maker.code.toString().startsWith(enteredCode)
+        );
+
+        // Update dropdown selection if match found
+        if (matchingMaker) {
+            productMaker.value = matchingMaker.name;
+        }
+    });
+    
+    document.getElementById('productGroup').addEventListener('change', function() {
+        const selectedGroup = groups.find(g => g.name === this.value);
+        if (selectedGroup) {
+            groupCodeInput.value = selectedGroup.code;
+        }
+    });
+
+    document.getElementById('productMaker').addEventListener('change', function() {
+        const selectedMaker = makers.find(m => m.name === this.value);
+        if (selectedMaker) {
+            makerCodeInput.value = selectedMaker.code;
+        }
+    });
+
+    document.getElementById('addGroupBtn').addEventListener('click', function() {
+        const code = document.getElementById('newGroupCode').value.trim();
+        const name = document.getElementById('newGroupName').value.trim();
+        
+        if (!code || !name) {
+            showWarningModal('Both code and name are required');
+            return;
+        }
+
+        // Create new group object
+        const newGroup = {
+            id: groups.length + 1,
+            code: parseInt(code),
+            name: name
+        };
+
+        // Add to beginning of groups array
+        groups.unshift(newGroup);
+        
+        // Add the new item to the top of the list
+        const groupsList = document.getElementById('groupsList');
+        const item = document.createElement('div');
+        item.className = 'group-item new-group';
+        item.innerHTML = `
+            <input type="number" 
+                   class="groups-input code" 
+                   value="${newGroup.code}"
+                   data-original-code="${newGroup.code}">
+            <input type="text" 
+                   class="groups-input name" 
+                   value="${newGroup.name}"
+                   data-original-name="${newGroup.name}">
+            <button class="groups-btn-delete-item" title="Delete group">🗑️</button>
+        `;
+
+        // Insert at the beginning of the list
+        if (groupsList.firstChild) {
+            groupsList.insertBefore(item, groupsList.firstChild);
+        } else {
+            groupsList.appendChild(item);
+        }
+
+        // Clear input fields
+        document.getElementById('newGroupCode').value = '';
+        document.getElementById('newGroupName').value = '';
+
+        // Update dropdown
+        fillDropdown(groups, groupSelect);
+
+        // Remove highlight after animation
+        setTimeout(() => {
+            item.classList.remove('new-group');
+        }, 5000);
+
+        // Attach delete handler to new item
+        item.querySelector('.groups-btn-delete-item').addEventListener('click', function() {
+            if (confirm('Are you sure you want to delete this group?')) {
+                const code = item.querySelector('.groups-input.code').value;
+                const groupIndex = groups.findIndex(g => g.code.toString() === code);
+                if (groupIndex !== -1) {
+                    groups.splice(groupIndex, 1);
+                    item.remove();
+                    fillDropdown(groups, groupSelect);
+                }
+            }
+        });
+    });
+
+    document.getElementById('groupCodeInput').addEventListener('input', function() {
+        // Limit to 3 digits and numbers only
+        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3);
+        
+        const enteredCode = this.value;
+        
+        // Find matching groups that start with entered code
+        const matchingGroup = groups.find(group => 
+            group.code.toString().startsWith(enteredCode)
+        );
+
+        // Update dropdown selection if match found
+        if (matchingGroup) {
+            productGroup.value = matchingGroup.name;
+        }
+    });
+
+    document.querySelector('label[for="productGroup"]').addEventListener('click', function(e) {
+        e.preventDefault();
+        showGroupsModal();
+    });
+
+    document.querySelector('.groups-close').addEventListener('click', function() {
+        document.getElementById('groupsModal').style.display = 'none';
+        document.body.classList.remove('modal-open');
+    });
+
+    document.getElementById('saveGroupBtn').addEventListener('click', function() {
+        // Show save notification
+        showSaveNotification();
+        const modal = document.getElementById('groupsModal');
+        modal.style.display = 'none';
+        document.body.classList.remove('modal-open');
+        
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('groupsModal');
+            if (modal.style.display === 'flex') {
+                modal.style.display = 'none';
+                document.body.classList.remove('modal-open');
+            }
+        }
+    });
+
+    document.getElementById('sortByCode').addEventListener('click', function() {
+        sortGroups('code');
+    });
+
+    document.getElementById('sortByName').addEventListener('click', function() {
+        sortGroups('name');
+    });
+    // #endregion
+});
+
+// #region FUNCTIONS
     function handleNavigation(direction) {// Handle navigation with unsaved changes check
         if (formChanged) {
             pendingNavigationDirection = direction;
@@ -544,433 +976,5 @@ document.addEventListener('DOMContentLoaded', async () => {
         setTimeout(() => {
             notification.style.display = 'none';
         }, 3000);
-    }   
-
-
-
-//EVENT LISTENERS------------------------------------------------------------------------------------------------
-    headerProductCode.addEventListener('input', function() {
-        formChanged = true;
-    });
-
-    headerProductName.addEventListener('input', function() {
-        formChanged = true;
-    });
-
-    sidePrevBtn.addEventListener('click', function() {
-        handleNavigation('prev');
-    });
-
-    sideNextBtn.addEventListener('click', function() {
-        handleNavigation('next');
-    });
-
-    productForm.addEventListener('input', function() {
-        formChanged = true;
-    });
-
-    productForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        saveProductData();
-        formChanged = false;
-
-        if (pendingNavigationDirection) {
-            navigateProduct(pendingNavigationDirection);
-            pendingNavigationDirection = null;
-        } else {
-            showConfirmation();
-        }
-    });
-
-    cancelBtn.addEventListener('click', function() {
-        cancelConfirmationModal.style.display = 'flex';
-    });
-
-    confirmCancelBtn.addEventListener('click', function() {
-        loadProductData(currentProductId);
-        cancelConfirmationModal.style.display = 'none';
-    });
-
-    cancelRevertBtn.addEventListener('click', function() {
-        cancelConfirmationModal.style.display = 'none';
-    });
-
-    window.addEventListener('click', function(e) {
-        if (e.target === cancelConfirmationModal) {
-            cancelConfirmationModal.style.display = 'none';
-        }
-    });
-
-    closeBtn.addEventListener('click', function() {
-        saveConfirmation.style.display = 'none';
-    });
-
-    window.addEventListener('click', function(e) {
-        if (e.target === saveConfirmation) {
-            saveConfirmation.style.display = 'none';
-        }
-    });
-
-    saveAndContinueBtn.addEventListener('click', function() {
-        saveProductData();
-        formChanged = false;
-        if (pendingNavigationDirection === 'new') {
-            createNewProduct();
-        } else {
-            navigateProduct(pendingNavigationDirection);
-        }
-        pendingNavigationDirection = null;
-        unsavedChangesModal.style.display = 'none';
-    });
-
-    discardAndContinueBtn.addEventListener('click', function() {
-        formChanged = false;
-        navigateProduct(pendingNavigationDirection);
-        pendingNavigationDirection = null;
-        unsavedChangesModal.style.display = 'none';
-    });
-
-    cancelNavigationBtn.addEventListener('click', function() {
-        pendingNavigationDirection = null;
-        unsavedChangesModal.style.display = 'none';
-    });
-
-    saveBtn.addEventListener('click', function(e) {
-        e.preventDefault(); // Prevent default form submission
-        saveProductData();
-        formChanged = false;
-        if (validForInsert){
-            showConfirmation();
-        }
-    });
-
-    discountInput.addEventListener('input', function() {
-        const price = parseFloat(priceInput.value) || 0;
-        const discount = parseFloat(discountInput.value) || 0;
-        if (price > 0 && discount >= 0 && discount <= 100) {
-            finalPriceInput.value = (price - (price * (discount / 100))).toFixed(2);
-        }
-    });
-
-    finalPriceInput.addEventListener('input', function() {
-        const price = parseFloat(priceInput.value) || 0;
-        const finalPrice = parseFloat(finalPriceInput.value) || 0;
-        if (price > 0 && finalPrice >= 0 && finalPrice <= price) {
-            discountInput.value = (((price - finalPrice) / price) * 100).toFixed(2);
-        }
-    });
-
-    deleteBtn.addEventListener('click', function() {
-        deleteConfirmationModal.style.display = 'flex';
-    });
-
-    confirmDeleteBtn.addEventListener('click', function() {
-        const productIndex = products.findIndex(p => p.id === currentProductId);
-        if (productIndex !== -1) {
-            products.splice(productIndex, 1);
-            if (currentProductId > 1) {
-                currentProductId--;
-                loadProductData(currentProductId);
-            } else if (products.length > 0) {
-                loadProductData(products[0].id);
-            }
-            updateNavigationState();
-        }
-        deleteConfirmationModal.style.display = 'none';
-    });
-
-    cancelDeleteBtn.addEventListener('click', function() {
-        deleteConfirmationModal.style.display = 'none';
-    });
-
-    changeImageBtn.addEventListener('click', function() {
-        imageInput.click();
-    });
-
-    imageInput.addEventListener('change', function(e) {
-        if (e.target.files && e.target.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                mainProductImage.src = event.target.result;
-                formChanged = true;
-            };
-            reader.readAsDataURL(e.target.files[0]);
-        }
-    });
-
-    mainProductImage.addEventListener('click', function() {
-        imagePreviewModal.style.display = 'flex';
-        previewImage.src = this.src;
-    });
-
-    closeModal.addEventListener('click', function() {
-        imagePreviewModal.style.display = 'none';
-    });
-
-    imagePreviewModal.addEventListener('click', function(e) {
-        if (e.target === this) {
-            imagePreviewModal.style.display = 'none';
-        }
-    });
-
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && imagePreviewModal.style.display === 'flex') {
-            imagePreviewModal.style.display = 'none';
-        }
-    });
-
-    productNotes.addEventListener('input', function() {
-        this.style.height = 'auto';
-        this.style.height = (this.scrollHeight) + 'px';
-    });
-    
-    createNewBtn.addEventListener('click', function() {
-        if (formChanged) {
-            pendingNavigationDirection = 'new';
-            showUnsavedChangesModal();
-            console.log('test');
-        } else {
-            createNewProduct();
-            console.log('tesmj njt2');
-        }
-    });
-
-    document.getElementById('warningOkBtn').addEventListener('click', function() {
-        document.getElementById('warningModal').style.display = 'none';
-    });
-
-    document.querySelector('#warningModal .close-btn').addEventListener('click', function() {
-        document.getElementById('warningModal').style.display = 'none';
-    });
-
-    document.getElementById('warningModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            this.style.display = 'none';
-        }
-    });
-
-        document.querySelector('label[for="productMaker"]').addEventListener('click', function(e) {
-        e.preventDefault();
-        showMakersModal();
-    });
-
-    document.querySelector('.makers-close').addEventListener('click', function() {
-        document.getElementById('makersModal').style.display = 'none';
-        document.body.classList.remove('modal-open');
-    });
-
-    document.getElementById('saveMakerBtn').addEventListener('click', function() {
-        showMakerSaveNotification();
-        document.getElementById('makersModal').style.display = 'none';
-        document.body.classList.remove('modal-open');
-    });
-
-    document.getElementById('addMakerBtn').addEventListener('click', function() {
-        const code = document.getElementById('newMakerCode').value.trim();
-        const name = document.getElementById('newMakerName').value.trim();
-        
-        if (!code || !name) {
-            showWarningModal('Both code and name are required');
-            return;
-        }
-
-        const newMaker = {
-            id: makers.length + 1,
-            code: parseInt(code),
-            name: name
-        };
-
-        makers.unshift(newMaker);
-        
-        const makersList = document.getElementById('makersList');
-        const item = document.createElement('div');
-        item.className = 'group-item new-group';
-        item.innerHTML = `
-            <input type="number" 
-                   class="groups-input code" 
-                   value="${newMaker.code}"
-                   data-original-code="${newMaker.code}">
-            <input type="text" 
-                   class="groups-input name" 
-                   value="${newMaker.name}"
-                   data-original-name="${newMaker.name}">
-            <button class="groups-btn-delete-item" title="Delete maker">🗑️</button>
-        `;
-
-        if (makersList.firstChild) {
-            makersList.insertBefore(item, makersList.firstChild);
-        } else {
-            makersList.appendChild(item);
-        }
-
-        document.getElementById('newMakerCode').value = '';
-        document.getElementById('newMakerName').value = '';
-
-        fillDropdown(makers, makerSelect);
-
-        setTimeout(() => {
-            item.classList.remove('new-group');
-        }, 3000);
-
-        attachMakerDeleteHandlers();
-    });
-
-    document.getElementById('sortMakerByCode').addEventListener('click', () => sortMakers('code'));
-    document.getElementById('sortMakerByName').addEventListener('click', () => sortMakers('name'));
-
-    document.getElementById('searchMakerCode').addEventListener('input', filterMakers);
-    document.getElementById('searchMakerName').addEventListener('input', filterMakers);
-    
-    makerCodeInput.addEventListener('input', function() {
-        // Limit to 3 digits and numbers only
-        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3);
-        
-        const enteredCode = this.value;
-        
-        // Find matching makers that start with entered code
-        const matchingMaker = makers.find(maker => 
-            maker.code.toString().startsWith(enteredCode)
-        );
-
-        // Update dropdown selection if match found
-        if (matchingMaker) {
-            productMaker.value = matchingMaker.name;
-        }
-    });
-    
-    document.getElementById('productGroup').addEventListener('change', function() {
-        const selectedGroup = groups.find(g => g.name === this.value);
-        if (selectedGroup) {
-            groupCodeInput.value = selectedGroup.code;
-        }
-    });
-
-    document.getElementById('productMaker').addEventListener('change', function() {
-        const selectedMaker = makers.find(m => m.name === this.value);
-        if (selectedMaker) {
-            makerCodeInput.value = selectedMaker.code;
-        }
-    });
-
-    document.getElementById('addGroupBtn').addEventListener('click', function() {
-        const code = document.getElementById('newGroupCode').value.trim();
-        const name = document.getElementById('newGroupName').value.trim();
-        
-        if (!code || !name) {
-            showWarningModal('Both code and name are required');
-            return;
-        }
-
-        // Create new group object
-        const newGroup = {
-            id: groups.length + 1,
-            code: parseInt(code),
-            name: name
-        };
-
-        // Add to beginning of groups array
-        groups.unshift(newGroup);
-        
-        // Add the new item to the top of the list
-        const groupsList = document.getElementById('groupsList');
-        const item = document.createElement('div');
-        item.className = 'group-item new-group';
-        item.innerHTML = `
-            <input type="number" 
-                   class="groups-input code" 
-                   value="${newGroup.code}"
-                   data-original-code="${newGroup.code}">
-            <input type="text" 
-                   class="groups-input name" 
-                   value="${newGroup.name}"
-                   data-original-name="${newGroup.name}">
-            <button class="groups-btn-delete-item" title="Delete group">🗑️</button>
-        `;
-
-        // Insert at the beginning of the list
-        if (groupsList.firstChild) {
-            groupsList.insertBefore(item, groupsList.firstChild);
-        } else {
-            groupsList.appendChild(item);
-        }
-
-        // Clear input fields
-        document.getElementById('newGroupCode').value = '';
-        document.getElementById('newGroupName').value = '';
-
-        // Update dropdown
-        fillDropdown(groups, groupSelect);
-
-        // Remove highlight after animation
-        setTimeout(() => {
-            item.classList.remove('new-group');
-        }, 5000);
-
-        // Attach delete handler to new item
-        item.querySelector('.groups-btn-delete-item').addEventListener('click', function() {
-            if (confirm('Are you sure you want to delete this group?')) {
-                const code = item.querySelector('.groups-input.code').value;
-                const groupIndex = groups.findIndex(g => g.code.toString() === code);
-                if (groupIndex !== -1) {
-                    groups.splice(groupIndex, 1);
-                    item.remove();
-                    fillDropdown(groups, groupSelect);
-                }
-            }
-        });
-    });
-
-    document.getElementById('groupCodeInput').addEventListener('input', function() {
-        // Limit to 3 digits and numbers only
-        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3);
-        
-        const enteredCode = this.value;
-        
-        // Find matching groups that start with entered code
-        const matchingGroup = groups.find(group => 
-            group.code.toString().startsWith(enteredCode)
-        );
-
-        // Update dropdown selection if match found
-        if (matchingGroup) {
-            productGroup.value = matchingGroup.name;
-        }
-    });
-
-    document.querySelector('label[for="productGroup"]').addEventListener('click', function(e) {
-        e.preventDefault();
-        showGroupsModal();
-    });
-
-    document.querySelector('.groups-close').addEventListener('click', function() {
-        document.getElementById('groupsModal').style.display = 'none';
-        document.body.classList.remove('modal-open');
-    });
-
-    document.getElementById('saveGroupBtn').addEventListener('click', function() {
-        // Show save notification
-        showSaveNotification();
-        const modal = document.getElementById('groupsModal');
-        modal.style.display = 'none';
-        document.body.classList.remove('modal-open');
-        
-    });
-
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            const modal = document.getElementById('groupsModal');
-            if (modal.style.display === 'flex') {
-                modal.style.display = 'none';
-                document.body.classList.remove('modal-open');
-            }
-        }
-    });
-
-    document.getElementById('sortByCode').addEventListener('click', function() {
-        sortGroups('code');
-    });
-
-    document.getElementById('sortByName').addEventListener('click', function() {
-        sortGroups('name');
-    });
-});
+    }
+    // #endregion
