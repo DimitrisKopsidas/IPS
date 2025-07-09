@@ -241,3 +241,45 @@ app.get('/api/getMakers', async (req, res) => {
         });
     }
 });
+
+app.get('/api/getNextProductId', async (req, res) => {
+    try {
+        const [rows] = await pool.query('CALL GetNextProductId()');
+        console.log('Retrieved next product ID:', rows[0][0]);
+        res.json(rows[0][0]);
+    } catch (error) {
+        console.error('Error fetching next product ID:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to fetch next product ID',
+            details: error.message 
+        });
+    }
+});
+
+app.get('/api/getNextCarouselId', async (req, res) => {
+    try {
+        const [rows] = await pool.query('CALL GetNextCarouselId()');
+        console.log('Retrieved next carousel ID:', rows[0][0]);
+        res.json(rows[0][0]);
+    } catch (error) {
+        console.error('Error fetching next carousel ID:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to fetch next carousel ID',
+            details: error.message 
+        });
+    }
+});
+
+app.get('/api/getNextPromoId', async (req, res) => {
+    try {
+        const [rows] = await pool.query('CALL GetNextPromoId()');
+        console.log('Retrieved next promo ID:', rows[0][0]);
+        res.json(rows[0][0]);
+    } catch (error) {
+        console.error('Error fetching next promo ID:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to fetch next promo ID',
+            details: error.message 
+        });
+    }
+});

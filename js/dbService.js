@@ -229,6 +229,53 @@ async function fetchMakers() {
     }
 }
 
+async function fetchNextProductId() {
+    try {
+        const response = await fetch('http://localhost:3000/api/getNextProductId');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Next product ID:', data);
+        return data.NEXTID;
+    } catch (error) {
+        console.error('Error fetching next product ID:', error);
+        return null;
+    }
+}
+
+async function fetchNextCarouselId() {
+    try {
+        const response = await fetch('http://localhost:3000/api/getNextCarouselId');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Next carousel ID:', data);
+        return data.NEXTID;
+    } catch (error) {
+        console.error('Error fetching next carousel ID:', error);
+        return null;
+    }
+}
+
+async function fetchNextPromoId() {
+    try {
+        const response = await fetch('http://localhost:3000/api/getNextPromoId');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Next promo ID:', data);
+        return data.NEXTID;
+    } catch (error) {
+        console.error('Error fetching next promo ID:', error);
+        return null;
+    }
+}
+
+
+
 export { 
     fetchCarouselProducts,
     fetchCarouselSettings,
@@ -241,5 +288,8 @@ export {
     getPromoData,
     fetchFilteredProducts,
     fetchTypes,
-    fetchMakers
+    fetchMakers,
+    fetchNextProductId,
+    fetchNextCarouselId,
+    fetchNextPromoId
 };
