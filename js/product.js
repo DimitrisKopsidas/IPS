@@ -65,6 +65,7 @@ import { fetchFilteredProducts, fetchMakers, fetchTypes } from './dbService.js';
     let validForInsert = true;
     let currentSort = { field: 'code', direction: 'asc' };
     let makerSort = { field: 'code', direction: 'asc' };
+    let isNew = false;
 
     // Get URL parameters
     const urlParams = new URLSearchParams(window.location.search);
@@ -90,7 +91,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (productData) {
         loadProductData(productData);
     }else if (productId === 'new') {
-        console.log('Creating new product');
+        createNewProduct();
     } else {
         showWarningModal('Product not found');
     }
@@ -275,10 +276,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (formChanged) {
             pendingNavigationDirection = 'new';
             showUnsavedChangesModal();
-            console.log('test');
         } else {
             createNewProduct();
-            console.log('tesmj njt2');
         }
     });
 
@@ -670,7 +669,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         groupSelect.value = '';
         makerSelect.value = '';
         productNotes.value = "";
-        mainProductImage.src = "media/98.png";
+        mainProductImage.src = "media/9997.png";
         groupCodeInput.value = "";
         makerCodeInput.value = "";
         
@@ -681,19 +680,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Update navigation state
         updateNavigationState();
         
-        // Set focus to product code
         headerProductCode.focus();
         
         // Reset form changed flag
         formChanged = true;
-    }
-
-    function showGroupsModal() {
-        const modal = document.getElementById('groupsModal');
-        modal.style.display = 'flex';
-        document.body.classList.add('modal-open');
-        sortGroups('code'); // Initial sort by code
-        updateGroupsList();
     }
 
     function updateGroupsList() {
