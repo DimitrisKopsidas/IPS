@@ -460,62 +460,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // #region FUNCTIONS
-    function handleNavigation(direction) {// Handle navigation with unsaved changes check
-        if (formChanged) {
-            pendingNavigationDirection = direction;
-            showUnsavedChangesModal();
-        } else {
-            navigateProduct(direction);
-        }
-    }
-
-    async function navigateProduct(direction) {
-        try {
-            const currentIndex = products.findIndex(p => p.ID === currentProductId);
-            if (currentIndex === -1) {
-                console.error('Current product not found in dataset');
-                return;
-            }
-
-            let targetProduct = null;
-            
-            if (direction === 'next') {
-                // Get next product from array
-                targetProduct = products[currentIndex + 1];
-            } else if (direction === 'prev') {
-                // Get previous product from array
-                targetProduct = products[currentIndex - 1];
-            }
-
-            if (targetProduct) {
-                loadProductData(targetProduct);
-                // Update URL to reflect new product ID while keeping filters
-                const params = new URLSearchParams(window.location.search);
-                params.set('id', targetProduct.ID);
-                const newUrl = `${window.location.pathname}?${params.toString()}`;
-                window.history.pushState({}, '', newUrl);
-            }
-        } catch (error) {
-            console.error('Navigation error:', error);
-            showWarningModal('Failed to navigate between products');
-        }
-    }
-
-    function updateNavigationState() {
-        // Find current product's index in filtered list
-        const currentIndex = products.findIndex(p => p.ID === currentProductId);
-        
-        // Disable prev button if we're at start of list
-        sidePrevBtn.disabled = currentIndex <= 0;
-        
-        // Disable next button if we're at end of list
-        sideNextBtn.disabled = currentIndex >= products.length - 1;
-        
-        // Update button styles
-        sidePrevBtn.style.opacity = sidePrevBtn.disabled ? '0.5' : '1';
-        sideNextBtn.style.opacity = sideNextBtn.disabled ? '0.5' : '1';
-    }
-    
     function loadProductData(productData) {
         // Basic product information
         headerProductCode.value = productData.CODE;
@@ -580,13 +524,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateNavigationState();
     }
 
-    function showWarningModal(message) {
-        const warningModal = document.getElementById('warningModal');
-        const warningMessage = document.getElementById('warningMessage');
-        warningMessage.textContent = message;
-        warningModal.style.display = 'flex';
-    }
-
     function saveProductData() {
         if (!headerProductCode.value.trim()) {
             showWarningModal('Product Code is required');
@@ -609,19 +546,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
         validForInsert = true;
-    }
-
-    function showConfirmation() {// Update showConfirmation function to ensure modal is visible
-        const saveConfirmation = document.getElementById('saveConfirmation');
-        saveConfirmation.style.display = 'flex';
-
-        setTimeout(() => {// Auto-hide after 2 seconds
-            saveConfirmation.style.display = 'none';
-        }, 2000);
-    }
-    
-    function showUnsavedChangesModal() {// Function to show unsaved changes modal
-        unsavedChangesModal.style.display = 'flex';
     }
 
     function createNewProduct() {
@@ -683,15 +607,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    function showSaveNotification() {
-        const notification = document.querySelector('.groups-save-notification');
-        notification.style.display = 'block';
-        
-        setTimeout(() => {
-            notification.style.display = 'none';
-        }, 3000);
-    }
-
     function sortGroups(field) {
         const direction = field === currentSort.field && currentSort.direction === 'asc' ? 'desc' : 'asc';
         currentSort = { field, direction };
@@ -711,22 +626,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateSortButtons();
     }
 
-    function updateSortButtons() {
-        const codeBtn = document.getElementById('sortByCode');
-        const nameBtn = document.getElementById('sortByName');
-        
-        codeBtn.classList.remove('active');
-        nameBtn.classList.remove('active');
-        
-        const activeBtn = currentSort.field === 'code' ? codeBtn : nameBtn;
-        activeBtn.classList.add('active');
-        
-        codeBtn.textContent = `Sort by Code ${currentSort.field === 'code' ? 
-            (currentSort.direction === 'asc' ? '↓' : '↑') : '↓'}`;
-        nameBtn.textContent = `Sort by Name ${currentSort.field === 'name' ? 
-            (currentSort.direction === 'asc' ? '↓' : '↑') : '↓'}`;
-    }
-
     function filterGroups() {
         const codeFilter = document.getElementById('searchGroupCode').value.toLowerCase();
         const nameFilter = document.getElementById('searchGroupName').value.toLowerCase();
@@ -740,6 +639,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         displayFilteredGroups(filteredGroups);
     }
 
+    function populateSelectFields(makers, types) {
+    
+        // Add makers to select
+        makers.forEach(maker => {
+            const option = document.createElement('option');
+            option.value = maker.NAME;
+            option.textContent = maker.NAME;
+            productMaker.appendChild(option);
+        });
+
+        // Add types to select
+        types.forEach(type => {
+            const option = document.createElement('option');
+            option.value = type.NAME;
+            option.textContent = type.NAME;
+            productGroup.appendChild(option);
+        });
+    }
+    
     function displayFilteredGroups(filteredGroups) {
         const groupsList = document.getElementById('groupsList');
         groupsList.innerHTML = '';
@@ -764,7 +682,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Reattach delete handlers
         attachDeleteHandlers();
     }
-
+    //------------------------VISUAL FUNCTIONS--------------------------------
     function attachDeleteHandlers() {
         document.querySelectorAll('.groups-btn-delete-item').forEach((btn, index) => {
             btn.addEventListener('click', function() {
@@ -793,22 +711,105 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         updateGroupsList();
     }
-    function populateSelectFields(makers, types) {
-    
-    // Add makers to select
-    makers.forEach(maker => {
-        const option = document.createElement('option');
-        option.value = maker.NAME;
-        option.textContent = maker.NAME;
-        productMaker.appendChild(option);
-    });
 
-    // Add types to select
-    types.forEach(type => {
-        const option = document.createElement('option');
-        option.value = type.NAME;
-        option.textContent = type.NAME;
-        productGroup.appendChild(option);
-    });
-}
+    function handleNavigation(direction) {// Handle navigation with unsaved changes check
+        if (formChanged) {
+            pendingNavigationDirection = direction;
+            showUnsavedChangesModal();
+        } else {
+            navigateProduct(direction);
+        }
+    }
+
+    async function navigateProduct(direction) {
+        try {
+            const currentIndex = products.findIndex(p => p.ID === currentProductId);
+            if (currentIndex === -1) {
+                console.error('Current product not found in dataset');
+                return;
+            }
+
+            let targetProduct = null;
+            
+            if (direction === 'next') {
+                // Get next product from array
+                targetProduct = products[currentIndex + 1];
+            } else if (direction === 'prev') {
+                // Get previous product from array
+                targetProduct = products[currentIndex - 1];
+            }
+
+            if (targetProduct) {
+                loadProductData(targetProduct);
+                // Update URL to reflect new product ID while keeping filters
+                const params = new URLSearchParams(window.location.search);
+                params.set('id', targetProduct.ID);
+                const newUrl = `${window.location.pathname}?${params.toString()}`;
+                window.history.pushState({}, '', newUrl);
+            }
+        } catch (error) {
+            console.error('Navigation error:', error);
+            showWarningModal('Failed to navigate between products');
+        }
+    }
+
+    function updateNavigationState() {
+        // Find current product's index in filtered list
+        const currentIndex = products.findIndex(p => p.ID === currentProductId);
+        
+        // Disable prev button if we're at start of list
+        sidePrevBtn.disabled = currentIndex <= 0;
+        
+        // Disable next button if we're at end of list
+        sideNextBtn.disabled = currentIndex >= products.length - 1;
+        
+        // Update button styles
+        sidePrevBtn.style.opacity = sidePrevBtn.disabled ? '0.5' : '1';
+        sideNextBtn.style.opacity = sideNextBtn.disabled ? '0.5' : '1';
+    }
+
+    function showWarningModal(message) {
+        const warningModal = document.getElementById('warningModal');
+        const warningMessage = document.getElementById('warningMessage');
+        warningMessage.textContent = message;
+        warningModal.style.display = 'flex';
+    }
+
+    function showSaveNotification() {
+        const notification = document.querySelector('.groups-save-notification');
+        notification.style.display = 'block';
+        
+        setTimeout(() => {
+            notification.style.display = 'none';
+        }, 3000);
+    }
+
+    function showConfirmation() {// Update showConfirmation function to ensure modal is visible
+        const saveConfirmation = document.getElementById('saveConfirmation');
+        saveConfirmation.style.display = 'flex';
+
+        setTimeout(() => {// Auto-hide after 2 seconds
+            saveConfirmation.style.display = 'none';
+        }, 2000);
+    }
+    
+    function showUnsavedChangesModal() {// Function to show unsaved changes modal
+        unsavedChangesModal.style.display = 'flex';
+    }
+
+    function updateSortButtons() {
+        const codeBtn = document.getElementById('sortByCode');
+        const nameBtn = document.getElementById('sortByName');
+        
+        codeBtn.classList.remove('active');
+        nameBtn.classList.remove('active');
+        
+        const activeBtn = currentSort.field === 'code' ? codeBtn : nameBtn;
+        activeBtn.classList.add('active');
+        
+        codeBtn.textContent = `Sort by Code ${currentSort.field === 'code' ? 
+            (currentSort.direction === 'asc' ? '↓' : '↑') : '↓'}`;
+        nameBtn.textContent = `Sort by Name ${currentSort.field === 'name' ? 
+            (currentSort.direction === 'asc' ? '↓' : '↑') : '↓'}`;
+    }
     // #endregion
