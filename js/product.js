@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     confirmCancelBtn.addEventListener('click', function() {
-        loadProductData(currentProductId);
+        loadProductData(productData);
         cancelConfirmationModal.style.display = 'none';
     });
 
@@ -163,7 +163,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         saveProductData();
         formChanged = false;
         if (pendingNavigationDirection === 'new') {
-            createNewProduct();
+            const params = new URLSearchParams(window.location.search);
+            params.set('id', 'new');
+            window.location.href = `${window.location.pathname}?${params.toString()}`;
         } else {
             navigateProduct(pendingNavigationDirection);
         }
@@ -318,7 +320,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             pendingNavigationDirection = 'new';
             showUnsavedChangesModal();
         } else {
-            createNewProduct();
+            // Preserve existing URL parameters except 'id'
+            const params = new URLSearchParams(window.location.search);
+            params.set('id', 'new');
+            
+            // Navigate to new URL while maintaining other parameters
+            window.location.href = `${window.location.pathname}?${params.toString()}`;
         }
     });
 
@@ -494,6 +501,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         sortGroups('name');
     });
     // #endregion
+
+    window.addEventListener('popstate', async function() {
+        // Get current URL parameters after navigation
+        const params = new URLSearchParams(window.location.search);
+        const newProductId = params.get('id');
+        
+        // Find product in current products array
+        const productData = products.find(p => p.ID.toString() === newProductId);
+        
+        if (productData) {
+            loadProductData(productData);
+        } else if (newProductId === 'new') {
+            createNewProduct();
+        } else {
+            showWarningModal('Product not found');
+        }
+    });
 });
 
 // #region FUNCTIONS
@@ -526,7 +550,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             div.className = 'info-item';
             div.textContent = `${productData.CAROUSELCODE} - ${productData.CAROUSELNAME}`;
             div.addEventListener('click', function() {
-                window.location.href = `carousel/${productData.CAROUSELCODE}.html`;
+                window.location.href = `carousel.html?id=${productData.CAROUSELID}`;
             });
             carouselList.appendChild(div);
         } else {
@@ -540,7 +564,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             div.className = 'info-item';
             div.textContent = `${productData.PROMOCODE} - ${(productData.PROMODISCOUNT * 100).toFixed(0)}% OFF`;
             div.addEventListener('click', function() {
-                window.location.href = `promo/${productData.PROMOCODE}.html`;
+                window.location.href = `promo.html?id=${productData.PROMOID}`;
             });
             promoList.appendChild(div);
         } else {
