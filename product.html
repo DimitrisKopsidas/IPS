@@ -77,7 +77,6 @@
                             </div>
                         </div>
                         
-                        
                         <div class="form-group half">
                             <label for="productMaker" class="clickable">Maker:</label>
                             <div class="group-select-wrapper">
@@ -138,10 +137,6 @@
             <p>Changes saved successfully!</p>
         </div>
     </div>
-
-    <div class="groups-save-notification" style="display: none;">
-                <p>✓ Groups data saved and exported successfully!</p>
-            </div>
     
     <div id="unsavedChangesModal" class="confirmation-modal">
         <div class="modal-content">
@@ -200,7 +195,6 @@
         <div class="groups-modal-content">
             <span class="groups-close">&times;</span>
             <h3>Manage Groups</h3>
-            
             <!-- Combined search and sort controls -->
             <div class="groups-controls-row">
                 <div class="groups-search-row">
@@ -219,68 +213,18 @@
                     <button id="sortByName" class="groups-btn-sort">Sort by Name ↓</button>
                 </div>
             </div>
-
-            
-            
             <div class="group-item">
                 <input type="number" class="groups-input code" id="newGroupCode" value="" placeholder="Code">
                 <input type="text" class="groups-input name" id="newGroupName" value="" placeholder="Group Name">
                 <button class="groups-btn-save-item" id="addGroupBtn" title="Add group">➕</button>
             </div>
-            
             <div class="groups-list" id="groupsList">
-                
             </div>
-            <!-- <h4>+ New Group</h4>
-            <div class="groups-input-row">
-                <input type="number" id="newGroupCode" class="groups-input code" placeholder="Code" autocomplete="off">
-                <input type="text" id="newGroupName" class="groups-input name" placeholder="Name" autocomplete="off">
-                <button id="addGroupBtn" class="groups-btn groups-btn-add">Add Group +</button>
-            </div> -->
             <button id="saveGroupBtn" class="groups-btn groups-btn-save">Save Changes</button>
-            
         </div>
     </div>
-
-    <!-- Makers Management Modal -->
-    <div id="makersModal" class="groups-modal">
-        <div class="groups-modal-content">
-            <span class="makers-close">&times;</span>
-            <h3>Manage Makers</h3>
-            
-            <!-- Combined search and sort controls -->
-            <div class="groups-controls-row">
-                <div class="groups-search-row">
-                    <input type="number" 
-                           id="searchMakerCode" 
-                           class="groups-search code" 
-                           placeholder="Search">
-                    <input type="text" 
-                           id="searchMakerName" 
-                           class="groups-search name" 
-                           placeholder="Search">
-                </div>
-                🔎
-                <div class="groups-sort-controls">
-                    <button id="sortMakerByCode" class="groups-btn-sort">Sort by Code ↓</button>
-                    <button id="sortMakerByName" class="groups-btn-sort">Sort by Name ↓</button>
-                </div>
-            </div>
-            
-            <div class="group-item">
-                <input type="number" class="groups-input code" id="newMakerCode" placeholder="Code">
-                <input type="text" class="groups-input name" id="newMakerName" placeholder="Maker Name">
-                <button class="groups-btn-save-item" id="addMakerBtn" title="Add maker">➕</button>
-            </div>
-            
-            <div class="groups-list" id="makersList"></div>
-            
-            <button id="saveMakerBtn" class="groups-btn groups-btn-save">Save Changes</button>
-        </div>
-    </div>
-
-    <div class="makers-save-notification" style="display: none;">
-        <p>✓ Makers data saved and exported successfully!</p>
+    <div class="groups-save-notification" style="display: none;">
+        <p>✓ Groups data saved and exported successfully!</p>
     </div>
 
     <div class="side-navigation">
