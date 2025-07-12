@@ -274,7 +274,85 @@ async function fetchNextPromoId() {
     }
 }
 
+async function deleteProduct(productId) {
+    try {
+        console.log('Deleting product:', productId);
+        const response = await fetch(`http://localhost:3000/api/deleteProduct/${productId}`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('Product deletion result:', result);
+        return { success: true };
+    } catch (error) {
+        console.error('Error deleting product:', error);
+        return { success: false, error: error.message };
+    }
+}
 
+async function deleteMaker(makerId) {
+    try {
+        console.log('Deleting maker:', makerId);
+        const response = await fetch(`http://localhost:3000/api/deleteMaker/${makerId}`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('Maker deletion result:', result);
+        return { success: true };
+    } catch (error) {
+        console.error('Error deleting maker:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+async function deleteType(typeId) {
+    try {
+        console.log('Deleting type:', typeId);
+        const response = await fetch(`http://localhost:3000/api/deleteType/${typeId}`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('Type deletion result:', result);
+        return { success: true };
+    } catch (error) {
+        console.error('Error deleting type:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+async function deleteImage(imageId) {
+    try {
+        console.log('Deleting image:', imageId);
+        const response = await fetch(`http://localhost:3000/api/deleteImage/${imageId}`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('Image deletion result:', result);
+        return result;
+    } catch (error) {
+        console.error('Error deleting image:', error);
+        return { success: false, error: error.message };
+    }
+}
 
 export { 
     fetchCarouselProducts,
@@ -291,5 +369,9 @@ export {
     fetchMakers,
     fetchNextProductId,
     fetchNextCarouselId,
-    fetchNextPromoId
+    fetchNextPromoId,
+    deleteProduct,
+    deleteMaker,
+    deleteType,
+    deleteImage
 };

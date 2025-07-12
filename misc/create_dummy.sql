@@ -18,7 +18,7 @@ INSERT INTO PRODUCT (CODE, NAME, TYPE, MAKER, PRICE, DISCOUNT, FINALPRICE, NOTES
 (1013, 'Core i5-13400F'				, 3, 3, 189.00, 0.1, 170.10, 'Budget desktop CPU'),
 (1014, 'GeForce GTX 1650'			, 4, 4, 149.00, 0.05, 141.55, 'Entry-level GPU'),
 (1015, 'Razer Kiyo Pro'				, 6, 5, 199.99, 0.1, 179.99, 'High-quality webcam for streaming'),
-(1016, 'OptiPlex 7000'				, 2, 1, 850.00, 0.12, 748.00, 'Business desktop monitor'),
+(1016, 'Dell OptiPlex 7000'				, 1, 1, 850.00, 0.12, 748.00, 'Business desktop computer'),
 (1017, 'INZONE Buds'				, 6, 2, 179.99, 0.1, 161.99, 'Wireless gaming earbuds'),
 (1018, 'Optane SSD P5800X'			, 5, 3, 1299.00, 0.15, 1104.15, 'High-performance SSD for enterprise'),
 (1019, 'Razer Huntsman V2 Analog'	, 6, 5, 249.99, 0.1, 224.99, 'Analog optical gaming keyboard'),

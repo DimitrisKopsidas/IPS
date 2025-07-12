@@ -1,10 +1,6 @@
-/*TO DO
-1)DISABLE BUTTON ON CREATE NEW
-2)CHANGE PRODUCT ID TO CODE AND ADD ID
-*/
-
 import {fillDropdown,initiateHotkeys} from "./common.js";
-import { fetchFilteredProducts, fetchMakers, fetchTypes } from './dbService.js';
+import { fetchFilteredProducts, fetchMakers, fetchTypes, deleteProduct, deleteMaker, deleteType, deleteImage } from './dbService.js';
+
 // #region VARIABLE DECLARATION
     // Form references
     const productForm = document.getElementById('productForm');
@@ -216,19 +212,60 @@ document.addEventListener('DOMContentLoaded', async () => {
         deleteConfirmationModal.style.display = 'flex';
     });
 
-    confirmDeleteBtn.addEventListener('click', function() {
-        const productIndex = products.findIndex(p => p.id === currentProductId);
-        if (productIndex !== -1) {
-            products.splice(productIndex, 1);
-            if (currentProductId > 1) {
-                currentProductId--;
-                loadProductData(currentProductId);
-            } else if (products.length > 0) {
-                loadProductData(products[0].id);
+    confirmDeleteBtn.addEventListener('click', async function() {//IMAGE AND DB DELETION
+        try {
+            // Delete product image first
+            const imageResult = await deleteImage(currentProductId);
+            if (!imageResult.success) {
+                throw new Error(`Failed to delete image: ${imageResult.error}`);
             }
-            updateNavigationState();
+
+            // Only proceed with product deletion if image deletion succeeded
+            const result = await deleteProduct(currentProductId);
+            
+            if (result.success) {
+                // Remove from local array
+                const productIndex = products.findIndex(p => p.ID === currentProductId);
+                if (productIndex !== -1) {
+                    products.splice(productIndex, 1);
+                    
+                    // Navigate to another product
+                    if (products.length > 0) {
+                        let nextProduct;
+                        if (productIndex >= products.length) {
+                            // If we deleted the last product, go to the new last product
+                            nextProduct = products[products.length - 1];
+                        } else {
+                            // Otherwise go to the next product in line
+                            nextProduct = products[productIndex];
+                        }
+                        
+                        // Update URL and load the next product
+                        const params = new URLSearchParams(window.location.search);
+                        params.set('id', nextProduct.ID);
+                        window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
+                        loadProductData(nextProduct);
+                    } else {
+                        // No products left, create new and update URL
+                        const params = new URLSearchParams(window.location.search);
+                        params.set('id', 'new');
+                        window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
+                        createNewProduct();
+                    }
+                }
+                
+                // Close modal and show confirmation
+                deleteConfirmationModal.style.display = 'none';
+                showWarningModal('Product and associated image deleted successfully');
+                
+            } else {
+                throw new Error('Product deletion failed');
+            }
+        } catch (error) {
+            console.error('Error during deletion:', error);
+            showWarningModal(`Deletion failed: ${error.message}`);
+            deleteConfirmationModal.style.display = 'none';
         }
-        deleteConfirmationModal.style.display = 'none';
     });
 
     cancelDeleteBtn.addEventListener('click', function() {

@@ -1,6 +1,10 @@
 import express from 'express';
 import mysql from 'mysql2/promise';
 import cors from 'cors';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
 const app = express();
 app.use(cors());
@@ -15,6 +19,8 @@ const dbConfig = {
     database: 'crystal_v1'
 };
 const pool = mysql.createPool(dbConfig);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 // Test connection on startup
 async function testConnection() {
     try {
@@ -280,6 +286,69 @@ app.get('/api/getNextPromoId', async (req, res) => {
         res.status(500).json({ 
             error: 'Failed to fetch next promo ID',
             details: error.message 
+        });
+    }
+});
+
+app.delete('/api/deleteProduct/:id', async (req, res) => {
+    try {
+        const productId = req.params.id;
+        await pool.query('CALL DeleteProduct(?)', [productId]);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error deleting product:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
+    }
+});
+
+app.delete('/api/deleteMaker/:id', async (req, res) => {
+    try {
+        const makerId = req.params.id;
+        await pool.query('CALL DeleteMaker(?)', [makerId]);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error deleting maker:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
+    }
+});
+
+app.delete('/api/deleteType/:id', async (req, res) => {
+    try {
+        const typeId = req.params.id;
+        await pool.query('CALL DeleteType(?)', [typeId]);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error deleting type:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
+    }
+});
+
+app.delete('/api/deleteImage/:imageId', async (req, res) => {
+    try {
+        const imageId = req.params.imageId;
+        const imagePath = path.join(__dirname, '..', 'media', `${imageId}.png`);
+        
+        // Check if file exists
+        if (fs.existsSync(imagePath)) {
+            fs.unlinkSync(imagePath);
+            res.json({ success: true });
+        } else {
+            res.json({ success: true, message: 'Image not found' });
+        }
+    } catch (error) {
+        console.error('Error deleting image:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
         });
     }
 });
