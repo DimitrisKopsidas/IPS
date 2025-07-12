@@ -507,12 +507,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         // Handle type/group selection
         productGroup.value = productData.TYPENAME;
-        const selectedType = types.find(t => t.ID === productData.TYPECODE);
+        const selectedType = types.find(t => t.ID === productData.TYPEID);
         groupCodeInput.value = selectedType ? selectedType.CODE : '';
         
         // Handle maker selection
         productMaker.value = productData.MAKERNAME;
-        const selectedMaker = makers.find(m => m.ID === productData.MAKERCODE);
+        const selectedMaker = makers.find(m => m.ID === productData.MAKERID);
         makerCodeInput.value = selectedMaker ? selectedMaker.CODE : '';
         
         // Other fields

@@ -66,8 +66,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                             </div>
                             <div class="product-info">
                                 <div class="info-row">
-                                    <span class="product-group">Type: ${product.TYPE}</span>
-                                    <span class="product-maker">Maker: ${product.MAKER}</span>
+                                    <span class="product-group">Type: ${product.TYPECODE} - ${product.TYPENAME}</span>
+                                    <span class="product-maker">Maker: ${product.MAKERCODE} - ${product.MAKERNAME}</span>
                                 </div>
                                 <div class="info-row">
                                     <span class="product-price">Price: $${product.PRICE}</span>
