@@ -460,14 +460,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        // Get the appropriate data array based on currentModalType
-        const groups = currentModalType === 'types' ? types : makers;
-
-        // Create new group object
+        // Create new group object with correct structure
         const newGroup = {
-            id: groups.length + 1,
-            code: parseInt(code),
-            name: name
+            ID: null, // Will be set after database insert
+            CODE: parseInt(code),
+            NAME: name
         };
 
         // Add to beginning of appropriate array
@@ -484,12 +481,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         item.innerHTML = `
             <input type="number" 
                    class="groups-input code" 
-                   value="${newGroup.code}"
-                   data-original-code="${newGroup.code}">
+                   value="${newGroup.CODE}"
+                   data-original-code="${newGroup.CODE}">
             <input type="text" 
                    class="groups-input name" 
-                   value="${newGroup.name}"
-                   data-original-name="${newGroup.name}">
+                   value="${newGroup.NAME}"
+                   data-original-name="${newGroup.NAME}">
             <button class="groups-btn-delete-item" title="Delete group">🗑️</button>
         `;
 
@@ -511,26 +508,29 @@ document.addEventListener('DOMContentLoaded', async () => {
             fillDropdown(makers, productMaker);
         }
 
-        // Remove highlight after animation
-        setTimeout(() => {
-            item.classList.remove('new-group');
-        }, 5000);
-
         // Attach delete handler to new item
-        item.querySelector('.groups-btn-delete-item').addEventListener('click', function() {
+        item.querySelector('.groups-btn-delete-item').addEventListener('click', async function() {
             if (confirm('Are you sure you want to delete this group?')) {
-                const code = item.querySelector('.groups-input.code').value;
-                const currentGroups = currentModalType === 'types' ? types : makers;
-                const groupIndex = currentGroups.findIndex(g => g.code.toString() === code);
-                if (groupIndex !== -1) {
-                    if (currentModalType === 'types') {
-                        types.splice(groupIndex, 1);
-                        fillDropdown(types, productType);
-                    } else {
-                        makers.splice(groupIndex, 1);
-                        fillDropdown(makers, productMaker);
+                try {
+                    // For new items, just remove from local array and DOM
+                    const code = item.querySelector('.groups-input.code').value;
+                    const currentGroups = currentModalType === 'types' ? types : makers;
+                    const groupIndex = currentGroups.findIndex(g => g.CODE.toString() === code);
+                    
+                    if (groupIndex !== -1) {
+                        currentGroups.splice(groupIndex, 1);
+                        
+                        if (currentModalType === 'types') {
+                            fillDropdown(types, productType);
+                        } else {
+                            fillDropdown(makers, productMaker);
+                        }
+                        
+                        item.remove();
                     }
-                    item.remove();
+                } catch (error) {
+                    console.error('Error deleting new item:', error);
+                    showWarningModal('Error deleting item');
                 }
             }
         });
@@ -564,13 +564,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.body.classList.remove('modal-open');
     });
 
-    document.getElementById('saveGroupBtn').addEventListener('click', function() {
-        // Show save notification
-        showSaveNotification();
-        const modal = document.getElementById('groupsModal');
-        modal.style.display = 'none';
-        document.body.classList.remove('modal-open');
-        
+    document.getElementById('saveGroupBtn').addEventListener('click', async function() {
+        try {
+            await saveGroupsData();
+            
+            // Show save notification
+            showSaveNotification();
+            const modal = document.getElementById('groupsModal');
+            modal.style.display = 'none';
+            document.body.classList.remove('modal-open');
+            
+        } catch (error) {
+            console.error('Error saving groups data:', error);
+            showWarningModal(`Failed to save changes: ${error.message}`);
+        }
     });
 
     document.addEventListener('keydown', function(e) {
@@ -867,6 +874,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         attachDeleteHandlers();
     }
 
+    // Replace the existing updateGroupsList function
     function updateGroupsList() {
         const groupsList = document.getElementById('groupsList');
         groupsList.innerHTML = '';
@@ -893,16 +901,84 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Add delete functionality
         document.querySelectorAll('.groups-btn-delete-item').forEach((btn, index) => {
-            btn.addEventListener('click', function() {
-                if (confirm('Are you sure you want to delete this group?')) {
-                    groups.splice(index, 1);
-                    // Update the appropriate dropdown
-                    if (currentModalType === 'types') {
-                        fillDropdown(types, productType);
-                    } else {
-                        fillDropdown(makers, productMaker);
+            btn.addEventListener('click', async function() {
+                if (confirm(`Are you sure you want to delete this ${currentModalType === 'types' ? 'type' : 'maker'}?`)) {
+                    try {
+                        const groups = currentModalType === 'types' ? types : makers;
+                        const itemToDelete = groups[index];
+                        
+                        // Check if this is a new unsaved item
+                        const groupItem = this.closest('.group-item');
+                        if (groupItem.classList.contains('new-group')) {
+                            // Just remove from DOM and local array for new items
+                            groups.splice(index, 1);
+                            groupItem.remove();
+                            
+                            // Update dropdown
+                            if (currentModalType === 'types') {
+                                productType.innerHTML = '<option value="">Select Type</option>';
+                                types.forEach(type => {
+                                    const option = document.createElement('option');
+                                    option.value = type.NAME;
+                                    option.textContent = type.NAME;
+                                    productType.appendChild(option);
+                                });
+                            } else {
+                                productMaker.innerHTML = '<option value="">Select Maker</option>';
+                                makers.forEach(maker => {
+                                    const option = document.createElement('option');
+                                    option.value = maker.NAME;
+                                    option.textContent = maker.NAME;
+                                    productMaker.appendChild(option);
+                                });
+                            }
+                            
+                            // Refresh the list
+                            updateGroupsList();
+                            showWarningModal(`${currentModalType === 'types' ? 'Type' : 'Maker'} deleted successfully`);
+                        } else {
+                            // Delete from database for existing items
+                            let deleteResult;
+                            if (currentModalType === 'types') {
+                                deleteResult = await deleteType(itemToDelete.ID);
+                            } else {
+                                deleteResult = await deleteMaker(itemToDelete.ID);
+                            }
+                            
+                            if (deleteResult.success) {
+                                // Remove from local array
+                                groups.splice(index, 1);
+                                
+                                // Update dropdown
+                                if (currentModalType === 'types') {
+                                    productType.innerHTML = '<option value="">Select Type</option>';
+                                    types.forEach(type => {
+                                        const option = document.createElement('option');
+                                        option.value = type.NAME;
+                                        option.textContent = type.NAME;
+                                        productType.appendChild(option);
+                                    });
+                                } else {
+                                    productMaker.innerHTML = '<option value="">Select Maker</option>';
+                                    makers.forEach(maker => {
+                                        const option = document.createElement('option');
+                                        option.value = maker.NAME;
+                                        option.textContent = maker.NAME;
+                                        productMaker.appendChild(option);
+                                    });
+                                }
+                                
+                                // Refresh the list
+                                updateGroupsList();
+                                showWarningModal(`${currentModalType === 'types' ? 'Type' : 'Maker'} deleted successfully`);
+                            } else {
+                                throw new Error(deleteResult.error);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error deleting item:', error);
+                        showWarningModal(`Error deleting ${currentModalType === 'types' ? 'type' : 'maker'}: ${error.message}`);
                     }
-                    updateGroupsList();
                 }
             });
         });
@@ -972,17 +1048,72 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    // Replace the existing attachDeleteHandlers function
     function attachDeleteHandlers() {
         document.querySelectorAll('.groups-btn-delete-item').forEach((btn, index) => {
-            btn.addEventListener('click', function() {
-                if (confirm('Are you sure you want to delete this group?')) {
-                    const groupItem = this.closest('.group-item');
-                    const code = groupItem.querySelector('.groups-input.code').value;
-                    const groupIndex = groups.findIndex(g => g.code.toString() === code);
-                    if (groupIndex !== -1) {
-                        groups.splice(groupIndex, 1);
-                        fillDropdown(groups, groupSelect);
-                        filterGroups(); // Refresh the filtered list
+            btn.addEventListener('click', async function() {
+                if (confirm(`Are you sure you want to delete this ${currentModalType === 'types' ? 'type' : 'maker'}?`)) {
+                    try {
+                        const groupItem = this.closest('.group-item');
+                        const code = groupItem.querySelector('.groups-input.code').value;
+                        const name = groupItem.querySelector('.groups-input.name').value;
+                        
+                        const groups = currentModalType === 'types' ? types : makers;
+                        const itemToDelete = groups.find(g => g.CODE.toString() === code && g.NAME === name);
+                        
+                        if (!itemToDelete) {
+                            throw new Error('Item not found');
+                        }
+                        
+                        // Check if this is a new unsaved item
+                        if (groupItem.classList.contains('new-group')) {
+                            // Just remove from DOM and local array for new items
+                            const groupIndex = groups.findIndex(g => g.CODE.toString() === code);
+                            if (groupIndex !== -1) {
+                                groups.splice(groupIndex, 1);
+                            }
+                            groupItem.remove();
+                            
+                            // Update dropdown
+                            if (currentModalType === 'types') {
+                                fillDropdown(types, productType);
+                            } else {
+                                fillDropdown(makers, productMaker);
+                            }
+                            return;
+                        }
+                        
+                        // Delete from database for existing items
+                        let deleteResult;
+                        if (currentModalType === 'types') {
+                            deleteResult = await deleteType(itemToDelete.ID);
+                        } else {
+                            deleteResult = await deleteMaker(itemToDelete.ID);
+                        }
+                        
+                        if (deleteResult.success) {
+                            // Remove from local array
+                            const groupIndex = groups.findIndex(g => g.ID === itemToDelete.ID);
+                            if (groupIndex !== -1) {
+                                groups.splice(groupIndex, 1);
+                            }
+                            
+                            // Update dropdown
+                            if (currentModalType === 'types') {
+                                fillDropdown(types, productType);
+                            } else {
+                                fillDropdown(makers, productMaker);
+                            }
+                            
+                            // Refresh the filtered list
+                            filterGroups();
+                            showWarningModal(`${currentModalType === 'types' ? 'Type' : 'Maker'} deleted successfully`);
+                        } else {
+                            throw new Error(deleteResult.error);
+                        }
+                    } catch (error) {
+                        console.error('Error deleting item:', error);
+                        showWarningModal(`Error deleting ${currentModalType === 'types' ? 'type' : 'maker'}: ${error.message}`);
                     }
                 }
             });
@@ -1009,6 +1140,129 @@ document.addEventListener('DOMContentLoaded', async () => {
                 makers = data;
                 updateGroupsList();
             });
+        }
+    }
+
+    // Replace the existing saveGroupsData function
+    async function saveGroupsData() {
+        // Add this at the beginning of saveGroupsData function for debugging
+        console.log('saveGroupsData called');
+        const groupItems = document.querySelectorAll('.group-item');
+        console.log('Found group items:', groupItems.length);
+        
+        const newItems = document.querySelectorAll('.group-item.new-group');
+        console.log('Found new items:', newItems.length);
+        
+        const promises = [];
+        const itemsToUpdate = []; // Track items for class removal
+        
+        for (const item of groupItems) {
+            const codeInput = item.querySelector('.groups-input.code');
+            const nameInput = item.querySelector('.groups-input.name');
+            
+            const currentCode = parseInt(codeInput.value);
+            const currentName = nameInput.value.trim();
+            const originalCode = parseInt(codeInput.dataset.originalCode);
+            const originalName = nameInput.dataset.originalName;
+            
+            // Check if this is a new item (has new-group class)
+            if (item.classList.contains('new-group')) {
+                // Insert new item
+                const insertData = {
+                    code: currentCode,
+                    name: currentName
+                };
+                
+                if (currentModalType === 'types') {
+                    promises.push(insertType(insertData));
+                } else {
+                    promises.push(insertMaker(insertData));
+                }
+                
+                // Track this item for class removal after successful save
+                itemsToUpdate.push({ item, isNew: true });
+            } else {
+                // Skip if no changes for existing items
+                if (currentCode === originalCode && currentName === originalName) {
+                    continue;
+                }
+                
+                // Update existing item - find the item in the global array
+                const groups = currentModalType === 'types' ? types : makers;
+                const existingItem = groups.find(g => g.CODE === originalCode && g.NAME === originalName);
+                
+                if (existingItem) {
+                    const updateData = {
+                        id: existingItem.ID,
+                        code: currentCode,
+                        name: currentName
+                    };
+                    
+                    if (currentModalType === 'types') {
+                        promises.push(updateType(updateData));
+                    } else {
+                        promises.push(updateMaker(updateData));
+                    }
+                    
+                    // Track this item for data attribute updates
+                    itemsToUpdate.push({ item, isNew: false, updateData });
+                }
+            }
+        }
+        
+        // Execute all save operations
+        if (promises.length > 0) {
+            const results = await Promise.all(promises);
+            
+            // Check if any operations failed
+            const failures = results.filter(result => !result.success);
+            if (failures.length > 0) {
+                throw new Error(`Some operations failed: ${failures.map(f => f.error).join(', ')}`);
+            }
+            
+            // Update items after successful saves
+            itemsToUpdate.forEach(({ item, isNew, updateData }) => {
+                if (isNew) {
+                    // Remove new-group class for successfully saved new items
+                    item.classList.remove('new-group');
+                }
+                
+                if (updateData) {
+                    // Update data attributes for modified existing items
+                    const codeInput = item.querySelector('.groups-input.code');
+                    const nameInput = item.querySelector('.groups-input.name');
+                    codeInput.dataset.originalCode = updateData.code;
+                    nameInput.dataset.originalName = updateData.name;
+                }
+            });
+            
+            // Refresh data from database after successful saves
+            if (currentModalType === 'types') {
+                types = await fetchTypes();
+                // Update the productType dropdown
+                productType.innerHTML = '<option value="">Select Type</option>';
+                types.forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type.NAME;
+                    option.textContent = type.NAME;
+                    productType.appendChild(option);
+                });
+            } else {
+                makers = await fetchMakers();
+                // Update the productMaker dropdown
+                productMaker.innerHTML = '<option value="">Select Maker</option>';
+                makers.forEach(maker => {
+                    const option = document.createElement('option');
+                    option.value = maker.NAME;
+                    option.textContent = maker.NAME;
+                    productMaker.appendChild(option);
+                });
+            }
+            
+            // Refresh the modal list to show updated data from database
+            updateGroupsList();
+            
+            console.log(`Successfully saved ${promises.length} items to database`);
         }
     }
 
