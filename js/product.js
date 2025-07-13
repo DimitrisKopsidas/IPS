@@ -1,6 +1,6 @@
 import {fillDropdown,initiateHotkeys} from "./common.js";
 import { fetchFilteredProducts, fetchMakers, fetchTypes, deleteProduct, 
-    deleteMaker, deleteType, deleteImage, updateProduct, insertProduct } from './dbService.js';
+    deleteMaker, deleteType, deleteImage, updateProduct, insertProduct, fetchNextProductId } from './dbService.js';
 
 // #region VARIABLE DECLARATION
     // Form references
@@ -76,6 +76,7 @@ import { fetchFilteredProducts, fetchMakers, fetchTypes, deleteProduct,
     let products = [];
     let makers = [];
     let types = [];
+    let nextProductId;
     // #endregion
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -83,6 +84,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     products = await fetchFilteredProducts(selectedType, selectedMaker);
     makers = await fetchMakers();
     types = await fetchTypes();
+    nextProductId = await fetchNextProductId();
 
     populateSelectFields(makers, types);
 
