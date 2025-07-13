@@ -380,3 +380,38 @@ app.put('/api/updateProduct/:id', async (req, res) => {
         });
     }
 });
+
+// Add this endpoint with the other endpoints
+app.post('/api/insertProduct', async (req, res) => {
+    try {
+        const { code, name, type, maker, price, discount, finalPrice, notes } = req.body;
+
+        await pool.query('CALL InsertProduct(?, ?, ?, ?, ?, ?, ?, ?)', [
+            code,
+            name,
+            type,
+            maker,
+            price,
+            discount,
+            finalPrice,
+            notes
+        ]);
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error inserting product:', error);
+        // Check for duplicate entry error (MySQL error code 1062)
+        if (error.code === 'ER_DUP_ENTRY') {
+            res.status(409).json({ 
+                success: false, 
+                error: `Product code ${req.body.code} already exists. Please use a different code.`,
+                isDuplicateCode: true
+            });
+        } else {
+            res.status(500).json({ 
+                success: false, 
+                error: error.message 
+            });
+        }
+    }
+});

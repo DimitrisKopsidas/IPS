@@ -1,5 +1,6 @@
 import {fillDropdown,initiateHotkeys} from "./common.js";
-import { fetchFilteredProducts, fetchMakers, fetchTypes, deleteProduct, deleteMaker, deleteType, deleteImage, updateProduct } from './dbService.js';
+import { fetchFilteredProducts, fetchMakers, fetchTypes, deleteProduct, 
+    deleteMaker, deleteType, deleteImage, updateProduct, insertProduct } from './dbService.js';
 
 // #region VARIABLE DECLARATION
     // Form references
@@ -611,8 +612,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const selectedType = types.find(t => t.NAME === productGroup.value);
             const selectedMaker = makers.find(m => m.NAME === productMaker.value);
 
-            const result = await updateProduct({
-                id: currentProductId,
+            const productData = {
                 code: parseInt(headerProductCode.value),
                 name: headerProductName.value,
                 type: selectedType ? selectedType.ID : null,
@@ -621,26 +621,44 @@ document.addEventListener('DOMContentLoaded', async () => {
                 discount: parseFloat(discountInput.value) / 100,
                 finalPrice: parseFloat(finalPriceInput.value),
                 notes: productNotes.value
-            });
+            };
+
+            const result = productId === 'new' 
+                ? await insertProduct(productData)
+                : await updateProduct({ id: currentProductId, ...productData });
 
             if (result.success) {
                 validForInsert = true;
                 formChanged = false;
                 
-                // Refresh the products list with current filters
+                // Refresh the products list
                 products = await fetchFilteredProducts('All', 'All');
                 
-                // Find the updated product in the refreshed list
-                const updatedProduct = products.find(p => p.ID === currentProductId);
+                // Find the updated/inserted product
+                const savedProduct = products.find(p => p.CODE === productData.code);
                 
-                if (updatedProduct) {
-                    loadProductData(updatedProduct);
+                if (savedProduct) {
+                    if (productId === 'new') {
+                        const params = new URLSearchParams(window.location.search);
+                        params.set('id', savedProduct.ID);
+                        window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
+                    }
+                    
+                    loadProductData(savedProduct);
                     showConfirmation();
                 } else {
-                    throw new Error('Updated product not found in results');
+                    throw new Error('Saved product not found in results');
                 }
             } else {
-                throw new Error(result.error);
+                // Check if it's a duplicate code error
+                if (result.isDuplicateCode) {
+                    showWarningModal(result.error);
+                    headerProductCode.focus();
+                    headerProductCode.select();
+                } else {
+                    throw new Error(result.error);
+                }
+                validForInsert = false;
             }
         } catch (error) {
             console.error('Error saving product:', error);
