@@ -352,3 +352,31 @@ app.delete('/api/deleteImage/:imageId', async (req, res) => {
         });
     }
 });
+
+// Add to existing endpoints
+app.put('/api/updateProduct/:id', async (req, res) => {
+    try {
+        const productId = req.params.id;
+        const { code, name, type, maker, price, discount, finalPrice, notes } = req.body;
+
+        await pool.query('CALL UpdateProduct(?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+            productId,
+            code,
+            name,
+            type,
+            maker,
+            price,
+            discount,
+            finalPrice,
+            notes
+        ]);
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error updating product:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
+    }
+});

@@ -1,5 +1,5 @@
 import {fillDropdown,initiateHotkeys} from "./common.js";
-import { fetchFilteredProducts, fetchMakers, fetchTypes, deleteProduct, deleteMaker, deleteType, deleteImage } from './dbService.js';
+import { fetchFilteredProducts, fetchMakers, fetchTypes, deleteProduct, deleteMaker, deleteType, deleteImage, updateProduct } from './dbService.js';
 
 // #region VARIABLE DECLARATION
     // Form references
@@ -95,6 +95,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
         showWarningModal('Product not found');
     }
+
+    window.addEventListener('popstate', async function() {
+        // Get current URL parameters after navigation
+        const params = new URLSearchParams(window.location.search);
+        const newProductId = params.get('id');
+        
+        // Find product in current products array
+        const productData = products.find(p => p.ID.toString() === newProductId);
+        
+        if (productData) {
+            loadProductData(productData);
+        } else if (newProductId === 'new') {
+            createNewProduct();
+        } else {
+            showWarningModal('Product not found');
+        }
+    });
 
 // #region EVENT LISTENERS
     headerProductCode.addEventListener('input', function() {
@@ -501,23 +518,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         sortGroups('name');
     });
     // #endregion
-
-    window.addEventListener('popstate', async function() {
-        // Get current URL parameters after navigation
-        const params = new URLSearchParams(window.location.search);
-        const newProductId = params.get('id');
-        
-        // Find product in current products array
-        const productData = products.find(p => p.ID.toString() === newProductId);
-        
-        if (productData) {
-            loadProductData(productData);
-        } else if (newProductId === 'new') {
-            createNewProduct();
-        } else {
-            showWarningModal('Product not found');
-        }
-    });
 });
 
 // #region FUNCTIONS
@@ -585,7 +585,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateNavigationState();
     }
 
-    function saveProductData() {
+    async function saveProductData() {
         if (!headerProductCode.value.trim()) {
             showWarningModal('Product Code is required');
             headerProductCode.focus();
@@ -600,13 +600,53 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        if (priceInput.value==0) {
+        if (priceInput.value == 0) {
             showWarningModal('Product Price is required');
             priceInput.focus();
             validForInsert = false;
             return;
         }
-        validForInsert = true;
+
+        try {
+            const selectedType = types.find(t => t.NAME === productGroup.value);
+            const selectedMaker = makers.find(m => m.NAME === productMaker.value);
+
+            const result = await updateProduct({
+                id: currentProductId,
+                code: parseInt(headerProductCode.value),
+                name: headerProductName.value,
+                type: selectedType ? selectedType.ID : null,
+                maker: selectedMaker ? selectedMaker.ID : null,
+                price: parseFloat(priceInput.value),
+                discount: parseFloat(discountInput.value) / 100,
+                finalPrice: parseFloat(finalPriceInput.value),
+                notes: productNotes.value
+            });
+
+            if (result.success) {
+                validForInsert = true;
+                formChanged = false;
+                
+                // Refresh the products list with current filters
+                products = await fetchFilteredProducts('All', 'All');
+                
+                // Find the updated product in the refreshed list
+                const updatedProduct = products.find(p => p.ID === currentProductId);
+                
+                if (updatedProduct) {
+                    loadProductData(updatedProduct);
+                    showConfirmation();
+                } else {
+                    throw new Error('Updated product not found in results');
+                }
+            } else {
+                throw new Error(result.error);
+            }
+        } catch (error) {
+            console.error('Error saving product:', error);
+            showWarningModal(`Failed to save changes: ${error.message}`);
+            validForInsert = false;
+        }
     }
 
     function createNewProduct() {
@@ -842,7 +882,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         setTimeout(() => {
             notification.style.display = 'none';
-        }, 3000);
+        }, 1000);
     }
 
     function showConfirmation() {// Update showConfirmation function to ensure modal is visible

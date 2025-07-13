@@ -354,6 +354,39 @@ async function deleteImage(imageId) {
     }
 }
 
+async function updateProduct(productData) {
+    try {
+        console.log('Updating product:', productData);
+        const response = await fetch(`http://localhost:3000/api/updateProduct/${productData.id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                code: productData.code,
+                name: productData.name,
+                type: productData.type,
+                maker: productData.maker,
+                price: productData.price,
+                discount: productData.discount,
+                finalPrice: productData.finalPrice,
+                notes: productData.notes
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Product update result:', result);
+        return result;
+    } catch (error) {
+        console.error('Error updating product:', error);
+        return { success: false, error: error.message };
+    }
+}
+
 export { 
     fetchCarouselProducts,
     fetchCarouselSettings,
@@ -373,5 +406,6 @@ export {
     deleteProduct,
     deleteMaker,
     deleteType,
-    deleteImage
+    deleteImage,
+    updateProduct
 };
