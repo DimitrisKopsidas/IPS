@@ -62,7 +62,7 @@
                 <form id="productForm">
                     <div class="form-row">
                         <div class="form-group half">
-                            <label for="productGroup" class="clickable">Type:</label>
+                            <label for="productType" class="clickable">Type:</label>
                             <div class="group-select-wrapper">
                                 <input type="text" 
                                        id="groupCodeInput" 
@@ -71,7 +71,7 @@
                                        pattern="\d*"
                                        placeholder="000"
                                        oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-                                <select id="productGroup" name="group" required>
+                                <select id="productType" name="group" required>
                                     <!-- Options will be populated dynamically -->
                                 </select>
                             </div>
@@ -201,11 +201,11 @@
                     <input type="number" 
                            id="searchGroupCode" 
                            class="groups-search code" 
-                           placeholder="Search">
+                           placeholder="Code">
                     <input type="text" 
                            id="searchGroupName" 
                            class="groups-search name" 
-                           placeholder="Search">
+                           placeholder="Name">
                 </div>
                 🔎
                 <div class="groups-sort-controls">

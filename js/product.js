@@ -5,14 +5,14 @@ import { fetchFilteredProducts, fetchMakers, fetchTypes, deleteProduct,
 // #region VARIABLE DECLARATION
     // Form references
     const productForm = document.getElementById('productForm');
-    const groupSelect = document.getElementById('productGroup');
+    const groupSelect = document.getElementById('productType');
     const makerSelect = document.getElementById('productMaker');
     const priceInput = document.getElementById('productPrice');
     const discountInput = document.getElementById('productDiscount');
     const finalPriceInput = document.getElementById('productFinalPrice');
     const groupCodeInput = document.getElementById('groupCodeInput');
     const makerCodeInput = document.getElementById('makerCodeInput');
-    const productGroup = document.getElementById('productGroup');
+    const productType = document.getElementById('productType');
     const productMaker = document.getElementById('productMaker');
     const changeImageTxt = document.getElementById('changeImageTxt');
 
@@ -67,6 +67,7 @@ import { fetchFilteredProducts, fetchMakers, fetchTypes, deleteProduct,
     let makerSort = { field: 'code', direction: 'asc' };
     let isNew = false;
     let pendingImageFile = null;
+    let currentModalType = null; // 'types' or 'makers'
 
     // Get URL parameters
     const urlParams = new URLSearchParams(window.location.search);
@@ -414,7 +415,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.querySelector('label[for="productMaker"]').addEventListener('click', function(e) {
         e.preventDefault();
-        showMakersModal();
+        currentModalType = 'makers';
+        showGroupsModal();
     });
     
     makerCodeInput.addEventListener('input', function() {
@@ -434,7 +436,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
     
-    document.getElementById('productGroup').addEventListener('change', function() {
+    document.getElementById('productType').addEventListener('change', function() {
         const selectedType = types.find(t => t.NAME === this.value);
         if (selectedType) {
             groupCodeInput.value = selectedType.CODE; // Using ID from database
@@ -457,6 +459,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
+        // Get the appropriate data array based on currentModalType
+        const groups = currentModalType === 'types' ? types : makers;
+
         // Create new group object
         const newGroup = {
             id: groups.length + 1,
@@ -464,8 +469,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             name: name
         };
 
-        // Add to beginning of groups array
-        groups.unshift(newGroup);
+        // Add to beginning of appropriate array
+        if (currentModalType === 'types') {
+            types.unshift(newGroup);
+        } else {
+            makers.unshift(newGroup);
+        }
         
         // Add the new item to the top of the list
         const groupsList = document.getElementById('groupsList');
@@ -494,8 +503,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('newGroupCode').value = '';
         document.getElementById('newGroupName').value = '';
 
-        // Update dropdown
-        fillDropdown(groups, groupSelect);
+        // Update appropriate dropdown
+        if (currentModalType === 'types') {
+            fillDropdown(types, productType);
+        } else {
+            fillDropdown(makers, productMaker);
+        }
 
         // Remove highlight after animation
         setTimeout(() => {
@@ -506,11 +519,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         item.querySelector('.groups-btn-delete-item').addEventListener('click', function() {
             if (confirm('Are you sure you want to delete this group?')) {
                 const code = item.querySelector('.groups-input.code').value;
-                const groupIndex = groups.findIndex(g => g.code.toString() === code);
+                const currentGroups = currentModalType === 'types' ? types : makers;
+                const groupIndex = currentGroups.findIndex(g => g.code.toString() === code);
                 if (groupIndex !== -1) {
-                    groups.splice(groupIndex, 1);
+                    if (currentModalType === 'types') {
+                        types.splice(groupIndex, 1);
+                        fillDropdown(types, productType);
+                    } else {
+                        makers.splice(groupIndex, 1);
+                        fillDropdown(makers, productMaker);
+                    }
                     item.remove();
-                    fillDropdown(groups, groupSelect);
                 }
             }
         });
@@ -529,12 +548,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Update dropdown selection if match found
         if (matchingType) {
-            productGroup.value = matchingType.NAME;
+            productType.value = matchingType.NAME;
         }
     });
 
-    document.querySelector('label[for="productGroup"]').addEventListener('click', function(e) {
+    document.querySelector('label[for="productType"]').addEventListener('click', function(e) {
         e.preventDefault();
+        currentModalType = 'types';
         showGroupsModal();
     });
 
@@ -569,6 +589,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('sortByName').addEventListener('click', function() {
         sortGroups('name');
     });
+
+    document.getElementById('searchGroupCode').addEventListener('input', function() {
+        filterGroups();
+    });
+
+    document.getElementById('searchGroupName').addEventListener('input', function() {
+        filterGroups();
+    });
     // #endregion
 });
 
@@ -582,7 +610,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         finalPriceInput.value = productData.FINALPRICE;
         
         // Handle type/group selection
-        productGroup.value = productData.TYPENAME;
+        productType.value = productData.TYPENAME;
         const selectedType = types.find(t => t.ID === productData.TYPEID);
         groupCodeInput.value = selectedType ? selectedType.CODE : '';
         
@@ -661,7 +689,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         try {
-            const selectedType = types.find(t => t.NAME === productGroup.value);
+            const selectedType = types.find(t => t.NAME === productType.value);
             const selectedMaker = makers.find(m => m.NAME === productMaker.value);
 
             const productData = {
@@ -823,12 +851,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             item.innerHTML = `
                 <input type="number" 
                        class="groups-input code" 
-                       value="${group.code}"
-                       data-original-code="${group.code}">
+                       value="${group.CODE}"
+                       data-original-code="${group.CODE}">
                 <input type="text" 
                        class="groups-input name" 
-                       value="${group.name}"
-                       data-original-name="${group.name}">
+                       value="${group.NAME}"
+                       data-original-name="${group.NAME}">
                 <button class="groups-btn-delete-item" title="Delete group">🗑️</button>
             `;
             groupsList.appendChild(item);
@@ -838,9 +866,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         attachDeleteHandlers();
     }
 
-        function updateGroupsList() {
+    function updateGroupsList() {
         const groupsList = document.getElementById('groupsList');
         groupsList.innerHTML = '';
+        
+        // Get the appropriate data array based on currentModalType
+        const groups = currentModalType === 'types' ? types : makers;
         
         groups.forEach((group) => {
             const item = document.createElement('div');
@@ -848,12 +879,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             item.innerHTML = `
                 <input type="number" 
                        class="groups-input code" 
-                       value="${group.code}"
-                       data-original-code="${group.code}">
+                       value="${group.CODE}"
+                       data-original-code="${group.CODE}">
                 <input type="text" 
                        class="groups-input name" 
-                       value="${group.name}"
-                       data-original-name="${group.name}">
+                       value="${group.NAME}"
+                       data-original-name="${group.NAME}">
                 <button class="groups-btn-delete-item" title="Delete group">🗑️</button>
             `;
             groupsList.appendChild(item);
@@ -864,7 +895,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             btn.addEventListener('click', function() {
                 if (confirm('Are you sure you want to delete this group?')) {
                     groups.splice(index, 1);
-                    fillDropdown(groups, groupSelect);
+                    // Update the appropriate dropdown
+                    if (currentModalType === 'types') {
+                        fillDropdown(types, productType);
+                    } else {
+                        fillDropdown(makers, productMaker);
+                    }
                     updateGroupsList();
                 }
             });
@@ -875,9 +911,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         const direction = field === currentSort.field && currentSort.direction === 'asc' ? 'desc' : 'asc';
         currentSort = { field, direction };
 
+        // Get the appropriate data array based on currentModalType
+        const groups = currentModalType === 'types' ? types : makers;
+
         groups.sort((a, b) => {
-            let compareA = field === 'code' ? parseInt(a.code) : a.name.toLowerCase();
-            let compareB = field === 'code' ? parseInt(b.code) : b.name.toLowerCase();
+            let compareA = field === 'code' ? parseInt(a.CODE) : a.NAME.toLowerCase();
+            let compareB = field === 'code' ? parseInt(b.CODE) : b.NAME.toLowerCase();
 
             if (direction === 'asc') {
                 return compareA > compareB ? 1 : -1;
@@ -885,6 +924,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return compareA < compareB ? 1 : -1;
             }
         });
+
+        // Update the appropriate global array
+        if (currentModalType === 'types') {
+            types = groups;
+        } else {
+            makers = groups;
+        }
 
         updateGroupsList();
         updateSortButtons();
@@ -894,9 +940,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         const codeFilter = document.getElementById('searchGroupCode').value.toLowerCase();
         const nameFilter = document.getElementById('searchGroupName').value.toLowerCase();
         
+        // Get the appropriate data array based on currentModalType
+        const groups = currentModalType === 'types' ? types : makers;
+        
         const filteredGroups = groups.filter(group => {
-            const matchesCode = group.code.toString().includes(codeFilter);
-            const matchesName = group.name.toLowerCase().includes(nameFilter);
+            const matchesCode = group.CODE.toString().includes(codeFilter);
+            const matchesName = group.NAME.toLowerCase().includes(nameFilter);
             return matchesCode && matchesName;
         });
         
@@ -918,7 +967,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const option = document.createElement('option');
             option.value = type.NAME;
             option.textContent = type.NAME;
-            productGroup.appendChild(option);
+            productType.appendChild(option);
         });
     }
 
@@ -948,7 +997,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('searchGroupCode').value = '';
         document.getElementById('searchGroupName').value = '';
         
-        updateGroupsList();
+        // Load appropriate data based on currentModalType
+        if (currentModalType === 'types') {
+            fetchTypes().then(data => {
+                types = data;
+                updateGroupsList();
+            });
+        } else if (currentModalType === 'makers') {
+            fetchMakers().then(data => {
+                makers = data;
+                updateGroupsList();
+            });
+        }
     }
 
     function handleNavigation(direction) {// Handle navigation with unsaved changes check
