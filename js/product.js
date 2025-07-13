@@ -1,6 +1,7 @@
 import {fillDropdown,initiateHotkeys} from "./common.js";
 import { fetchFilteredProducts, fetchMakers, fetchTypes, deleteProduct, 
-    deleteMaker, deleteType, deleteImage, updateProduct, insertProduct, fetchNextProductId } from './dbService.js';
+    deleteMaker, deleteType, deleteImage, updateProduct, insertProduct, 
+    fetchNextProductId, updateMaker, updateType, insertMaker, insertType } from './dbService.js';
 
 // #region VARIABLE DECLARATION
     // Form references

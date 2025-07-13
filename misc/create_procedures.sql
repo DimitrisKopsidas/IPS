@@ -288,6 +288,20 @@ END$$
 DELIMITER ;
 
 DELIMITER $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `InsertMaker`(
+    IN p_CODE        INT,
+    IN p_NAME        VARCHAR(255)
+)
+BEGIN
+    INSERT INTO MAKER (
+        CODE, NAME
+    ) VALUES (
+        p_CODE, p_NAME
+    );
+END$$
+DELIMITER ;
+
+DELIMITER $$
 CREATE DEFINER=`root`@`localhost` PROCEDURE `InsertProduct`(
     IN p_CODE        INT,
     IN p_NAME        VARCHAR(255),
@@ -303,6 +317,20 @@ BEGIN
         CODE, NAME, TYPE, MAKER, PRICE, DISCOUNT, FINALPRICE, NOTES
     ) VALUES (
         p_CODE, p_NAME, p_TYPE, p_MAKER, p_PRICE, p_DISCOUNT, p_FINALPRICE, p_NOTES
+    );
+END$$
+DELIMITER ;
+
+DELIMITER $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `InsertType`(
+    IN p_CODE        INT,
+    IN p_NAME        VARCHAR(255)
+)
+BEGIN
+    INSERT INTO TYPE (
+        CODE, NAME
+    ) VALUES (
+        p_CODE, p_NAME
     );
 END$$
 DELIMITER ;
