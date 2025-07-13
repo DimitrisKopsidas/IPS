@@ -14,6 +14,7 @@ import { fetchFilteredProducts, fetchMakers, fetchTypes, deleteProduct,
     const makerCodeInput = document.getElementById('makerCodeInput');
     const productGroup = document.getElementById('productGroup');
     const productMaker = document.getElementById('productMaker');
+    const changeImageTxt = document.getElementById('changeImageTxt');
 
     // Modal elements
     const saveConfirmation = document.getElementById('saveConfirmation');
@@ -65,6 +66,7 @@ import { fetchFilteredProducts, fetchMakers, fetchTypes, deleteProduct,
     let currentSort = { field: 'code', direction: 'asc' };
     let makerSort = { field: 'code', direction: 'asc' };
     let isNew = false;
+    let pendingImageFile = null;
 
     // Get URL parameters
     const urlParams = new URLSearchParams(window.location.search);
@@ -298,14 +300,61 @@ document.addEventListener('DOMContentLoaded', async () => {
         imageInput.click();
     });
 
-    imageInput.addEventListener('change', function(e) {
+    // Replace the existing imageInput event listener
+    imageInput.addEventListener('change', async function(e) {
         if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            
+            // Validate file type
+            if (!file.type.match(/image\/(jpg|jpeg|png|gif)/)) {
+                showWarningModal('Please select an image file (JPG, PNG, or GIF)');
+                return;
+            }
+
+            // Validate file size (5MB max)
+            if (file.size > 5 * 1024 * 1024) {
+                showWarningModal('Image file size must be less than 5MB');
+                return;
+            }
+
+            // Show preview immediately
             const reader = new FileReader();
             reader.onload = function(event) {
                 mainProductImage.src = event.target.result;
                 formChanged = true;
             };
-            reader.readAsDataURL(e.target.files[0]);
+            reader.readAsDataURL(file);
+
+            // Handle image replacement for existing products
+            if (currentProductId && currentProductId !== 'new') {
+                try {
+                    // First delete the existing image
+                    console.log('Deleting existing image for product:', currentProductId);
+                    const deleteResult = await deleteImage(currentProductId);
+                    
+                    if (!deleteResult.success) {
+                        console.warn('Warning: Could not delete existing image:', deleteResult.error);
+                        // Continue with upload even if delete fails (image might not exist)
+                    }
+
+                    // Upload the new image using the existing function
+                    const uploadResult = await uploadNewProductImage(file);
+                    
+                    if (uploadResult.success) {
+                        // Update image source to show the uploaded image with cache busting
+                        mainProductImage.src = `http://localhost:3000/media/${currentProductId}.png?t=${Date.now()}`;
+                        console.log('Image updated successfully for existing product');
+                    } else {
+                        throw new Error(uploadResult.error);
+                    }
+                } catch (error) {
+                    console.error('Error updating image:', error);
+                    showWarningModal(`Image update failed: ${error.message}`);
+                }
+            } else {
+                // For new products, store the file for upload during save
+                pendingImageFile = file;
+            }
         }
     });
 
@@ -588,6 +637,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateNavigationState();
     }
 
+    // Replace the existing saveProductData function
     async function saveProductData() {
         if (!headerProductCode.value.trim()) {
             showWarningModal('Product Code is required');
@@ -644,6 +694,27 @@ document.addEventListener('DOMContentLoaded', async () => {
                         const params = new URLSearchParams(window.location.search);
                         params.set('id', savedProduct.ID);
                         window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
+                        currentProductId = savedProduct.ID;
+                        
+                        // Handle image upload for new products
+                        if (pendingImageFile) {
+                            try {
+                                const imageResult = await uploadNewProductImage(pendingImageFile);
+                                
+                                if (imageResult.success) {
+                                    // Update image source to show the uploaded image
+                                    mainProductImage.src = `http://localhost:3000/media/${savedProduct.ID}.png?t=${Date.now()}`;
+                                    pendingImageFile = null; // Clear pending image
+                                    console.log('Image uploaded successfully for new product');
+                                } else {
+                                    console.error('Image upload failed:', imageResult.error);
+                                    showWarningModal(`Product saved but image upload failed: ${imageResult.error}`);
+                                }
+                            } catch (imageError) {
+                                console.error('Error uploading image:', imageError);
+                                showWarningModal(`Product saved but image upload failed: ${imageError.message}`);
+                            }
+                        }
                     }
                     
                     loadProductData(savedProduct);
@@ -669,6 +740,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    // Replace the existing createNewProduct function
     function createNewProduct() {
         headerProductCode.value = "";
         headerProductName.value = "";
@@ -681,11 +753,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         mainProductImage.src = "media/9997.png";
         groupCodeInput.value = "";
         makerCodeInput.value = "";
+        changeImageTxt.innerText = 'Upload Image';
+        
+        // Clear pending image
+        pendingImageFile = null;
         
         // Clear carousel and promo lists
         carouselList.innerHTML = '';
         promoList.innerHTML = '';
-    
+
         // Update navigation state
         updateNavigationState();
         
@@ -693,9 +769,76 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         // Reset form changed flag
         formChanged = true;
+        currentProductId = 'new';
     }
 
-    function updateGroupsList() {
+    // Replace the existing uploadNewProductImage function
+    async function uploadNewProductImage(imageFile) {
+        try {
+            if (!imageFile) {
+                throw new Error('No image file provided');
+            }
+
+            // Use currentProductId which will be set to the saved product's ID
+            if (!currentProductId || currentProductId === 'new') {
+                throw new Error('Product must be saved before uploading image');
+            }
+
+            const formData = new FormData();
+            formData.append('image', imageFile);
+
+            const response = await fetch(`http://localhost:3000/api/uploadNewProductImage/${currentProductId}`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            return {
+                success: true,
+                message: 'Image uploaded successfully',
+                productId: currentProductId
+            };
+        } catch (error) {
+            console.error('Error uploading new product image:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    //------------------------VISUAL FUNCTIONS--------------------------------
+    function displayFilteredGroups(filteredGroups) {
+        const groupsList = document.getElementById('groupsList');
+        groupsList.innerHTML = '';
+        
+        filteredGroups.forEach(group => {
+            const item = document.createElement('div');
+            item.className = 'group-item';
+            item.innerHTML = `
+                <input type="number" 
+                       class="groups-input code" 
+                       value="${group.code}"
+                       data-original-code="${group.code}">
+                <input type="text" 
+                       class="groups-input name" 
+                       value="${group.name}"
+                       data-original-name="${group.name}">
+                <button class="groups-btn-delete-item" title="Delete group">🗑️</button>
+            `;
+            groupsList.appendChild(item);
+        });
+
+        // Reattach delete handlers
+        attachDeleteHandlers();
+    }
+
+        function updateGroupsList() {
         const groupsList = document.getElementById('groupsList');
         groupsList.innerHTML = '';
         
@@ -778,32 +921,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             productGroup.appendChild(option);
         });
     }
-    
-    function displayFilteredGroups(filteredGroups) {
-        const groupsList = document.getElementById('groupsList');
-        groupsList.innerHTML = '';
-        
-        filteredGroups.forEach(group => {
-            const item = document.createElement('div');
-            item.className = 'group-item';
-            item.innerHTML = `
-                <input type="number" 
-                       class="groups-input code" 
-                       value="${group.code}"
-                       data-original-code="${group.code}">
-                <input type="text" 
-                       class="groups-input name" 
-                       value="${group.name}"
-                       data-original-name="${group.name}">
-                <button class="groups-btn-delete-item" title="Delete group">🗑️</button>
-            `;
-            groupsList.appendChild(item);
-        });
 
-        // Reattach delete handlers
-        attachDeleteHandlers();
-    }
-    //------------------------VISUAL FUNCTIONS--------------------------------
     function attachDeleteHandlers() {
         document.querySelectorAll('.groups-btn-delete-item').forEach((btn, index) => {
             btn.addEventListener('click', function() {

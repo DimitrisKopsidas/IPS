@@ -5,6 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import multer from 'multer';
 
 const app = express();
 app.use(cors());
@@ -413,5 +414,48 @@ app.post('/api/insertProduct', async (req, res) => {
                 error: error.message 
             });
         }
+    }
+});
+
+// Add this after your other imports and before your routes
+const storage = multer.diskStorage({
+    destination: function(req, file, cb) {
+        const mediaPath = path.join(__dirname, '..', 'media');
+        if (!fs.existsSync(mediaPath)){
+            fs.mkdirSync(mediaPath, { recursive: true });
+        }
+        cb(null, mediaPath);
+    },
+    filename: function(req, file, cb) {
+        cb(null, `${req.params.productId}.png`);
+    }
+});
+
+const upload = multer({ 
+    storage: storage,
+    limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+});
+
+// Add static file serving
+app.use('/media', express.static(path.join(__dirname, '..', 'media')));
+
+// Add this endpoint
+app.post('/api/uploadNewProductImage/:productId', upload.single('image'), (req, res) => {
+    try {
+        if (!req.file) {
+            throw new Error('No file uploaded');
+        }
+
+        res.json({
+            success: true,
+            message: 'Image uploaded successfully',
+            path: `/media/${req.params.productId}.png`
+        });
+    } catch (error) {
+        console.error('Error uploading new product image:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
     }
 });
