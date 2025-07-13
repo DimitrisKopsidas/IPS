@@ -1,4 +1,34 @@
 DELIMITER $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `DeleteMaker`(
+    IN p_maker_id INT
+)
+BEGIN
+    DELETE FROM MAKER
+    WHERE MAKER = p_maker_id;
+END$$
+DELIMITER ;
+
+DELIMITER $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `DeleteProduct`(
+    IN p_product_id INT
+)
+BEGIN
+    DELETE FROM PRODUCT
+    WHERE PRODUCT = p_product_id;
+END$$
+DELIMITER ;
+
+DELIMITER $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `DeleteType`(
+    IN p_type_id INT
+)
+BEGIN
+    DELETE FROM TYPE
+    WHERE TYPE = p_type_id;
+END$$
+DELIMITER ;
+
+DELIMITER $$
 CREATE DEFINER=`root`@`localhost` PROCEDURE `GetCarouselProducts`(IN p_connectkey VARCHAR(255))
 BEGIN
     SELECT 
@@ -40,14 +70,20 @@ BEGIN
         P.PRODUCT AS ID,
         P.CODE,
         P.NAME,
-        T.NAME AS TYPE,
-        M.NAME AS MAKER,
+        T.TYPE AS TYPEID,
+        M.MAKER AS MAKERID,
+        T.CODE AS TYPECODE,
+        M.CODE AS MAKERCODE,
+        T.NAME AS TYPENAME,
+        M.NAME AS MAKERNAME,
         P.PRICE,
         P.DISCOUNT,
         P.FINALPRICE,
         P.NOTES,
+        C.CAROUSEL AS CAROUSELID,
         C.CODE AS CAROUSELCODE,
         C.NAME AS CAROUSELNAME,
+        PRO.PROMO AS PROMOID,
         PRO.CODE AS PROMOCODE,
         PRO.DISCOUNT as PROMODISCOUNT
     FROM 
@@ -104,6 +140,45 @@ BEGIN
     INNER JOIN carousel c ON c.carousel = m.carousel
     INNER JOIN device d ON d.device = c.device
     WHERE d.connectkey = p_connectkey;
+END$$
+DELIMITER ;
+
+DELIMITER $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `GetNextCarouselId`()
+BEGIN
+    select 
+		carousel + 1 as NEXTID 
+	from 
+		carousel
+	order by 
+		carousel desc 
+limit 1;
+END$$
+DELIMITER ;
+
+DELIMITER $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `GetNextProductId`()
+BEGIN
+    select 
+		product + 1 as NEXTID 
+    from 
+		product
+    order by 
+		product desc 
+    limit 1;
+END$$
+DELIMITER ;
+
+DELIMITER $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `GetNextPromoId`()
+BEGIN
+    select 
+		promo + 1 as NEXTID 
+	from 
+		promo
+	order by 
+		promo desc 
+limit 1;
 END$$
 DELIMITER ;
 
@@ -213,11 +288,140 @@ END$$
 DELIMITER ;
 
 DELIMITER $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `InsertProduct`(
+    IN p_CODE        INT,
+    IN p_NAME        VARCHAR(255),
+    IN p_TYPE        INT,
+    IN p_MAKER       INT,
+    IN p_PRICE       FLOAT,
+    IN p_DISCOUNT    FLOAT,
+    IN p_FINALPRICE  FLOAT,
+    IN p_NOTES       VARCHAR(255)
+)
+BEGIN
+    INSERT INTO PRODUCT (
+        CODE, NAME, TYPE, MAKER, PRICE, DISCOUNT, FINALPRICE, NOTES
+    ) VALUES (
+        p_CODE, p_NAME, p_TYPE, p_MAKER, p_PRICE, p_DISCOUNT, p_FINALPRICE, p_NOTES
+    );
+END$$
+DELIMITER ;
+
+DELIMITER $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `ResetDummyData`()
+BEGIN
+DELETE FROM BACKSWIPES;
+DELETE FROM CAROUSEL;
+DELETE FROM DEVICE;
+DELETE FROM ISSUEDPROMO;
+DELETE FROM MAKER;
+DELETE FROM MINIGAME;
+DELETE FROM PRODUCT;
+DELETE FROM PRODUCTLINES;
+DELETE FROM PROMO;
+DELETE FROM PROMOLINES;
+DELETE FROM TYPE;
+DELETE FROM USER;
+
+ALTER TABLE BACKSWIPES AUTO_INCREMENT = 1;
+ALTER TABLE CAROUSEL AUTO_INCREMENT = 1;
+ALTER TABLE DEVICE AUTO_INCREMENT = 1;
+ALTER TABLE ISSUEDPROMO AUTO_INCREMENT = 1;
+ALTER TABLE MAKER AUTO_INCREMENT = 1;
+ALTER TABLE MINIGAME AUTO_INCREMENT = 1;
+ALTER TABLE PRODUCT AUTO_INCREMENT = 1;
+ALTER TABLE PRODUCTLINES AUTO_INCREMENT = 1;
+ALTER TABLE PROMO AUTO_INCREMENT = 1;
+ALTER TABLE PROMOLINES AUTO_INCREMENT = 1;
+ALTER TABLE TYPE AUTO_INCREMENT = 1;
+ALTER TABLE USER AUTO_INCREMENT = 1;
+
+INSERT INTO USER(username,password) VALUES ("Admin","admin");
+INSERT INTO DEVICE(code,name,lastping,connectkey) VALUES (100,"Rasp1",NOW(),"1234");
+INSERT INTO MAKER(code,name) VALUES (100,"Dell"),(200,"Sony"),(300,"Intel"),(400,"Nvidia"),(500,"Razer");
+INSERT INTO TYPE(code,name) VALUES (10,"Console"),("20","Monitor"),("30","CPU"),("31","GPU"),("33","SSD"),("40","Peripheral");
+INSERT INTO PRODUCT (CODE, NAME, TYPE, MAKER, PRICE, DISCOUNT, FINALPRICE, NOTES) VALUES
+(1001, 'Alienware X16'				, 1, 1, 1800.00, 0.1, 1620.00, 'High-performance gaming laptop'),
+(1002, 'PlayStation 5 Pro'			, 1, 2, 599.99, 0.05, 569.99, 'Next-gen gaming console with enhanced features'),
+(1003, 'Core i7-14700K'				, 3, 3, 429.00, 0.1, 386.10, 'High-performance desktop CPU'),
+(1004, 'GeForce RTX 4060 Ti'		, 4, 4, 399.00, 0.1, 359.10, 'Mid-range gaming GPU'),
+(1005, 'Razer BlackShark V2'		, 6, 5, 129.99, 0.15, 110.49, 'Esports headset'),
+(1006, 'Ultrasharp U2723QE'			, 2, 1, 650.00, 0.1, 585.00, '4K professional monitor'),
+(1007, 'INZONE M9'					, 2, 2, 899.99, 0.1, 809.99, 'Sony 4K gaming monitor'),
+(1008, 'Xeon Platinum 8490H'		, 3, 3, 7900.00, 0, 7900.00, 'Data center processor'),
+(1009, 'GeForce RTX 4080'			, 4, 4, 1199.00, 0, 1199.00, 'High-end gaming GPU'),
+(1010, 'Razer Basilisk V3 Pro'		, 6, 5, 159.99, 0.15, 135.99, 'Customizable gaming mouse'),
+(1011, 'Inspiron 16 Plus'			, 1, 1, 1200.00, 0.1, 1080.00, 'Everyday performance laptop'),
+(1012, 'PlayStation VR2'			, 1, 2, 549.99, 0.1, 494.99, 'Immersive VR headset for console'),
+(1013, 'Core i5-13400F'				, 3, 3, 189.00, 0.1, 170.10, 'Budget desktop CPU'),
+(1014, 'GeForce GTX 1650'			, 4, 4, 149.00, 0.05, 141.55, 'Entry-level GPU'),
+(1015, 'Razer Kiyo Pro'				, 6, 5, 199.99, 0.1, 179.99, 'High-quality webcam for streaming'),
+(1016, 'Dell OptiPlex 7000'				, 1, 1, 850.00, 0.12, 748.00, 'Business desktop computer'),
+(1017, 'INZONE Buds'				, 6, 2, 179.99, 0.1, 161.99, 'Wireless gaming earbuds'),
+(1018, 'Optane SSD P5800X'			, 5, 3, 1299.00, 0.15, 1104.15, 'High-performance SSD for enterprise'),
+(1019, 'Razer Huntsman V2 Analog'	, 6, 5, 249.99, 0.1, 224.99, 'Analog optical gaming keyboard'),
+(1020, 'NVIDIA Titan RTX'			, 4, 4, 2499.00, 0.1, 2249.10, 'Flagship professional GPU'),
+(1021, 'Intel Optane SSD 900P'		, 5, 3, 499.99, 0.1, 449.99, 'High-end NVMe SSD for enthusiasts'),
+(1022, 'Razer Core X Chroma SSD Dock', 5, 5, 299.99, 0.15, 254.99, 'External SSD dock with RGB and Thunderbolt 3');
+INSERT INTO PRODUCTLINES(CAROUSEL,PRODUCT,QUEUE) VALUES (1,3,1),(1,8,2),(1,13,3),(1,4,4),(1,9,5),(1,14,6),(1,20,7),(1,18,8),(1,21,9),(1,22,10);
+INSERT INTO CAROUSEL (CODE,NAME,DEVICE,NOTES,AUTOPLAYWAIT,SPEED,GAMECOUNT) VALUES (1,"PC PARTS",1,"Contains only pc parts starting with CPUs",1000,3000,4);
+INSERT INTO MINIGAME (CAROUSEL,REVOLUTIONS,SPINDURATION,ONSTOPTIME,INACTIVITYTIME) VALUES (1,2,1000,30000,30000);
+INSERT INTO BACKSWIPES (PRODUCTLINES,SWIPEDATE) VALUES (4,NOW()),(2,NOW()),(4,NOW()),(4,NOW()),(5,NOW()),(5,NOW()),(4,NOW()),(4,NOW()),(6,NOW()),(6,NOW()),(6,NOW()),(4,NOW()),(7,NOW());
+INSERT INTO PROMO (CODE,DISCOUNT,PRODUCT,TYPE,MAKER,CHANCE,DAYSTOLIVE) VALUES (50,0.5,1,0,0,0.1,7),(51,0.2,2,0,0,0.3,7),(52,0.2,3,0,0,0.3,7),(53,0.1,0,3,0,0.15,7),(54,0.1,0,0,3,0.15,7);
+INSERT INTO PROMOLINES (MINIGAME,PROMO) VALUES (1,1),(1,2),(1,3),(1,4),(1,5);
+INSERT INTO ISSUEDPROMO (REDEEMCODE,PROMO,DEVICE,CAROUSEL,MINIGAME,REDEEMED,ISSUEDATE) VALUES (154165,2,1,1,1,TRUE,NOW()),(781569,2,1,1,1,FALSE,NOW()),(346518,3,1,1,1,FALSE,NOW()),(347196,4,1,1,1,FALSE,NOW()),(978745,5,1,1,1,FALSE,NOW()),(154879,1,1,1,1,FALSE,'2025-05-01 19:23:44');
+
+END$$
+DELIMITER ;
+
+DELIMITER $$
 CREATE DEFINER=`root`@`localhost` PROCEDURE `UpdateDeviceLastPing`(IN p_connectkey VARCHAR(255))
 BEGIN
     UPDATE DEVICE
     SET LASTPING = NOW()
     WHERE CONNECTKEY = p_connectkey;
+END$$
+DELIMITER ;
+
+DELIMITER $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `UpdateMaker`(
+    IN p_maker_id INT,
+    IN p_code INT,
+    IN p_name VARCHAR(255)
+)
+BEGIN
+    UPDATE MAKER
+    SET
+        CODE = COALESCE(p_code, CODE),
+        NAME = COALESCE(p_name, NAME)
+    WHERE MAKER = p_maker_id;
+END$$
+DELIMITER ;
+
+DELIMITER $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `UpdateProduct`(
+    IN p_PRODUCT     INT,
+    IN p_CODE        INT,
+    IN p_NAME        VARCHAR(255),
+    IN p_TYPE        INT,
+    IN p_MAKER       INT,
+    IN p_PRICE       FLOAT,
+    IN p_DISCOUNT    FLOAT,
+    IN p_FINALPRICE  FLOAT,
+    IN p_NOTES       VARCHAR(255)
+)
+BEGIN
+    UPDATE PRODUCT
+    SET
+        CODE       = IF(p_CODE IS NOT NULL, p_CODE, CODE),
+        NAME       = IF(p_NAME IS NOT NULL, p_NAME, NAME),
+        TYPE       = IF(p_TYPE IS NOT NULL, p_TYPE, TYPE),
+        MAKER      = IF(p_MAKER IS NOT NULL, p_MAKER, MAKER),
+        PRICE      = IF(p_PRICE IS NOT NULL, p_PRICE, PRICE),
+        DISCOUNT   = IF(p_DISCOUNT IS NOT NULL, p_DISCOUNT, DISCOUNT),
+        FINALPRICE = IF(p_FINALPRICE IS NOT NULL, p_FINALPRICE, FINALPRICE),
+        NOTES      = IF(p_NOTES IS NOT NULL, p_NOTES, NOTES)
+    WHERE PRODUCT = p_PRODUCT;
 END$$
 DELIMITER ;
 
@@ -228,5 +432,20 @@ UPDATE ISSUEDPROMO
 SET REDEEMED = 1, 
 REDEEMDATE = NOW()
 WHERE REDEEMCODE = p_redeemcode;
+END$$
+DELIMITER ;
+
+DELIMITER $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `UpdateType`(
+    IN p_type_id INT,
+    IN p_code INT,
+    IN p_name VARCHAR(255)
+)
+BEGIN
+    UPDATE TYPE
+    SET
+        CODE = COALESCE(p_code, CODE),
+        NAME = COALESCE(p_name, NAME)
+    WHERE TYPE = p_type_id;
 END$$
 DELIMITER ;

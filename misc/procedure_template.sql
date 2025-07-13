@@ -1,29 +1,21 @@
 DELIMITER //
 
-CREATE PROCEDURE GetFilteredProducts(
-    IN input_type VARCHAR(100),
-    IN input_maker VARCHAR(100)
+CREATE PROCEDURE InsertProduct (
+    IN p_CODE        INT,
+    IN p_NAME        VARCHAR(255),
+    IN p_TYPE        INT,
+    IN p_MAKER       INT,
+    IN p_PRICE       FLOAT,
+    IN p_DISCOUNT    FLOAT,
+    IN p_FINALPRICE  FLOAT,
+    IN p_NOTES       VARCHAR(255)
 )
 BEGIN
-    SELECT 
-        PRODUCT AS ID,
-        P.CODE,
-        P.NAME,
-        T.NAME AS TYPE,
-        M.NAME AS MAKER,
-        PRICE,
-        DISCOUNT,
-        FINALPRICE,
-        NOTES 
-    FROM 
-        PRODUCT P
-    INNER JOIN 
-        MAKER M ON M.MAKER = P.MAKER
-    INNER JOIN 
-        TYPE T ON T.TYPE = P.TYPE
-    WHERE 
-        (input_type IS NULL OR T.NAME = input_type)
-        AND (input_maker IS NULL OR M.NAME = input_maker);
+    INSERT INTO PRODUCT (
+        CODE, NAME, TYPE, MAKER, PRICE, DISCOUNT, FINALPRICE, NOTES
+    ) VALUES (
+        p_CODE, p_NAME, p_TYPE, p_MAKER, p_PRICE, p_DISCOUNT, p_FINALPRICE, p_NOTES
+    );
 END //
 
 DELIMITER ;

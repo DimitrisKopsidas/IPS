@@ -420,6 +420,116 @@ async function insertProduct(productData) {
     }
 }
 
+async function insertMaker(makerData) {
+    try {
+        console.log('Inserting maker:', makerData);
+        const response = await fetch('http://localhost:3000/api/insertMaker', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                code: makerData.code,
+                name: makerData.name
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Maker insert result:', result);
+        return result;
+    } catch (error) {
+        console.error('Error inserting maker:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+async function insertType(typeData) {
+    try {
+        console.log('Inserting type:', typeData);
+        const response = await fetch('http://localhost:3000/api/insertType', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                code: typeData.code,
+                name: typeData.name
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Type insert result:', result);
+        return result;
+    } catch (error) {
+        console.error('Error inserting type:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+async function updateMaker(makerData) {
+    try {
+        console.log('Updating maker:', makerData);
+        const response = await fetch(`http://localhost:3000/api/updateMaker/${makerData.id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                code: makerData.code,
+                name: makerData.name
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Maker update result:', result);
+        return result;
+    } catch (error) {
+        console.error('Error updating maker:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+async function updateType(typeData) {
+    try {
+        console.log('Updating type:', typeData);
+        const response = await fetch(`http://localhost:3000/api/updateType/${typeData.id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                code: typeData.code,
+                name: typeData.name
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Type update result:', result);
+        return result;
+    } catch (error) {
+        console.error('Error updating type:', error);
+        return { success: false, error: error.message };
+    }
+}
+
 export { 
     fetchCarouselProducts,
     fetchCarouselSettings,
@@ -441,5 +551,9 @@ export {
     deleteType,
     deleteImage,
     updateProduct,
-    insertProduct
+    insertProduct,
+    insertMaker,
+    insertType,
+    updateMaker,
+    updateType
 };

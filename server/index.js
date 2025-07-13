@@ -459,3 +459,93 @@ app.post('/api/uploadNewProductImage/:productId', upload.single('image'), (req, 
         });
     }
 });
+
+// Add these endpoints after your existing endpoints in index.js
+
+// Insert new maker
+app.post('/api/insertMaker', async (req, res) => {
+    try {
+        const { code, name } = req.body;
+
+        await pool.query('CALL InsertMaker(?, ?)', [code, name]);
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error inserting maker:', error);
+        // Check for duplicate entry error (MySQL error code 1062)
+        if (error.code === 'ER_DUP_ENTRY') {
+            res.status(409).json({ 
+                success: false, 
+                error: `Maker code ${req.body.code} already exists. Please use a different code.`,
+                isDuplicateCode: true
+            });
+        } else {
+            res.status(500).json({ 
+                success: false, 
+                error: error.message 
+            });
+        }
+    }
+});
+
+// Insert new type
+app.post('/api/insertType', async (req, res) => {
+    try {
+        const { code, name } = req.body;
+
+        await pool.query('CALL InsertType(?, ?)', [code, name]);
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error inserting type:', error);
+        // Check for duplicate entry error (MySQL error code 1062)
+        if (error.code === 'ER_DUP_ENTRY') {
+            res.status(409).json({ 
+                success: false, 
+                error: `Type code ${req.body.code} already exists. Please use a different code.`,
+                isDuplicateCode: true
+            });
+        } else {
+            res.status(500).json({ 
+                success: false, 
+                error: error.message 
+            });
+        }
+    }
+});
+
+// Update existing maker
+app.put('/api/updateMaker/:id', async (req, res) => {
+    try {
+        const makerId = req.params.id;
+        const { code, name } = req.body;
+
+        await pool.query('CALL UpdateMaker(?, ?, ?)', [makerId, code, name]);
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error updating maker:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
+    }
+});
+
+// Update existing type
+app.put('/api/updateType/:id', async (req, res) => {
+    try {
+        const typeId = req.params.id;
+        const { code, name } = req.body;
+
+        await pool.query('CALL UpdateType(?, ?, ?)', [typeId, code, name]);
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error updating type:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
+    }
+});
