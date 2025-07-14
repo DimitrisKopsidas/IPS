@@ -4,7 +4,7 @@ function initializeNavigation(state, displayCallback, itemsPerPage) {
         const prevBtn = document.getElementById('sidePrevBtn');
         const nextBtn = document.getElementById('sideNextBtn');
         
-        const totalPages = Math.ceil(state.filteredProducts.length / state.itemsPerPage);
+        const totalPages = Math.ceil(state.filteredItems.length / state.itemsPerPage);
         
         // Hide both buttons if there's only one page or no items
         if (totalPages <= 1) {
@@ -22,15 +22,15 @@ function initializeNavigation(state, displayCallback, itemsPerPage) {
     document.getElementById('sidePrevBtn').addEventListener('click', () => {
         if (state.currentPage > 1) {
             state.currentPage--;
-            displayCallback(state.filteredProducts);
+            displayCallback(state.filteredItems);
         }
     });
 
     document.getElementById('sideNextBtn').addEventListener('click', () => {
-        const totalPages = Math.ceil(state.filteredProducts.length / state.itemsPerPage);
+        const totalPages = Math.ceil(state.filteredItems.length / state.itemsPerPage);
         if (state.currentPage < totalPages) {
             state.currentPage++;
-            displayCallback(state.filteredProducts);
+            displayCallback(state.filteredItems);
         }
     });
 

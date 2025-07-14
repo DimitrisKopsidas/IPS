@@ -1,1 +1,3 @@
-select product+1 as NEXTID from product order by product desc limit 1
+select * from product;
+CALL ResetDummyData();
+select * from type;
