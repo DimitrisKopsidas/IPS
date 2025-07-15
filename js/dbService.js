@@ -530,6 +530,82 @@ async function updateType(typeData) {
     }
 }
 
+async function fetchCarouselMinigame(carousel) {
+    try {
+        const response = await fetch(`http://localhost:3000/api/getCarouselMinigame/${carousel}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Carousel minigame data:', {
+            carousel,
+            minigameData: data
+        });
+        return data;
+    } catch (error) {
+        console.error('Error fetching carousel minigame:', error);
+        return [];
+    }
+}
+
+async function fetchCarouselProductsList(carousel) {
+    try {
+        const response = await fetch(`http://localhost:3000/api/getCarouselProducts/${carousel}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Carousel products list:', {
+            carousel,
+            productsCount: data.length,
+            products: data
+        });
+        return data;
+    } catch (error) {
+        console.error('Error fetching carousel products list:', error);
+        return [];
+    }
+}
+
+async function fetchFilteredCarousel(filterDeviceNotNull = null) {
+    try {
+        const filterParam = filterDeviceNotNull === null ? 'null' : filterDeviceNotNull;
+        const response = await fetch(`http://localhost:3000/api/getFilteredCarousel/${filterParam}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Filtered carousel data:', {
+            filter: filterDeviceNotNull,
+            carouselCount: data.length,
+            carousels: data
+        });
+        return data;
+    } catch (error) {
+        console.error('Error fetching filtered carousel:', error);
+        return [];
+    }
+}
+
+async function fetchMinigamePromosList(carousel) {
+    try {
+        const response = await fetch(`http://localhost:3000/api/getMinigamePromos/${carousel}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Minigame promos list:', {
+            carousel,
+            promosCount: data.length,
+            promos: data
+        });
+        return data;
+    } catch (error) {
+        console.error('Error fetching minigame promos list:', error);
+        return [];
+    }
+}
+
 export { 
     fetchCarouselProducts,
     fetchCarouselSettings,
@@ -555,5 +631,9 @@ export {
     insertMaker,
     insertType,
     updateMaker,
-    updateType
+    updateType,
+    fetchCarouselMinigame,
+    fetchCarouselProductsList,
+    fetchFilteredCarousel,
+    fetchMinigamePromosList
 };

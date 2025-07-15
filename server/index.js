@@ -539,4 +539,71 @@ app.put('/api/updateType/:id', async (req, res) => {
     }
 });
 
-//
+//CAROUSEL
+app.get('/api/getCarouselMinigame/:carousel', async (req, res) => {
+    try {
+        const carousel = req.params.carousel === 'true';
+        const [rows] = await pool.query('CALL GetCarouselMinigame(?)', [carousel]);
+        
+        console.log(`Retrieved carousel minigame data for carousel ${carousel}:`, rows[0]);
+        res.json(rows[0]);
+    } catch (error) {
+        console.error('Error fetching carousel minigame:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to fetch carousel minigame',
+            details: error.message 
+        });
+    }
+});
+
+// Get carousel products
+app.get('/api/getCarouselProducts/:carousel', async (req, res) => {
+    try {
+        const carousel = req.params.carousel === 'true';
+        const [rows] = await pool.query('CALL GetCarouselProducts(?)', [carousel]);
+        
+        console.log(`Retrieved carousel products for carousel ${carousel}:`, rows[0]);
+        res.json(rows[0]);
+    } catch (error) {
+        console.error('Error fetching carousel products:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to fetch carousel products',
+            details: error.message 
+        });
+    }
+});
+
+// Get filtered carousel data
+app.get('/api/getFilteredCarousel/:filterDeviceNotNull', async (req, res) => {
+    try {
+        const filterDeviceNotNull = req.params.filterDeviceNotNull === 'true' ? true : 
+                                   req.params.filterDeviceNotNull === 'false' ? false : null;
+        const [rows] = await pool.query('CALL GetFilteredCarousel(?)', [filterDeviceNotNull]);
+        
+        console.log(`Retrieved filtered carousel data with filter ${filterDeviceNotNull}:`, rows[0]);
+        res.json(rows[0]);
+    } catch (error) {
+        console.error('Error fetching filtered carousel:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to fetch filtered carousel',
+            details: error.message 
+        });
+    }
+});
+
+// Get minigame promos
+app.get('/api/getMinigamePromos/:carousel', async (req, res) => {
+    try {
+        const carousel = req.params.carousel === 'true';
+        const [rows] = await pool.query('CALL GetMinigamePromos(?)', [carousel]);
+        
+        console.log(`Retrieved minigame promos for carousel ${carousel}:`, rows[0]);
+        res.json(rows[0]);
+    } catch (error) {
+        console.error('Error fetching minigame promos:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to fetch minigame promos',
+            details: error.message 
+        });
+    }
+});
