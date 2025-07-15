@@ -105,7 +105,7 @@ END$$
 DELIMITER ;
 
 DELIMITER $$
-CREATE DEFINER=`root`@`localhost` PROCEDURE `GetFilteredCarousel`(IN filterDeviceNotNull BOOLEAN)
+CREATE DEFINER=`root`@`localhost` PROCEDURE `GetFilteredCarousels`(IN filterParam BOOLEAN)
 BEGIN
     SELECT 
         CAROUSEL AS ID,
@@ -120,7 +120,7 @@ BEGIN
     FROM 
         CAROUSEL
     WHERE 
-        (filterDeviceNotNull IS NULL OR (DEVICE IS NOT NULL AND DEVICE != 0));
+        (filterParam = TRUE OR (DEVICE IS NOT NULL AND DEVICE != 0));
 END$$
 DELIMITER ;
 

@@ -1,6 +1,5 @@
 import { fetchFilteredProducts, fetchMakers, fetchTypes } from './dbService.js';
 import { getItemCardHtml } from './common.js';
-
 const itemList = document.getElementById('productList');
 
 let items;
@@ -60,7 +59,7 @@ function displayItems(filteredItems = items) {//Append items according to filter
                 window.location.href = `product.html?${params.toString()}`;
             });
             
-            itemCard.innerHTML = getItemCardHtml("product",product);
+            itemCard.innerHTML = getItemCardHtml("product", product);
             itemList.appendChild(itemCard);
         });
     } else {

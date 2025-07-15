@@ -574,11 +574,11 @@ app.get('/api/getCarouselProducts/:carousel', async (req, res) => {
 });
 
 // Get filtered carousel data
-app.get('/api/getFilteredCarousel/:filterDeviceNotNull', async (req, res) => {
+app.get('/api/getFilteredCarousels/:filterDeviceNotNull', async (req, res) => {
     try {
         const filterDeviceNotNull = req.params.filterDeviceNotNull === 'true' ? true : 
                                    req.params.filterDeviceNotNull === 'false' ? false : null;
-        const [rows] = await pool.query('CALL GetFilteredCarousel(?)', [filterDeviceNotNull]);
+        const [rows] = await pool.query('CALL GetFilteredCarousels(?)', [filterDeviceNotNull]);
         
         console.log(`Retrieved filtered carousel data with filter ${filterDeviceNotNull}:`, rows[0]);
         res.json(rows[0]);

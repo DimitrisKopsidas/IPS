@@ -61,17 +61,17 @@ export function getItemCardHtml(choice, item) {
         return `<div class="product-layout">
                     <div class="product-details">
                         <div class="product-header">
-                            <span class="product-code">${carousel.code}</span>
-                            <h2 class="product-name">${carousel.name}</h2>
+                            <span class="product-code">${item.CODE}</span>
+                            <h2 class="product-name">${item.NAME}</h2>
                         </div>
                         <div class="product-info">
                             <div class="info-row">
                                 <span class="product-device">
-                                    ${hasDevice ? '🖥️' : '❌'} Device: ${carousel.device || 'Not Assigned'}
+                                    ${item.DEVICE ? '🖥️' : '❌'} Device: ${item.DEVICE || 'Not Assigned'}
                                 </span>
                             </div>
                             <div class="carousel-stats">
-                                <p class="product-note">${carousel.notes}</p>
+                                <p class="product-note">${item.NOTES}</p>
                             </div>
                         </div>
                     </div>

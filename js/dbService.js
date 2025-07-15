@@ -567,16 +567,15 @@ async function fetchCarouselProductsList(carousel) {
     }
 }
 
-async function fetchFilteredCarousel(filterDeviceNotNull = null) {
+async function fetchFilteredCarousels(filterParam) {
     try {
-        const filterParam = filterDeviceNotNull === null ? 'null' : filterDeviceNotNull;
-        const response = await fetch(`http://localhost:3000/api/getFilteredCarousel/${filterParam}`);
+        const response = await fetch(`http://localhost:3000/api/GetFilteredCarousels/${filterParam}`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
         console.log('Filtered carousel data:', {
-            filter: filterDeviceNotNull,
+            filter: filterParam,
             carouselCount: data.length,
             carousels: data
         });
@@ -634,6 +633,6 @@ export {
     updateType,
     fetchCarouselMinigame,
     fetchCarouselProductsList,
-    fetchFilteredCarousel,
+    fetchFilteredCarousels,
     fetchMinigamePromosList
 };
