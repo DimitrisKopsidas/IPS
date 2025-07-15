@@ -32,4 +32,51 @@ export function initiateHotkeys(onDirection){
     });
 }
 
+export function getItemCardHtml(choice, item) {
+    if (choice === "product") {
+        return `<div class="product-layout">
+                    <div class="product-image">
+                        <img src="media/${item.ID}.png" alt="${item.NAME}" onerror="this.src='media/404.png'">
+                    </div>
+                    <div class="product-details">
+                        <div class="product-header">
+                            <span class="product-code">${item.CODE}</span>
+                            <h2 class="product-name">${item.NAME}</h2>
+                        </div>
+                        <div class="product-info">
+                            <div class="info-row">
+                                <span class="product-group">Type: ${item.TYPECODE} - ${item.TYPENAME}</span>
+                                <span class="product-maker">Maker: ${item.MAKERCODE} - ${item.MAKERNAME}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="product-price">Price: $${item.PRICE}</span>
+                                <span class="product-discount">Discount: ${item.DISCOUNT*100}%</span>
+                                <span class="product-final-price">Final: $${item.FINALPRICE}</span>
+                            </div>
+                            <p class="product-note">${item.NOTES}</p>
+                        </div>
+                    </div>
+                </div>`;
+    } else if (choice === "carousel") {
+        return `<div class="product-layout">
+                    <div class="product-details">
+                        <div class="product-header">
+                            <span class="product-code">${carousel.code}</span>
+                            <h2 class="product-name">${carousel.name}</h2>
+                        </div>
+                        <div class="product-info">
+                            <div class="info-row">
+                                <span class="product-device">
+                                    ${hasDevice ? '🖥️' : '❌'} Device: ${carousel.device || 'Not Assigned'}
+                                </span>
+                            </div>
+                            <div class="carousel-stats">
+                                <p class="product-note">${carousel.notes}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+    }
+}
+
 
