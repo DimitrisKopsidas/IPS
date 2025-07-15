@@ -39,11 +39,11 @@ app.listen(PORT, () => {
     testConnection();
 });
 
-//CAROUSEL
-app.get('/api/GetCarouselProducts/:connectkey', async (req, res) => {
+//ACTIVECAROUSEL
+app.get('/api/GetCarouselProductsConnect/:connectkey', async (req, res) => {
     try {
         const connectkey = req.params.connectkey;
-        const [rows] = await pool.query('CALL GetCarouselProducts(?)', [connectkey]);
+        const [rows] = await pool.query('CALL GetCarouselProductsConnect(?)', [connectkey]);
         
         // Return all columns from the first result set
         console.log(`Retrieved carousel product data for connectKey ${connectkey}:`, rows[0]);
@@ -57,10 +57,10 @@ app.get('/api/GetCarouselProducts/:connectkey', async (req, res) => {
     }
 });
 
-app.get('/api/getCarouselSettings/:connectkey', async (req, res) => {
+app.get('/api/getCarouselSettingsConnect/:connectkey', async (req, res) => {
     try {
         const connectkey = req.params.connectkey;
-        const [rows] = await pool.query('CALL GetCarouselSettings(?)', [connectkey]);
+        const [rows] = await pool.query('CALL GetCarouselSettingsConnect(?)', [connectkey]);
         
         // Return all columns from the first result set
         console.log(`Retrieved carousel settings for connectKey ${connectkey}:`, rows[0]);
@@ -90,10 +90,10 @@ app.get('/api/updateDeviceLastPing/:connectKey', async (req, res) => {
     }
 });
 //MINIGAME
-app.get('/api/getMinigameSettings/:connectkey', async (req, res) => {
+app.get('/api/getMinigameSettingsConnect/:connectkey', async (req, res) => {
     try {
         const connectkey = req.params.connectkey;
-        const [rows] = await pool.query('CALL GetMinigameSettings(?)', [connectkey]);
+        const [rows] = await pool.query('CALL GetMinigameSettingsConnect(?)', [connectkey]);
         
         // Return all columns from the first result set
         console.log(`Retrieved minigame settings for connectKey ${connectkey}:`, rows[0]);
@@ -107,10 +107,10 @@ app.get('/api/getMinigameSettings/:connectkey', async (req, res) => {
     }
 });
 
-app.get('/api/getMinigamePromos/:connectkey', async (req, res) => {
+app.get('/api/getMinigamePromosConnect/:connectkey', async (req, res) => {
     try {
         const connectkey = req.params.connectkey;
-        const [rows] = await pool.query('CALL GetMinigamePromos(?)', [connectkey]);
+        const [rows] = await pool.query('CALL GetMinigamePromosConnect(?)', [connectkey]);
         
         // Return all columns from the first result set
         console.log(`Retrieved minigame promos for connectKey ${connectkey}:`, rows[0]);
@@ -354,7 +354,6 @@ app.delete('/api/deleteImage/:imageId', async (req, res) => {
     }
 });
 
-// Add to existing endpoints
 app.put('/api/updateProduct/:id', async (req, res) => {
     try {
         const productId = req.params.id;
@@ -382,7 +381,6 @@ app.put('/api/updateProduct/:id', async (req, res) => {
     }
 });
 
-// Add this endpoint with the other endpoints
 app.post('/api/insertProduct', async (req, res) => {
     try {
         const { code, name, type, maker, price, discount, finalPrice, notes } = req.body;
@@ -417,7 +415,6 @@ app.post('/api/insertProduct', async (req, res) => {
     }
 });
 
-// Add this after your other imports and before your routes
 const storage = multer.diskStorage({
     destination: function(req, file, cb) {
         const mediaPath = path.join(__dirname, '..', 'media');
@@ -436,10 +433,8 @@ const upload = multer({
     limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
 
-// Add static file serving
 app.use('/media', express.static(path.join(__dirname, '..', 'media')));
 
-// Add this endpoint
 app.post('/api/uploadNewProductImage/:productId', upload.single('image'), (req, res) => {
     try {
         if (!req.file) {
@@ -460,9 +455,6 @@ app.post('/api/uploadNewProductImage/:productId', upload.single('image'), (req, 
     }
 });
 
-// Add these endpoints after your existing endpoints in index.js
-
-// Insert new maker
 app.post('/api/insertMaker', async (req, res) => {
     try {
         const { code, name } = req.body;
@@ -488,7 +480,6 @@ app.post('/api/insertMaker', async (req, res) => {
     }
 });
 
-// Insert new type
 app.post('/api/insertType', async (req, res) => {
     try {
         const { code, name } = req.body;
@@ -514,7 +505,6 @@ app.post('/api/insertType', async (req, res) => {
     }
 });
 
-// Update existing maker
 app.put('/api/updateMaker/:id', async (req, res) => {
     try {
         const makerId = req.params.id;
@@ -532,7 +522,6 @@ app.put('/api/updateMaker/:id', async (req, res) => {
     }
 });
 
-// Update existing type
 app.put('/api/updateType/:id', async (req, res) => {
     try {
         const typeId = req.params.id;
@@ -549,3 +538,5 @@ app.put('/api/updateType/:id', async (req, res) => {
         });
     }
 });
+
+//

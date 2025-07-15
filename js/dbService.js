@@ -1,7 +1,7 @@
 //CAROUSEL
 async function fetchCarouselProducts(connectkey) {
     try {
-        const response = await fetch(`http://localhost:3000/api/GetCarouselProducts/${connectkey}`);
+        const response = await fetch(`http://localhost:3000/api/GetCarouselProductsConnect/${connectkey}`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -20,7 +20,7 @@ async function fetchCarouselProducts(connectkey) {
 
 async function fetchCarouselSettings(connectkey) {
     try {
-        const response = await fetch(`http://localhost:3000/api/getCarouselSettings/${connectkey}`);
+        const response = await fetch(`http://localhost:3000/api/getCarouselSettingsConnect/${connectkey}`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -53,7 +53,7 @@ async function updateDeviceLastPing(connectKey) {
 //MINIGAME
 async function fetchMinigameSettings(connectkey) {
     try {
-        const response = await fetch(`http://localhost:3000/api/getMinigameSettings/${connectkey}`);
+        const response = await fetch(`http://localhost:3000/api/GetMinigameSettingsConnect/${connectkey}`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -71,7 +71,7 @@ async function fetchMinigameSettings(connectkey) {
 
 async function fetchMinigamePromos(connectkey) {
     try {
-        const response = await fetch(`http://localhost:3000/api/getMinigamePromos/${connectkey}`);
+        const response = await fetch(`http://localhost:3000/api/GetMinigamePromosConnect/${connectkey}`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
