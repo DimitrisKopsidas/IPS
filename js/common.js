@@ -76,6 +76,16 @@ export function getItemCardHtml(choice, item) {
                         </div>
                     </div>
                 </div>`;
+    } else if (choice === "group") {
+        return `<input type="number" 
+                       class="groups-input code" 
+                       value="${item.CODE}"
+                       data-original-code="${item.CODE}">
+                <input type="text" 
+                       class="groups-input name" 
+                       value="${item.NAME}"
+                       data-original-name="${item.NAME}">
+                <button class="groups-btn-delete-item" title="Delete group">🗑️</button>`;
     }
 }
 

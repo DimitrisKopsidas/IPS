@@ -65,8 +65,6 @@ import { fetchFilteredProducts, fetchMakers, fetchTypes, deleteProduct,
     let pendingNavigationDirection = null;
     let validForInsert = true;
     let currentSort = { field: 'code', direction: 'asc' };
-    let makerSort = { field: 'code', direction: 'asc' };
-    let isNew = false;
     let pendingImageFile = null;
     let currentModalType = null; // 'types' or 'makers'
 
@@ -84,7 +82,6 @@ import { fetchFilteredProducts, fetchMakers, fetchTypes, deleteProduct,
     // #endregion
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Update initial data loading
     products = await fetchFilteredProducts(selectedType, selectedMaker);
     makers = await fetchMakers();
     types = await fetchTypes();
@@ -92,7 +89,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     populateSelectFields(makers, types);
 
-    // After loading data, find the specific product
     const productData = products.find(p => p.ID.toString() === productId);
     
     if (productData) {
@@ -103,8 +99,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         showWarningModal('Product not found');
     }
 
-    window.addEventListener('popstate', async function() {
-        // Get current URL parameters after navigation
+    window.addEventListener('popstate', async function() {// Reload the page correctly when navigating back
         const params = new URLSearchParams(window.location.search);
         const newProductId = params.get('id');
         
@@ -610,28 +605,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // #region FUNCTIONS
     function loadProductData(productData) {
-        // Basic product information
         headerProductCode.value = productData.CODE;
         headerProductName.value = productData.NAME;
         priceInput.value = productData.PRICE;
-        discountInput.value = productData.DISCOUNT * 100; // Convert to percentage
+        discountInput.value = productData.DISCOUNT * 100;
         finalPriceInput.value = productData.FINALPRICE;
-        
-        // Handle type/group selection
         productType.value = productData.TYPENAME;
         const selectedType = types.find(t => t.ID === productData.TYPEID);
         groupCodeInput.value = selectedType ? selectedType.CODE : '';
-        
-        // Handle maker selection
         productMaker.value = productData.MAKERNAME;
         const selectedMaker = makers.find(m => m.ID === productData.MAKERID);
         makerCodeInput.value = selectedMaker ? selectedMaker.CODE : '';
-        
-        // Other fields
         productNotes.value = productData.NOTES || '';
         mainProductImage.src = `media/${productData.ID}.png`;
 
-        // Handle carousel data
         carouselList.innerHTML = '';
         if (productData.CAROUSELCODE && productData.CAROUSELNAME) {
             const div = document.createElement('div');
@@ -645,7 +632,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             carouselList.innerHTML = '<div class="no-data">No carousel assigned</div>';
         }
 
-        // Handle promo data
         promoList.innerHTML = '';
         if (productData.PROMOCODE && productData.PROMODISCOUNT !== null) {
             const div = document.createElement('div');
@@ -663,17 +649,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         productNotes.style.height = 'auto';
         productNotes.style.height = (productNotes.scrollHeight) + 'px';
 
-        // Update current product ID for navigation
         currentProductId = productData.ID;
-        
-        // Reset form changed flag
         formChanged = false;
-
-        // Update navigation state
         updateNavigationState();
     }
 
-    // Replace the existing saveProductData function
     async function saveProductData() {
         if (!headerProductCode.value.trim()) {
             showWarningModal('Product Code is required');
@@ -719,10 +699,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 validForInsert = true;
                 formChanged = false;
                 
-                // Refresh the products list
                 products = await fetchFilteredProducts('All', 'All');
-                
-                // Find the updated/inserted product
                 const savedProduct = products.find(p => p.CODE === productData.code);
                 
                 if (savedProduct) {
@@ -776,7 +753,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Replace the existing createNewProduct function
     function createNewProduct() {
         headerProductCode.value = "";
         headerProductName.value = "";
@@ -791,31 +767,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         makerCodeInput.value = "";
         changeImageTxt.innerText = 'Upload Image';
         
-        // Clear pending image
         pendingImageFile = null;
-        
-        // Clear carousel and promo lists
         carouselList.innerHTML = '';
         promoList.innerHTML = '';
 
-        // Update navigation state
+        headerProductCode.focus()
         updateNavigationState();
-        
-        headerProductCode.focus();
-        
-        // Reset form changed flag
+
         formChanged = true;
         currentProductId = 'new';
     }
 
-    // Replace the existing uploadNewProductImage function
     async function uploadNewProductImage(imageFile) {
         try {
             if (!imageFile) {
                 throw new Error('No image file provided');
             }
 
-            // Use currentProductId which will be set to the saved product's ID
             if (!currentProductId || currentProductId === 'new') {
                 throw new Error('Product must be saved before uploading image');
             }
