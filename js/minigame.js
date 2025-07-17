@@ -4,41 +4,33 @@
 //3)SLICE SIZE ACCORDING TO CHANCE
 //4)DISPLAY DEATHDATE
 
-
-  // props.items.push({ label: 'four' });
-  // props.items.push({ label: 'five' });
-
-  // props.items.forEach(item => {
-  //   console.log(item.label);
-  // });
-
-//!!!!!!!!!!!!!!CONTINUE PROMO APPEND IN WHEEL, CREATE PROCEDURE
-
 import {Wheel} from 'https://cdn.jsdelivr.net/npm/spin-wheel@5.0.2/dist/spin-wheel-esm.js';
 import { fetchMinigameSettings, fetchMinigamePromos, insertIssuedPromo } from './dbService.js';
 
+// #region VARIABLE DECLARATION
 //DEFAULT SETTINGS
-var winningItemIndex=1;//BACKEND
-var revolutions=5;//DB
-var spinDuration=3000;//DB
-var onStopChangeDelay=30000;//DB
-var inactivityChangeDelay=20000;//DB
+var winningItemIndex=1;
+var revolutions=5;
+var spinDuration=3000;
+var onStopChangeDelay=30000;
+var inactivityChangeDelay=20000;
 
 //PROGRAM VARIABLES
 let connectkey;
 let settings = [];
 let promos = [];
-var redeemCode = redeemCodeCalc();
+var redeemCode = redeemCodeGenerator();
 var leftSep=document.getElementById('leftSep');
 var rightSep=document.getElementById('rightSep');
 var wheelStartBySeparator=0;
 var carouselURL;
 var overlay=new Image();
-overlay.src='media/overlay.svg';//INITIALIZE OVERLAY AS IMAGE
+overlay.src='media/overlay.svg';// Initialize overlay as image
+// #endregion VARIABLE DECLARATION
 
 document.addEventListener('DOMContentLoaded', async () => {
     const params = new URLSearchParams(window.location.search);
-    connectkey = params.get('connectkey')/* || 'default'*/;
+    connectkey = params.get('connectkey');
 
     settings = await fetchMinigameSettings(connectkey);
     promos = await fetchMinigamePromos(connectkey);
@@ -65,8 +57,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const props = {
         items: promos.map(promo => ({
                 label: `${promo.DISCOUNT * 100}%`,
-                chance: promo.CHANCE || 1, // Add chance if available
-                id: promo.ID // Store promo ID for reference
+                chance: promo.CHANCE || 1, 
+                id: promo.ID 
             })),
             onRest: onStop,
             overlayImage: overlay,
@@ -99,6 +91,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     winningItemCalc();
 });
 
+// #region FUNCTIONS
 async function onStop(){
     if(wheelStartBySeparator==1){
     changePageOnStop();
@@ -111,17 +104,17 @@ async function onStop(){
 
 function changePageOnStop() {
     setTimeout(function() {
-    if(onStopChangeDelay!=0){
-        window.location.href = carouselURL;
-    }
+        if (onStopChangeDelay!=0) {
+            window.location.href = carouselURL;
+        }
     }, onStopChangeDelay);
 }
 
 function changePageOnInactivity() {
     setTimeout(function() {
-    if((wheelStartBySeparator==0)&&(inactivityChangeDelay!=0)){
-        window.location.href = carouselURL;
-    }
+        if ((wheelStartBySeparator==0)&&(inactivityChangeDelay!=0)) {
+            window.location.href = carouselURL;
+        }
     }, inactivityChangeDelay);
 }
 
@@ -129,11 +122,9 @@ function displayPrize() {
     const contentWrapper = document.querySelector('.content-wrapper');
     const winningPromo = promos[winningItemIndex];
 
-    // Create prize display elements
     const prizeDisplay = document.createElement('div');
     prizeDisplay.className = 'prize-display';
     
-    // Set image and text based on promo type
     let prizeImage = '';
     let prizeText = '';
     
@@ -167,13 +158,11 @@ function displayPrize() {
         </div>
     `;
 
-    // Clear and add new content
     contentWrapper.innerHTML = '';
     contentWrapper.appendChild(prizeDisplay);
 }
 
 function winningItemCalc() {
-    // Validate promos array
     if (!Array.isArray(promos) || promos.length === 0) {
         console.error('No valid promos available for calculation');
         return 0; // Default to first item
@@ -197,22 +186,21 @@ function winningItemCalc() {
             }
         }
 
-        // Fallback to last item if no winner found
         winningItemIndex = promos.length - 1;
         return promos.length - 1;
 
     } catch (error) {
         console.error('Error calculating winning item:', error);
         winningItemIndex = 0;
-        return 0; // Default to first item on error
+        return 0; 
     }
 }
 
-function redeemCodeCalc() {
-    // Generate a random 6-digit number between 100000 and 999999
+function redeemCodeGenerator() {
     const min = 100000;
     const max = 999999;
     const code = Math.floor(Math.random() * (max - min + 1)) + min;
     
     return code;
 }
+//#endregion FUNCTIONS
