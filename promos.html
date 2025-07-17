@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Listing</title>
-    <link rel="stylesheet" href="css/promos.css">
+    <title>Promos Listing</title>
+    <link rel="stylesheet" href="css/products.css">
+    <link rel="stylesheet" href="css/common.css">
     <script src="js/promos.js" type="module"></script>
     <script src="js/navigation.js"></script>
-    
 </head>
 <body>
     <nav class="top-nav">
@@ -29,26 +29,25 @@
     <div class="container">
         <div class="header-container">
             <div class="title-section">
-                <h1>Promo Codes</h1>
+                <h1>Promos</h1>
             </div>
             <div class="navigation-buttons">
-                <button class="btn btn-new" id="newPromoBtn">
-                    <span>+</span> New Promo
+                <button class="btn btn-new" id="createNewButton">
+                    <span>+</span> Create New
                 </button>
             </div>
         </div>
-
         <div class="filters-section">
             <div class="filter-group">
-                <label for="codeFilter">Promo Code:</label>
+                <label for="codeFilter">Code:</label>
                 <input type="number" id="codeFilter" class="filter-input" placeholder="Enter code">
             </div>
             <div class="filter-group">
-                <label for="productNameFilter">Product Name:</label>
-                <input type="text" id="productNameFilter" class="filter-input" placeholder="Enter name">
+                <label for="nameFilter">Name:</label>
+                <input type="text" id="nameFilter" class="filter-input" placeholder="Enter name">
             </div>
             <div class="filter-group">
-                <label for="groupFilter">Group:</label>
+                <label for="groupFilter">Type:</label>
                 <select id="groupFilter" class="filter-input">
                 </select>
             </div>
@@ -58,8 +57,11 @@
                 </select>
             </div>
             <div class="filter-group">
-                <label for="promoTypeFilter">Promo Type:</label>
-                <select id="promoTypeFilter" class="filter-input">
+                <label for="makerFilter">Items per page:</label>
+                <select id="itemsPerPage" class="filter-input">
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
                 </select>
             </div>
             

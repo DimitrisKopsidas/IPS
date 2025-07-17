@@ -199,6 +199,33 @@ async function fetchFilteredProducts(type = 'All', maker = 'All') {
     }
 }
 
+async function fetchFilteredPromos(type = 'All', maker = 'All') {
+    try {
+        // Encode parameters to handle special characters
+        const encodedType = encodeURIComponent(type);
+        const encodedMaker = encodeURIComponent(maker);
+        
+        const response = await fetch(`http://localhost:3000/api/getFilteredPromos/${encodedType}/${encodedMaker}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Filtered promos:', {
+            type,
+            maker,
+            count: data.length,
+            promos: data
+        });
+        
+        return data;
+    } catch (error) {
+        console.error('Error fetching filtered promos:', error);
+        return [];
+    }
+}
+
 async function fetchTypes() {
     try {
         const response = await fetch('http://localhost:3000/api/getTypes');
@@ -644,5 +671,6 @@ export {
     fetchCarouselMinigame,
     fetchCarouselProductsList,
     fetchFilteredCarousels,
-    fetchMinigamePromosList
+    fetchMinigamePromosList,
+    fetchFilteredPromos,
 };

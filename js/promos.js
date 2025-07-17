@@ -1,178 +1,140 @@
-import { fetchMakers, fetchTypes } from './dbService.js';
+import { fetchFilteredPromos, fetchMakers, fetchTypes } from './dbService.js';
+import { getItemCardHtml } from './common.js';
 
-document.addEventListener('DOMContentLoaded', function() {
-    let navigation;
-    let itemsPerPage = 5; // Fixed number of items per page
-    const promos = [
-        {
-            id: 1,
-            code: 100,
-            productName: "Playstation 2",
-            productGroup: "Modern",
-            productMaker: "Sony",
-            discount: 25,
-            notes: "The PS2 is the best-selling video game console of all time with over 155 million units sold worldwide!",
-            issuedCount: 2,
-            carouselCount: 0
-        },
-        {
-            id: 2,
-            code: 101,
-            productName: "Atari 2600",
-            productGroup: "Old School",
-            productMaker: "Atari",
-            discount: 15,
-            notes: "The famous 'E.T.' game for Atari 2600 was so bad that thousands of cartridges were buried in a New Mexico landfill!",
-            issuedCount: 1,
-            carouselCount: 2
-        },
-        {
-            id: 3,
-            code: 102,
-            productName: "Sega Genesis",
-            productGroup: "Retro",
-            productMaker: "Sega",
-            discount: 20,
-            notes: "Sonic the Hedgehog was created because Sega wanted a mascot that could run fast to show off the Genesis's processing power!",
-            issuedCount: 3,
-            carouselCount: 1
-        },
-        {
-            id: 4,
-            code: 103,
-            productName: "Nintendo 64",
-            productGroup: "Retro",
-            productMaker: "Nintendo",
-            discount: 10,
-            notes: "The N64's controller was the first to feature an analog stick as standard, revolutionizing 3D gaming!",
-            issuedCount: 4,
-            carouselCount: 2
-        },
-        {
-            id: 5,
-            code: 104,
-            productName: "Nintendo Entertainment System",
-            productGroup: "Old School",
-            productMaker: "Nintendo",
-            discount: 5,
-            notes: "The NES was originally released as the 'Famicom' in Japan, and the cartridges were a different shape!",
-            issuedCount: 2,
-            carouselCount: 1
-        },
-        {
-            id: 6,
-            code: 105,
-            productName: "PlayStation",
-            productGroup: "Retro",
-            productMaker: "Sony",
-            discount: 30,
-            notes: "The PlayStation was originally meant to be a Nintendo CD add-on until Sony and Nintendo's partnership fell apart!",
-            issuedCount: 3,
-            carouselCount: 0
-        },
-        {
-            id: 7,
-            code: 106,
-            productName: "Super Nintendo Entertainment System",
-            productGroup: "Retro",
-            productMaker: "Nintendo",
-            discount: 20,
-            notes: "The SNES's grey color in North America was changed because the Japanese Super Famicom's plastic would turn yellow over time!",
-            issuedCount: 5,
-            carouselCount: 3
-        }
-    ];
-    const state = {
-        currentPage: 1,
-        filteredProducts: []
-    };
+// #region VARIABLE DECLARATION
+const itemList = document.getElementById('productList');
+let navigation;
+const state = {
+    currentPage: 1,
+    filteredItems: [],
+    itemsPerPage: 50 
+};
+let items;
+let types;
+let makers;
+// #endregion VARIABLE DECLARATION
 
-    // Update display function to use fixed number of items
-    function displayProducts(filteredProducts = promos) {
-        state.filteredProducts = filteredProducts;
+document.addEventListener('DOMContentLoaded', async () => {
+    navigation = initializeNavigation(state, displayItems, state.itemsPerPage);
+    try {
+        items = await fetchFilteredPromos('All', 'All');
+        types = await fetchTypes();
+        makers = await fetchMakers();
         
-        const startIndex = (state.currentPage - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
-        const productList = document.getElementById('productList');
-        
-        productList.innerHTML = '';
+        populateFilters();
+        displayItems(items);
+    } catch (error) {
+        console.error('Error loading initial data:', error);
+    }
+});
 
-        filteredProducts.slice(startIndex, endIndex).forEach(promo => {
-            const productCard = document.createElement('div');
-            productCard.className = 'product-card';
-            productCard.style.cursor = 'pointer';
-            productCard.addEventListener('click', () => {
-                window.location.href = `product.html?get=${promo.id}`;
+// #region FUNCTIONS
+function displayItems(filteredItems = items) {//Append items according to filters by reloading page
+    state.filteredItems = filteredItems;
+    state.itemsPerPage = parseInt(document.getElementById('itemsPerPage').value);
+    
+    // Calculate total pages and adjust current page if needed
+    const totalPages = Math.ceil(filteredItems.length / state.itemsPerPage);
+    if (state.currentPage > totalPages) {
+        state.currentPage = Math.max(1, totalPages);
+    }
+    
+    const startIndex = (state.currentPage - 1) * state.itemsPerPage;
+    const endIndex = Math.min(startIndex + state.itemsPerPage, filteredItems.length);
+    
+    itemList.innerHTML = '';
+
+    if (filteredItems.length > 0) {
+        const selectedType = document.getElementById('groupFilter').value;
+        const selectedMaker = document.getElementById('makerFilter').value;
+        filteredItems.slice(startIndex, endIndex).forEach(promo => {
+            const itemCard = document.createElement('div');
+            itemCard.className = 'product-card';
+            itemCard.style.cursor = 'pointer';
+            itemCard.addEventListener('click', () => {
+
+                const params = new URLSearchParams({
+                    id: promo.ID,
+                    type: selectedType,
+                    maker: selectedMaker,
+                });
+
+                window.location.href = `promo.html?${params.toString()}`;
             });
             
-            productCard.innerHTML = `
-                <div class="product-layout">
-                    <div class="product-details">
-                        <div class="product-header">
-                            <span class="product-code">${promo.code}</span>
-                            <h2 class="product-name">${promo.productName}</h2>
-                            <span class="product-discount"><b>Discount: ${promo.discount}%</b></span>
-                        </div>
-                        <div class="product-info">
-                            <div class="info-row">
-                                <span class="product-group">Group: ${promo.productGroup}</span>
-                                <span class="product-maker">Maker: ${promo.productMaker}</span>
-                            </div>
-                            <div class="info-row">
-                                
-                                <span>Active in carousels: ${promo.carouselCount}</span>
-                                <span>Promos issued: ${promo.issuedCount}</span>
-                            </div>
-                            <p class="product-note">${promo.notes}</p>
-                            <div class="product-stats">
-                                
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            productList.appendChild(productCard);
+            itemCard.innerHTML = getItemCardHtml("promo", promo);
+            itemList.appendChild(itemCard);
         });
-
-        navigation.updateNavigation();
+    } else {
+        itemList.innerHTML = '<div class="no-results">No items found</div>';
     }
 
-    // Initialize navigation
-    navigation = initializeNavigation(state, displayProducts,itemsPerPage);
+    navigation.updateNavigation();
+}
 
-    // Update filter function
-    function filterProducts() {
-        const selectedGroup = document.getElementById('groupFilter').value;
-        const selectedMaker = document.getElementById('makerFilter').value;
+async function filterItems() {//Display items accodrding to filters
+    try {
         const searchCode = document.getElementById('codeFilter').value.toLowerCase();
-        const searchName = document.getElementById('productNameFilter').value.toLowerCase();
-        const promoType = document.getElementById('promoTypeFilter').value;
+        const searchName = document.getElementById('nameFilter').value.toLowerCase();
+        const selectedType = document.getElementById('groupFilter').value;
+        const selectedMaker = document.getElementById('makerFilter').value;
+
+        state.currentPage = 1; 
         
-        state.currentPage = 1; // Reset to first page when filtering
+        // First get filtered items from server based on type and maker
+        const serverFilteredProducts = await fetchFilteredPromos(selectedType, selectedMaker);
         
-        const filteredProducts = promos.filter(promo => {
-            const matchesGroup = selectedGroup === 'Unknown' || promo.productGroup === selectedGroup;
-            const matchesMaker = selectedMaker === 'Unknown' || promo.productMaker === selectedMaker;
-            const matchesCode = searchCode === '' || promo.code.toString().includes(searchCode);
-            const matchesName = searchName === '' || promo.productName.toLowerCase().includes(searchName);
-            const matchesType = promoType === 'All' || 
-                (promoType === 'Product' && promo.productName) ||
-                (promoType === 'Group' && promo.productGroup && !promo.productName) ||
-                (promoType === 'Maker' && promo.productMaker && !promo.productName && !promo.productGroup);
+        // Then apply client-side filtering for code and name
+        const finalFiltered = serverFilteredProducts.filter(product => {
+            const matchesCode = searchCode === '' || 
+                                product.CODE.toString().toLowerCase().includes(searchCode);
+            const matchesName = searchName === '' || 
+                                product.PRODUCTNAME.toLowerCase().includes(searchName);
             
-            return matchesGroup && matchesMaker && matchesCode && matchesName && matchesType;
+            return matchesCode && matchesName;
         });
 
-        displayProducts(filteredProducts);
+        displayItems(finalFiltered);
+    } catch (error) {
+        console.error('Error applying filters:', error);
     }
+}
 
-    // Add event listeners for filters
-    document.getElementById('groupFilter').addEventListener('change', filterProducts);
-    document.getElementById('makerFilter').addEventListener('change', filterProducts);
-    document.getElementById('codeFilter').addEventListener('input', filterProducts);
-    document.getElementById('productNameFilter').addEventListener('input', filterProducts);
-    document.getElementById('promoTypeFilter').addEventListener('change', filterProducts);
+function populateFilters() {//Insert groups into the filters
+    const groupFilter = document.getElementById('groupFilter');
+    const makerFilter = document.getElementById('makerFilter');
 
-    // Initial display
-    filterProducts();
+    groupFilter.innerHTML = '<option value="All">All</option>';
+    makerFilter.innerHTML = '<option value="All">All</option>';
+
+    types.forEach(type => {
+        const option = document.createElement('option');
+        option.value = type.NAME;
+        option.textContent = `${type.CODE} - ${type.NAME}`;
+        groupFilter.appendChild(option);
+    });
+
+    makers.forEach(maker => {
+        const option = document.createElement('option');
+        option.value = maker.NAME;
+        option.textContent = `${maker.CODE} - ${maker.NAME}`;
+        makerFilter.appendChild(option);
+    });
+}    
+// #endregion FUNCTIONS
+
+// #region EVENT LISTENERS
+document.getElementById('itemsPerPage').addEventListener('change', () => {// Reset to first page when changing itemsPerPage
+    state.currentPage = 1; 
+    filterItems();
 });
+
+document.getElementById('createNewButton').addEventListener('click', () => {//Go to create new product page
+    window.location.href = `promo.html?id=new`;
+});
+
+document.getElementById('groupFilter').addEventListener('change', filterItems);//When value changes -> filter items
+document.getElementById('makerFilter').addEventListener('change', filterItems);
+document.getElementById('codeFilter').addEventListener('input', filterItems);
+document.getElementById('nameFilter').addEventListener('input', filterItems);  
+// #endregion EVENT LISTENERS

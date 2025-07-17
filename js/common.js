@@ -102,6 +102,27 @@ export function getItemCardHtml(choice, item, date) {
         return `<p><strong>${item.DISCOUNT * 100}% Discount</strong></p>
         <p>For maker: ${item.MAKER}</p>
         <p>Valid until ${date}</p>`;
+    } else if (choice === "promo") {
+        return `<div class="product-layout">
+                    <div class="product-details">
+                        <div class="product-header">
+                            <span class="product-code">${item.CODE}</span>
+                            <h2 class="product-name">${item.PRODUCTNAME}</h2>
+                            <span class="product-discount"><b>Discount: ${item.DISCOUNT}%</b></span>
+                        </div>
+                        <div class="product-info">
+                            <div class="info-row">
+                                <span class="product-group">Type: ${item.TYPENAME}</span>
+                                <span class="product-maker">Maker: ${item.MAKERNAME}</span>
+                            </div><!--
+                            <div class="info-row">
+                                
+                                <span>Active in carousels: ${item.carouselCount}</span>
+                                <span>Promos issued: ${item.issuedCount}</span>
+                            </div>-->
+                        </div>
+                    </div>
+                </div>`;
     }
 }
 

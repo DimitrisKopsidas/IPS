@@ -548,6 +548,7 @@ app.put('/api/updateType/:id', async (req, res) => {
 });
 // #endregion PRODUCTS
 
+// #region CAROUSELS
 app.get('/api/getCarouselMinigame/:carousel', async (req, res) => {
     try {
         const carousel = req.params.carousel === 'true';
@@ -608,6 +609,31 @@ app.get('/api/getMinigamePromos/:carousel', async (req, res) => {
         console.error('Error fetching minigame promos:', error.message);
         res.status(500).json({ 
             error: 'Failed to fetch minigame promos',
+            details: error.message 
+        });
+    }
+});
+// #endregion
+
+// #region PROMOS
+app.get('/api/getFilteredPromos/:type/:maker', async (req, res) => {
+    try {
+        const type = !req.params.type || req.params.type === 'All' ? null : req.params.type;
+        const maker = !req.params.maker || req.params.maker === 'All' ? null : req.params.maker;
+
+        const [rows] = await pool.query('CALL GetFilteredPromos(?, ?)', [type, maker]);
+        
+        console.log('Retrieved filtered promos:', {
+            typeFilter: type || 'NULL',
+            makerFilter: maker || 'NULL',
+            count: rows[0].length
+        });
+        
+        res.json(rows[0]);
+    } catch (error) {
+        console.error('Error fetching filtered promos:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to fetch filtered promos',
             details: error.message 
         });
     }
