@@ -1,6 +1,7 @@
 //WISHLIST
 //1)WAIT PER IMAGE
 //2)TIME OF WATCHING PER ITEM 
+//3)VIDEO INSTEAD OF IMAGE
 
 //LOW PRIO
 //1)IMPLEMENT BACK SWIPE
@@ -8,37 +9,39 @@
 
 import { fetchCarouselProducts, fetchCarouselSettings, updateDeviceLastPing } from './dbService.js';
 
+// #region VARIABLE DECLARATION
 var car;
 var flkty
-var autoplaywait;
-var autoplayspeed;
+var autoplayWait;
+var autoplaySpeed;
 var countforminigame;
-var prevslide=0;
-var currentslide;
-var actionflag=0;
-var actioncount=1;
+var prevSlide=0;
+var currSlide;
+var actionFlag=0;
+var actionCount=1;
 var timeoutID;
 var minigameURL;
-var actionwindow;
+var actionWindow;
 var media = [];
 let products = [];
 let settings = [];
 let state;
 let connectkey;
+// #endregion VARIABLE DECLARATION
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         const params = new URLSearchParams(window.location.search);
-        connectkey = params.get('connectkey')/* || 'default'*/;
+        connectkey = params.get('connectkey');
 
         products = await fetchCarouselProducts(connectkey);
         settings = await fetchCarouselSettings(connectkey);
 
         minigameURL = `minigame.html?connectkey=${connectkey}`;
-        autoplaywait = settings[0].AUTOPLAYWAIT;
-        autoplayspeed = settings[0].SPEED;
+        autoplayWait = settings[0].AUTOPLAYWAIT;
+        autoplaySpeed = settings[0].SPEED;
         countforminigame = settings[0].GAMECOUNT;
-        actionwindow = autoplaywait + 2000;
+        actionWindow = autoplayWait + 2000;
         state = settings[0].STATE;
         
         car = document.querySelector('.carousel');
@@ -46,12 +49,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             wrapAround: true,
             prevNextButtons: false,
             pageDots: false,
-            autoPlay: autoplayspeed,
+            autoPlay: autoplaySpeed,
             pauseAutoPlayOnHover: true
         });
 
         products.forEach((product) => {
-            flkty.insert(makeCell(product));
+            flkty.insert(createCell(product));
         });
         media = products.map(p => p.PRODUCT);
 
@@ -62,44 +65,36 @@ document.addEventListener('DOMContentLoaded', async () => {
             } catch (error) {
                 console.error('Failed to update device ping:', error);
             }
-        });
-
-        // Add change event listener to Flickity
-        
+        });        
     } catch (error) {
         console.error('Error loading carousel data:', error);
     }
 
-  
-  
-  //RESTART AUTOPLAY AFTER INTERACTION
-  car.addEventListener('click', function() {
+  car.addEventListener('click', function() {  //RESTART AUTOPLAY AFTER INTERACTION
     flkty.stopPlayer();
     setTimeout(function(){
       flkty.playPlayer();
-    },autoplaywait);//WAIT TIME AFTER STARTING AUTOPLAY
+    },autoplayWait);
     
   });
 
-  //SAVE USER INTERACTION TIME FOR MINIGAME START
-  car.addEventListener('click',function(){
-    actionflag=1;
+  car.addEventListener('click',function(){ //SAVE USER INTERACTION TIME FOR MINIGAME START
+    actionFlag=1;
     clearTimeout(timeoutID);
-    console.log("Action Start Flag:"+actionflag+" Count:"+actioncount);
+    console.log("Action Start Flag:"+actionFlag+" Count:"+actionCount);
 
-    timeoutID = setTimeout(function(){//RESET
-      actioncount=0;
-      actionflag=0;
+    timeoutID = setTimeout(function(){ //RESET
+      actionCount=0;
+      actionFlag=0;
       console.log("Action End");
-    },actionwindow)   
+    },actionWindow)   
   })
 
-  //LISTENER FOR CELL IN FOCUS
-  flkty.on('change', async function(index) {
-    currentslide=index;
-    backSwipeListener(currentslide,prevslide);
-    minigameListener(currentslide,prevslide);
-    prevslide=index;
+  flkty.on('change', async function(index) { //LISTENER FOR CELL IN FOCUS
+    currSlide=index;
+    backSwipeListener(currSlide,prevSlide);
+    minigameListener(currSlide,prevSlide);
+    prevSlide=index;
     settings = await fetchCarouselSettings(connectkey);
     if (settings[0].STATE !== state) {
             location.reload();
@@ -107,20 +102,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 });
 
-function makeCell(product) {
+// #region FUNCTIONS
+function createCell(product) {
     var cell = document.createElement('div');
     cell.className = 'carousel-cell';
     
-    // Add product image
     const imgElement = document.createElement('img');
     imgElement.src = `media/${product.PRODUCT}.png`;
     imgElement.onerror = () => imgElement.src = 'media/404.png';
     
-    // Add product info overlay
     const infoOverlay = document.createElement('div');
     infoOverlay.className = 'product-info-overlay';
     
-    // Format price display based on discount
     const priceDisplay = product.DISCOUNT > 0 
         ? `<div class="product-price">From
              <span class="original-price">$${product.PRICE || '0.00'}</span>
@@ -142,29 +135,30 @@ function makeCell(product) {
 }
 
 function backSwipeListener(current,prev){
-  if((current<prev)&&(current!=0)){
-    //console.log('SWIPE EVENT');
-  }
-  if((current==media.length)&&(prev==0)){
-    //console.log('SWIPE EVENT1');
-  }
-  if((current==0)&&(prev==1)){
-    //console.log('SWIPE EVENT2');
-  }
+  // if((current<prev)&&(current!=0)){
+  //   console.log('SWIPE EVENT');
+  // }
+  // if((current==media.length)&&(prev==0)){
+  //   console.log('SWIPE EVENT1');
+  // }
+  // if((current==0)&&(prev==1)){
+  //   console.log('SWIPE EVENT2');
+  // }
 }
 
 function minigameListener(current,prev){
-  if((actionflag==1)&&(current>prev)){
-      actioncount+=1;
-      if((current==media.length)&&(prev==0))
-      actioncount-=1;
+  if ((actionFlag==1) && (current>prev)) {
+      actionCount+=1;
+      if((current==media.length) && (prev==0))
+      actionCount-=1;
   }
-  if((actionflag==1)&&(current==0)&&(prev==media.length)){
-    actioncount+=1;
+  if ((actionFlag==1) && (current==0) && (prev==media.length)) {
+    actionCount+=1;
   }
   
-  console.log("Flag:"+actionflag+" Count:"+actioncount);
-  if(actioncount==(countforminigame)){
+  console.log("Flag:"+actionFlag+" Count:"+actionCount);
+  if (actionCount == (countforminigame)) {
     window.location.href = minigameURL;
   }
 }
+// #endregion FUNCTIONS
