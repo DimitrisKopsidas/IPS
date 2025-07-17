@@ -1,4 +1,4 @@
-import {fillDropdown,initiateHotkeys} from "./common.js";
+import {fillDropdown, getItemCardHtml} from "./common.js";
 import { fetchFilteredProducts, fetchMakers, fetchTypes, deleteProduct, 
     deleteMaker, deleteType, deleteImage, updateProduct, insertProduct, 
     fetchNextProductId, updateMaker, updateType, insertMaker, insertType } from './dbService.js';
@@ -67,6 +67,7 @@ import { fetchFilteredProducts, fetchMakers, fetchTypes, deleteProduct,
     let currentSort = { field: 'code', direction: 'asc' };
     let pendingImageFile = null;
     let currentModalType = null; // 'types' or 'makers'
+    let isNew = false;
 
     // Get URL parameters
     const urlParams = new URLSearchParams(window.location.search);
@@ -87,7 +88,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     types = await fetchTypes();
     nextProductId = await fetchNextProductId();
 
-    populateSelectFields(makers, types);
+    populateGroupFilters(makers, types);
 
     const productData = products.find(p => p.ID.toString() === productId);
     
@@ -235,39 +236,31 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     confirmDeleteBtn.addEventListener('click', async function() {//IMAGE AND DB DELETION
         try {
-            // Delete product image first
             const imageResult = await deleteImage(currentProductId);
             if (!imageResult.success) {
                 throw new Error(`Failed to delete image: ${imageResult.error}`);
             }
 
-            // Only proceed with product deletion if image deletion succeeded
             const result = await deleteProduct(currentProductId);
             
             if (result.success) {
-                // Remove from local array
                 const productIndex = products.findIndex(p => p.ID === currentProductId);
                 if (productIndex !== -1) {
                     products.splice(productIndex, 1);
                     
-                    // Navigate to another product
                     if (products.length > 0) {
                         let nextProduct;
                         if (productIndex >= products.length) {
-                            // If we deleted the last product, go to the new last product
                             nextProduct = products[products.length - 1];
                         } else {
-                            // Otherwise go to the next product in line
                             nextProduct = products[productIndex];
                         }
                         
-                        // Update URL and load the next product
                         const params = new URLSearchParams(window.location.search);
                         params.set('id', nextProduct.ID);
                         window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
                         loadProductData(nextProduct);
                     } else {
-                        // No products left, create new and update URL
                         const params = new URLSearchParams(window.location.search);
                         params.set('id', 'new');
                         window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
@@ -275,10 +268,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 }
                 
-                // Close modal and show confirmation
                 deleteConfirmationModal.style.display = 'none';
                 showWarningModal('Product and associated image deleted successfully');
-                
             } else {
                 throw new Error('Product deletion failed');
             }
@@ -297,24 +288,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         imageInput.click();
     });
 
-    // Replace the existing imageInput event listener
     imageInput.addEventListener('change', async function(e) {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
             
-            // Validate file type
             if (!file.type.match(/image\/(jpg|jpeg|png|gif)/)) {
                 showWarningModal('Please select an image file (JPG, PNG, or GIF)');
                 return;
             }
 
-            // Validate file size (5MB max)
-            if (file.size > 5 * 1024 * 1024) {
+            if (file.size > 5 * 1024 * 1024) {//Change 5 to any MB desired
                 showWarningModal('Image file size must be less than 5MB');
                 return;
             }
 
-            // Show preview immediately
             const reader = new FileReader();
             reader.onload = function(event) {
                 mainProductImage.src = event.target.result;
@@ -322,23 +309,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             };
             reader.readAsDataURL(file);
 
-            // Handle image replacement for existing products
             if (currentProductId && currentProductId !== 'new') {
                 try {
-                    // First delete the existing image
                     console.log('Deleting existing image for product:', currentProductId);
                     const deleteResult = await deleteImage(currentProductId);
                     
                     if (!deleteResult.success) {
                         console.warn('Warning: Could not delete existing image:', deleteResult.error);
-                        // Continue with upload even if delete fails (image might not exist)
                     }
-
-                    // Upload the new image using the existing function
                     const uploadResult = await uploadNewProductImage(file);
                     
                     if (uploadResult.success) {
-                        // Update image source to show the uploaded image with cache busting
                         mainProductImage.src = `http://localhost:3000/media/${currentProductId}.png?t=${Date.now()}`;
                         console.log('Image updated successfully for existing product');
                     } else {
@@ -349,7 +330,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     showWarningModal(`Image update failed: ${error.message}`);
                 }
             } else {
-                // For new products, store the file for upload during save
                 pendingImageFile = file;
             }
         }
@@ -386,11 +366,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             pendingNavigationDirection = 'new';
             showUnsavedChangesModal();
         } else {
-            // Preserve existing URL parameters except 'id'
             const params = new URLSearchParams(window.location.search);
             params.set('id', 'new');
             
-            // Navigate to new URL while maintaining other parameters
             window.location.href = `${window.location.pathname}?${params.toString()}`;
         }
     });
@@ -416,17 +394,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     
     makerCodeInput.addEventListener('input', function() {
-        // Limit to 3 digits and numbers only
         this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3);
         
         const enteredCode = this.value;
         
-        // Find matching maker that starts with entered code
         const matchingMaker = makers.find(maker => 
             maker.CODE.toString().startsWith(enteredCode)
         );
 
-        // Update dropdown selection if match found
         if (matchingMaker) {
             productMaker.value = matchingMaker.NAME;
         }
@@ -435,14 +410,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('productType').addEventListener('change', function() {
         const selectedType = types.find(t => t.NAME === this.value);
         if (selectedType) {
-            groupCodeInput.value = selectedType.CODE; // Using ID from database
+            groupCodeInput.value = selectedType.CODE;
         }
     });
 
     document.getElementById('productMaker').addEventListener('change', function() {
         const selectedMaker = makers.find(m => m.NAME === this.value);
         if (selectedMaker) {
-            makerCodeInput.value = selectedMaker.CODE; // Using ID from database
+            makerCodeInput.value = selectedMaker.CODE;
         }
     });
 
@@ -455,94 +430,50 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        // Create new group object with correct structure
         const newGroup = {
-            ID: null, // Will be set after database insert
+            ID: null, 
             CODE: parseInt(code),
             NAME: name
         };
 
-        // Add to beginning of appropriate array
         if (currentModalType === 'types') {
             types.unshift(newGroup);
         } else {
             makers.unshift(newGroup);
         }
         
-        // Add the new item to the top of the list
         const groupsList = document.getElementById('groupsList');
         const item = document.createElement('div');
         item.className = 'group-item new-group';
-        item.innerHTML = `
-            <input type="number" 
-                   class="groups-input code" 
-                   value="${newGroup.CODE}"
-                   data-original-code="${newGroup.CODE}">
-            <input type="text" 
-                   class="groups-input name" 
-                   value="${newGroup.NAME}"
-                   data-original-name="${newGroup.NAME}">
-            <button class="groups-btn-delete-item" title="Delete group">🗑️</button>
-        `;
+        item.innerHTML = getItemCardHtml("group", newGroup);
 
-        // Insert at the beginning of the list
         if (groupsList.firstChild) {
             groupsList.insertBefore(item, groupsList.firstChild);
         } else {
             groupsList.appendChild(item);
         }
 
-        // Clear input fields
         document.getElementById('newGroupCode').value = '';
         document.getElementById('newGroupName').value = '';
 
-        // Update appropriate dropdown
         if (currentModalType === 'types') {
             fillDropdown(types, productType);
         } else {
             fillDropdown(makers, productMaker);
         }
 
-        // Attach delete handler to new item
-        item.querySelector('.groups-btn-delete-item').addEventListener('click', async function() {
-            if (confirm('Are you sure you want to delete this group?')) {
-                try {
-                    // For new items, just remove from local array and DOM
-                    const code = item.querySelector('.groups-input.code').value;
-                    const currentGroups = currentModalType === 'types' ? types : makers;
-                    const groupIndex = currentGroups.findIndex(g => g.CODE.toString() === code);
-                    
-                    if (groupIndex !== -1) {
-                        currentGroups.splice(groupIndex, 1);
-                        
-                        if (currentModalType === 'types') {
-                            fillDropdown(types, productType);
-                        } else {
-                            fillDropdown(makers, productMaker);
-                        }
-                        
-                        item.remove();
-                    }
-                } catch (error) {
-                    console.error('Error deleting new item:', error);
-                    showWarningModal('Error deleting item');
-                }
-            }
-        });
+        attachDeleteHandlers();
     });
 
     document.getElementById('groupCodeInput').addEventListener('input', function() {
-        // Limit to 3 digits and numbers only
         this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3);
         
         const enteredCode = this.value;
         
-        // Find matching type that starts with entered code
         const matchingType = types.find(type => 
             type.CODE.toString().startsWith(enteredCode)
         );
 
-        // Update dropdown selection if match found
         if (matchingType) {
             productType.value = matchingType.NAME;
         }
@@ -563,7 +494,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             await saveGroupsData();
             
-            // Show save notification
             showSaveNotification();
             const modal = document.getElementById('groupsModal');
             modal.style.display = 'none';
@@ -604,6 +534,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // #region FUNCTIONS
+    // #region PRODUCT FUNCTIONS
     function loadProductData(productData) {
         headerProductCode.value = productData.CODE;
         headerProductName.value = productData.NAME;
@@ -709,15 +640,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                         window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
                         currentProductId = savedProduct.ID;
                         
-                        // Handle image upload for new products
                         if (pendingImageFile) {
                             try {
                                 const imageResult = await uploadNewProductImage(pendingImageFile);
                                 
                                 if (imageResult.success) {
-                                    // Update image source to show the uploaded image
                                     mainProductImage.src = `http://localhost:3000/media/${savedProduct.ID}.png?t=${Date.now()}`;
-                                    pendingImageFile = null; // Clear pending image
+                                    pendingImageFile = null;
                                     console.log('Image uploaded successfully for new product');
                                 } else {
                                     console.error('Image upload failed:', imageResult.error);
@@ -816,7 +745,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    //------------------------VISUAL FUNCTIONS--------------------------------
+    // #endregion
+    // #region GROUPS FUNCTIONS
+    function displayGroups() {
+        const groupsList = document.getElementById('groupsList');
+        groupsList.innerHTML = '';
+        
+        const groups = currentModalType === 'types' ? types : makers;
+        
+        groups.forEach((group) => {
+            const item = document.createElement('div');
+            item.className = 'group-item';
+            item.innerHTML = getItemCardHtml("group", group);
+            groupsList.appendChild(item);
+        });
+
+        attachDeleteHandlers();
+    }
+
     function displayFilteredGroups(filteredGroups) {
         const groupsList = document.getElementById('groupsList');
         groupsList.innerHTML = '';
@@ -824,199 +770,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         filteredGroups.forEach(group => {
             const item = document.createElement('div');
             item.className = 'group-item';
-            item.innerHTML = `
-                <input type="number" 
-                       class="groups-input code" 
-                       value="${group.CODE}"
-                       data-original-code="${group.CODE}">
-                <input type="text" 
-                       class="groups-input name" 
-                       value="${group.NAME}"
-                       data-original-name="${group.NAME}">
-                <button class="groups-btn-delete-item" title="Delete group">🗑️</button>
-            `;
+            item.innerHTML = getItemCardHtml("group", group);
             groupsList.appendChild(item);
         });
 
-        // Reattach delete handlers
         attachDeleteHandlers();
     }
 
-    // Replace the existing updateGroupsList function
-    function updateGroupsList() {
-        const groupsList = document.getElementById('groupsList');
-        groupsList.innerHTML = '';
-        
-        // Get the appropriate data array based on currentModalType
-        const groups = currentModalType === 'types' ? types : makers;
-        
-        groups.forEach((group) => {
-            const item = document.createElement('div');
-            item.className = 'group-item';
-            item.innerHTML = `
-                <input type="number" 
-                       class="groups-input code" 
-                       value="${group.CODE}"
-                       data-original-code="${group.CODE}">
-                <input type="text" 
-                       class="groups-input name" 
-                       value="${group.NAME}"
-                       data-original-name="${group.NAME}">
-                <button class="groups-btn-delete-item" title="Delete group">🗑️</button>
-            `;
-            groupsList.appendChild(item);
-        });
-
-        // Add delete functionality
-        document.querySelectorAll('.groups-btn-delete-item').forEach((btn, index) => {
-            btn.addEventListener('click', async function() {
-                if (confirm(`Are you sure you want to delete this ${currentModalType === 'types' ? 'type' : 'maker'}?`)) {
-                    try {
-                        const groups = currentModalType === 'types' ? types : makers;
-                        const itemToDelete = groups[index];
-                        
-                        // Check if this is a new unsaved item
-                        const groupItem = this.closest('.group-item');
-                        if (groupItem.classList.contains('new-group')) {
-                            // Just remove from DOM and local array for new items
-                            groups.splice(index, 1);
-                            groupItem.remove();
-                            
-                            // Update dropdown
-                            if (currentModalType === 'types') {
-                                productType.innerHTML = '<option value="">Select Type</option>';
-                                types.forEach(type => {
-                                    const option = document.createElement('option');
-                                    option.value = type.NAME;
-                                    option.textContent = type.NAME;
-                                    productType.appendChild(option);
-                                });
-                            } else {
-                                productMaker.innerHTML = '<option value="">Select Maker</option>';
-                                makers.forEach(maker => {
-                                    const option = document.createElement('option');
-                                    option.value = maker.NAME;
-                                    option.textContent = maker.NAME;
-                                    productMaker.appendChild(option);
-                                });
-                            }
-                            
-                            // Refresh the list
-                            updateGroupsList();
-                            showWarningModal(`${currentModalType === 'types' ? 'Type' : 'Maker'} deleted successfully`);
-                        } else {
-                            // Delete from database for existing items
-                            let deleteResult;
-                            if (currentModalType === 'types') {
-                                deleteResult = await deleteType(itemToDelete.ID);
-                            } else {
-                                deleteResult = await deleteMaker(itemToDelete.ID);
-                            }
-                            
-                            if (deleteResult.success) {
-                                // Remove from local array
-                                groups.splice(index, 1);
-                                
-                                // Update dropdown
-                                if (currentModalType === 'types') {
-                                    productType.innerHTML = '<option value="">Select Type</option>';
-                                    types.forEach(type => {
-                                        const option = document.createElement('option');
-                                        option.value = type.NAME;
-                                        option.textContent = type.NAME;
-                                        productType.appendChild(option);
-                                    });
-                                } else {
-                                    productMaker.innerHTML = '<option value="">Select Maker</option>';
-                                    makers.forEach(maker => {
-                                        const option = document.createElement('option');
-                                        option.value = maker.NAME;
-                                        option.textContent = maker.NAME;
-                                        productMaker.appendChild(option);
-                                    });
-                                }
-                                
-                                // Refresh the list
-                                updateGroupsList();
-                                showWarningModal(`${currentModalType === 'types' ? 'Type' : 'Maker'} deleted successfully`);
-                            } else {
-                                throw new Error(deleteResult.error);
-                            }
-                        }
-                    } catch (error) {
-                        console.error('Error deleting item:', error);
-                        showWarningModal(`Error deleting ${currentModalType === 'types' ? 'type' : 'maker'}: ${error.message}`);
-                    }
-                }
-            });
-        });
-    }
-
-    function sortGroups(field) {
-        const direction = field === currentSort.field && currentSort.direction === 'asc' ? 'desc' : 'asc';
-        currentSort = { field, direction };
-
-        // Get the appropriate data array based on currentModalType
-        const groups = currentModalType === 'types' ? types : makers;
-
-        groups.sort((a, b) => {
-            let compareA = field === 'code' ? parseInt(a.CODE) : a.NAME.toLowerCase();
-            let compareB = field === 'code' ? parseInt(b.CODE) : b.NAME.toLowerCase();
-
-            if (direction === 'asc') {
-                return compareA > compareB ? 1 : -1;
-            } else {
-                return compareA < compareB ? 1 : -1;
-            }
-        });
-
-        // Update the appropriate global array
-        if (currentModalType === 'types') {
-            types = groups;
-        } else {
-            makers = groups;
-        }
-
-        updateGroupsList();
-        updateSortButtons();
-    }
-
-    function filterGroups() {
-        const codeFilter = document.getElementById('searchGroupCode').value.toLowerCase();
-        const nameFilter = document.getElementById('searchGroupName').value.toLowerCase();
-        
-        // Get the appropriate data array based on currentModalType
-        const groups = currentModalType === 'types' ? types : makers;
-        
-        const filteredGroups = groups.filter(group => {
-            const matchesCode = group.CODE.toString().includes(codeFilter);
-            const matchesName = group.NAME.toLowerCase().includes(nameFilter);
-            return matchesCode && matchesName;
-        });
-        
-        displayFilteredGroups(filteredGroups);
-    }
-
-    function populateSelectFields(makers, types) {
-    
-        // Add makers to select
-        makers.forEach(maker => {
-            const option = document.createElement('option');
-            option.value = maker.NAME;
-            option.textContent = maker.NAME;
-            productMaker.appendChild(option);
-        });
-
-        // Add types to select
-        types.forEach(type => {
-            const option = document.createElement('option');
-            option.value = type.NAME;
-            option.textContent = type.NAME;
-            productType.appendChild(option);
-        });
-    }
-
-    // Replace the existing attachDeleteHandlers function
     function attachDeleteHandlers() {
         document.querySelectorAll('.groups-btn-delete-item').forEach((btn, index) => {
             btn.addEventListener('click', async function() {
@@ -1033,16 +793,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                             throw new Error('Item not found');
                         }
                         
-                        // Check if this is a new unsaved item
                         if (groupItem.classList.contains('new-group')) {
-                            // Just remove from DOM and local array for new items
                             const groupIndex = groups.findIndex(g => g.CODE.toString() === code);
                             if (groupIndex !== -1) {
                                 groups.splice(groupIndex, 1);
                             }
                             groupItem.remove();
                             
-                            // Update dropdown
                             if (currentModalType === 'types') {
                                 fillDropdown(types, productType);
                             } else {
@@ -1051,7 +808,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                             return;
                         }
                         
-                        // Delete from database for existing items
                         let deleteResult;
                         if (currentModalType === 'types') {
                             deleteResult = await deleteType(itemToDelete.ID);
@@ -1060,20 +816,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                         }
                         
                         if (deleteResult.success) {
-                            // Remove from local array
                             const groupIndex = groups.findIndex(g => g.ID === itemToDelete.ID);
                             if (groupIndex !== -1) {
                                 groups.splice(groupIndex, 1);
                             }
                             
-                            // Update dropdown
                             if (currentModalType === 'types') {
                                 fillDropdown(types, productType);
                             } else {
                                 fillDropdown(makers, productMaker);
                             }
                             
-                            // Refresh the filtered list
                             filterGroups();
                             showWarningModal(`${currentModalType === 'types' ? 'Type' : 'Maker'} deleted successfully`);
                         } else {
@@ -1088,41 +841,90 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    function sortGroups(field) {
+        const direction = field === currentSort.field && currentSort.direction === 'asc' ? 'desc' : 'asc';
+        currentSort = { field, direction };
+
+        const groups = currentModalType === 'types' ? types : makers;
+
+        groups.sort((a, b) => {
+            let compareA = field === 'code' ? parseInt(a.CODE) : a.NAME.toLowerCase();
+            let compareB = field === 'code' ? parseInt(b.CODE) : b.NAME.toLowerCase();
+
+            if (direction === 'asc') {
+                return compareA > compareB ? 1 : -1;
+            } else {
+                return compareA < compareB ? 1 : -1;
+            }
+        });
+
+        if (currentModalType === 'types') {
+            types = groups;
+        } else {
+            makers = groups;
+        }
+
+        displayGroups();
+        updateSortButtons();
+    }
+
+    function filterGroups() {
+        const codeFilter = document.getElementById('searchGroupCode').value.toLowerCase();
+        const nameFilter = document.getElementById('searchGroupName').value.toLowerCase();
+        
+        const groups = currentModalType === 'types' ? types : makers;
+        
+        const filteredGroups = groups.filter(group => {
+            const matchesCode = group.CODE.toString().includes(codeFilter);
+            const matchesName = group.NAME.toLowerCase().includes(nameFilter);
+            return matchesCode && matchesName;
+        });
+        
+        displayFilteredGroups(filteredGroups);
+    }
+
+    function populateGroupFilters(makers, types) {
+        makers.forEach(maker => {
+            const option = document.createElement('option');
+            option.value = maker.NAME;
+            option.textContent = maker.NAME;
+            productMaker.appendChild(option);
+        });
+
+        types.forEach(type => {
+            const option = document.createElement('option');
+            option.value = type.NAME;
+            option.textContent = type.NAME;
+            productType.appendChild(option);
+        });
+    }
+
     function showGroupsModal() {
         const modal = document.getElementById('groupsModal');
         modal.style.display = 'flex';
         document.body.classList.add('modal-open');
         
-        // Clear search fields
         document.getElementById('searchGroupCode').value = '';
         document.getElementById('searchGroupName').value = '';
         
-        // Load appropriate data based on currentModalType
         if (currentModalType === 'types') {
             fetchTypes().then(data => {
                 types = data;
-                updateGroupsList();
+                displayGroups();
             });
         } else if (currentModalType === 'makers') {
             fetchMakers().then(data => {
                 makers = data;
-                updateGroupsList();
+                displayGroups();
             });
         }
     }
 
-    // Replace the existing saveGroupsData function
     async function saveGroupsData() {
-        // Add this at the beginning of saveGroupsData function for debugging
-        console.log('saveGroupsData called');
         const groupItems = document.querySelectorAll('.group-item');
-        console.log('Found group items:', groupItems.length);
-        
-        const newItems = document.querySelectorAll('.group-item.new-group');
-        console.log('Found new items:', newItems.length);
         
         const promises = [];
-        const itemsToUpdate = []; // Track items for class removal
+        const itemsToUpdate = [];
         
         for (const item of groupItems) {
             const codeInput = item.querySelector('.groups-input.code');
@@ -1133,9 +935,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const originalCode = parseInt(codeInput.dataset.originalCode);
             const originalName = nameInput.dataset.originalName;
             
-            // Check if this is a new item (has new-group class)
             if (item.classList.contains('new-group')) {
-                // Insert new item
                 const insertData = {
                     code: currentCode,
                     name: currentName
@@ -1147,15 +947,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                     promises.push(insertMaker(insertData));
                 }
                 
-                // Track this item for class removal after successful save
                 itemsToUpdate.push({ item, isNew: true });
             } else {
-                // Skip if no changes for existing items
                 if (currentCode === originalCode && currentName === originalName) {
                     continue;
                 }
                 
-                // Update existing item - find the item in the global array
                 const groups = currentModalType === 'types' ? types : makers;
                 const existingItem = groups.find(g => g.CODE === originalCode && g.NAME === originalName);
                 
@@ -1172,31 +969,25 @@ document.addEventListener('DOMContentLoaded', async () => {
                         promises.push(updateMaker(updateData));
                     }
                     
-                    // Track this item for data attribute updates
                     itemsToUpdate.push({ item, isNew: false, updateData });
                 }
             }
         }
         
-        // Execute all save operations
         if (promises.length > 0) {
             const results = await Promise.all(promises);
             
-            // Check if any operations failed
             const failures = results.filter(result => !result.success);
             if (failures.length > 0) {
                 throw new Error(`Some operations failed: ${failures.map(f => f.error).join(', ')}`);
             }
             
-            // Update items after successful saves
             itemsToUpdate.forEach(({ item, isNew, updateData }) => {
                 if (isNew) {
-                    // Remove new-group class for successfully saved new items
                     item.classList.remove('new-group');
                 }
                 
                 if (updateData) {
-                    // Update data attributes for modified existing items
                     const codeInput = item.querySelector('.groups-input.code');
                     const nameInput = item.querySelector('.groups-input.name');
                     codeInput.dataset.originalCode = updateData.code;
@@ -1204,10 +995,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             });
             
-            // Refresh data from database after successful saves
             if (currentModalType === 'types') {
                 types = await fetchTypes();
-                // Update the productType dropdown
                 productType.innerHTML = '<option value="">Select Type</option>';
                 types.forEach(type => {
                     const option = document.createElement('option');
@@ -1227,13 +1016,29 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             }
             
-            // Refresh the modal list to show updated data from database
-            updateGroupsList();
-            
+            displayGroups();
             console.log(`Successfully saved ${promises.length} items to database`);
         }
     }
 
+    function updateSortButtons() {
+        const codeBtn = document.getElementById('sortByCode');
+        const nameBtn = document.getElementById('sortByName');
+        
+        codeBtn.classList.remove('active');
+        nameBtn.classList.remove('active');
+        
+        const activeBtn = currentSort.field === 'code' ? codeBtn : nameBtn;
+        activeBtn.classList.add('active');
+        
+        codeBtn.textContent = `Sort by Code ${currentSort.field === 'code' ? 
+            (currentSort.direction === 'asc' ? '↓' : '↑') : '↓'}`;
+        nameBtn.textContent = `Sort by Name ${currentSort.field === 'name' ? 
+            (currentSort.direction === 'asc' ? '↓' : '↑') : '↓'}`;
+    }
+    
+    // #endregion
+    // #region NAVIGATION FUNCTIONS
     function handleNavigation(direction) {// Handle navigation with unsaved changes check
         if (formChanged) {
             pendingNavigationDirection = direction;
@@ -1254,16 +1059,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             let targetProduct = null;
             
             if (direction === 'next') {
-                // Get next product from array
                 targetProduct = products[currentIndex + 1];
             } else if (direction === 'prev') {
-                // Get previous product from array
                 targetProduct = products[currentIndex - 1];
             }
 
             if (targetProduct) {
                 loadProductData(targetProduct);
-                // Update URL to reflect new product ID while keeping filters
                 const params = new URLSearchParams(window.location.search);
                 params.set('id', targetProduct.ID);
                 const newUrl = `${window.location.pathname}?${params.toString()}`;
@@ -1276,20 +1078,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function updateNavigationState() {
-        // Find current product's index in filtered list
         const currentIndex = products.findIndex(p => p.ID === currentProductId);
-        
-        // Disable prev button if we're at start of list
+
         sidePrevBtn.disabled = currentIndex <= 0;
-        
-        // Disable next button if we're at end of list
         sideNextBtn.disabled = currentIndex >= products.length - 1;
         
-        // Update button styles
         sidePrevBtn.style.opacity = sidePrevBtn.disabled ? '0.5' : '1';
         sideNextBtn.style.opacity = sideNextBtn.disabled ? '0.5' : '1';
     }
 
+    // #endregion
+    // #region MODAL FUNCTIONS
     function showWarningModal(message) {
         const warningModal = document.getElementById('warningModal');
         const warningMessage = document.getElementById('warningMessage');
@@ -1315,23 +1114,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         }, 2000);
     }
     
-    function showUnsavedChangesModal() {// Function to show unsaved changes modal
+    function showUnsavedChangesModal() {
         unsavedChangesModal.style.display = 'flex';
     }
-
-    function updateSortButtons() {
-        const codeBtn = document.getElementById('sortByCode');
-        const nameBtn = document.getElementById('sortByName');
-        
-        codeBtn.classList.remove('active');
-        nameBtn.classList.remove('active');
-        
-        const activeBtn = currentSort.field === 'code' ? codeBtn : nameBtn;
-        activeBtn.classList.add('active');
-        
-        codeBtn.textContent = `Sort by Code ${currentSort.field === 'code' ? 
-            (currentSort.direction === 'asc' ? '↓' : '↑') : '↓'}`;
-        nameBtn.textContent = `Sort by Name ${currentSort.field === 'name' ? 
-            (currentSort.direction === 'asc' ? '↓' : '↑') : '↓'}`;
-    }
+    // #endregion
     // #endregion
