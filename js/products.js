@@ -1,16 +1,18 @@
 import { fetchFilteredProducts, fetchMakers, fetchTypes } from './dbService.js';
 import { getItemCardHtml } from './common.js';
-const itemList = document.getElementById('productList');
 
-let items;
-let types;
-let makers;
+// #region VARIABLE DECLARATION
+const itemList = document.getElementById('productList');
 let navigation;
 const state = {
     currentPage: 1,
     filteredItems: [],
     itemsPerPage: 50 
 };
+let items;
+let types;
+let makers;
+// #endregion VARIABLE DECLARATION
 
 document.addEventListener('DOMContentLoaded', async () => {
     navigation = initializeNavigation(state, displayItems, state.itemsPerPage);
@@ -26,6 +28,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
+// #region FUNCTIONS
 function displayItems(filteredItems = items) {//Append items according to filters by reloading page
     state.filteredItems = filteredItems;
     state.itemsPerPage = parseInt(document.getElementById('itemsPerPage').value);
@@ -118,7 +121,9 @@ function populateFilters() {//Insert groups into the filters
         makerFilter.appendChild(option);
     });
 }    
+// #endregion FUNCTIONS
 
+// #region EVENT LISTENERS
 document.getElementById('itemsPerPage').addEventListener('change', () => {// Reset to first page when changing itemsPerPage
     state.currentPage = 1; 
     filterItems();
@@ -132,3 +137,4 @@ document.getElementById('groupFilter').addEventListener('change', filterItems);/
 document.getElementById('makerFilter').addEventListener('change', filterItems);
 document.getElementById('codeFilter').addEventListener('input', filterItems);
 document.getElementById('nameFilter').addEventListener('input', filterItems);  
+// #endregion EVENT LISTENERS

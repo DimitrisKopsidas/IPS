@@ -11,7 +11,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Database configuration
+// #region BASIC CONFIGS
 const dbConfig = {
     host: 'localhost',
     port: 2000,
@@ -22,6 +22,7 @@ const dbConfig = {
 const pool = mysql.createPool(dbConfig);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
 // Test connection on startup
 async function testConnection() {
     try {
@@ -38,8 +39,9 @@ app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
     testConnection();
 });
+// #endregion BASIC CONFIGS
 
-//ACTIVECAROUSEL
+// #region ACTIVECAROUSEL
 app.get('/api/GetCarouselProductsConnect/:connectkey', async (req, res) => {
     try {
         const connectkey = req.params.connectkey;
@@ -89,7 +91,9 @@ app.get('/api/updateDeviceLastPing/:connectKey', async (req, res) => {
         });
     }
 });
-//MINIGAME
+// #endregion ACTIVECAROUSEL
+
+// #region MINIGAME
 app.get('/api/getMinigameSettingsConnect/:connectkey', async (req, res) => {
     try {
         const connectkey = req.params.connectkey;
@@ -143,7 +147,9 @@ app.get('/api/insertIssuedPromo/:connectKey/:redeemCode/:promoId', async (req, r
         });
     }
 });
-//CHECK
+// #endregion MINIGAME
+
+// #region CHECK
 app.get('/api/updateRedeemed/:redeemCode', async (req, res) => {
     try {
         const redeemCode = req.params.redeemCode;
@@ -191,7 +197,9 @@ app.get('/api/getPromoData/:code', async (req, res) => {
         });
     }
 });
+// #endregion CHECK
 
+// #region PRODUCTS
 app.get('/api/getFilteredProducts/:type/:maker', async (req, res) => {
     try {
         const type = !req.params.type || req.params.type === 'All' ? null : req.params.type;
@@ -538,8 +546,8 @@ app.put('/api/updateType/:id', async (req, res) => {
         });
     }
 });
+// #endregion PRODUCTS
 
-//CAROUSEL
 app.get('/api/getCarouselMinigame/:carousel', async (req, res) => {
     try {
         const carousel = req.params.carousel === 'true';
@@ -556,7 +564,6 @@ app.get('/api/getCarouselMinigame/:carousel', async (req, res) => {
     }
 });
 
-// Get carousel products
 app.get('/api/getCarouselProducts/:carousel', async (req, res) => {
     try {
         const carousel = req.params.carousel === 'true';
@@ -573,7 +580,6 @@ app.get('/api/getCarouselProducts/:carousel', async (req, res) => {
     }
 });
 
-// Get filtered carousel data
 app.get('/api/getFilteredCarousels/:filterDeviceNotNull', async (req, res) => {
     try {
         const filterDeviceNotNull = req.params.filterDeviceNotNull === 'true' ? true : 
@@ -591,7 +597,6 @@ app.get('/api/getFilteredCarousels/:filterDeviceNotNull', async (req, res) => {
     }
 });
 
-// Get minigame promos
 app.get('/api/getMinigamePromos/:carousel', async (req, res) => {
     try {
         const carousel = req.params.carousel === 'true';

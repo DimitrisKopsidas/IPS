@@ -6,7 +6,6 @@
 //LOW PRIO
 //1)IMPLEMENT BACK SWIPE
 
-
 import { fetchCarouselProducts, fetchCarouselSettings, updateDeviceLastPing } from './dbService.js';
 
 // #region VARIABLE DECLARATION

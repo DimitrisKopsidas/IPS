@@ -1,4 +1,4 @@
-//CAROUSEL
+// #region ACTIVECAROUSEL
 async function fetchCarouselProducts(connectkey) {
     try {
         const response = await fetch(`http://localhost:3000/api/GetCarouselProductsConnect/${connectkey}`);
@@ -50,7 +50,9 @@ async function updateDeviceLastPing(connectKey) {
         return { success: false, error: error.message };
     }
 }
-//MINIGAME
+// #endregion ACTIVECAROUSEL
+
+// #region MINIGAME
 async function fetchMinigameSettings(connectkey) {
     try {
         const response = await fetch(`http://localhost:3000/api/GetMinigameSettingsConnect/${connectkey}`);
@@ -111,7 +113,9 @@ async function insertIssuedPromo(connectKey, redeemCode, promoId) {
         return { success: false, error: error.message };
     }
 }
-//CHECK
+// #endregion MINIGAME
+
+// #region CHECK
 async function updateRedeemed(redeemCode) {
     try {
         console.log('Updating redeem code:', redeemCode);
@@ -165,7 +169,9 @@ async function getPromoData(code) {
         return null;
     }
 }
+// #endregion CHECK
 
+// #region PRODUCTS
 async function fetchFilteredProducts(type = 'All', maker = 'All') {
     try {
         // Encode parameters to handle special characters
@@ -228,7 +234,9 @@ async function fetchMakers() {
         return [];
     }
 }
+// #endregion PRODUCTS
 
+// #region PRODUCT
 async function fetchNextProductId() {
     try {
         const response = await fetch('http://localhost:3000/api/getNextProductId');
@@ -529,6 +537,8 @@ async function updateType(typeData) {
         return { success: false, error: error.message };
     }
 }
+// #endregion PRODUCT
+
 
 async function fetchCarouselMinigame(carousel) {
     try {

@@ -1,6 +1,7 @@
 import { getItemCardHtml } from './common.js';
 import { getPromoStatus, getPromoData, updateRedeemed } from './dbService.js';
 
+// #region VARIABLE DECLARATION
 const promoForm = document.getElementById('promoForm');
 const resultContainer = document.getElementById('resultContainer');
 const statusIcon = document.getElementById('statusIcon');
@@ -12,6 +13,7 @@ let issueDate;
 let expiryDate;
 let formattedDate;
 let promoCode;
+// #endregion VARIABLE DECLARATION
 
 document.addEventListener('DOMContentLoaded', async () => {
     promoForm.addEventListener('submit', function(e) {
@@ -28,6 +30,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 });
 
+// #region FUNCTIONS
 async function verifyPromoCode(promoCode) {// PROMO CHECK
     try {
         const status = await getPromoStatus(promoCode);
@@ -129,3 +132,4 @@ document.addEventListener('click', function(event) {// Close modal when clicking
         verificationModal.style.display = 'none';
     }
 });
+// #endregion FUNCTIONS

@@ -1,15 +1,16 @@
 import { fetchFilteredCarousels } from './dbService.js';
 import { getItemCardHtml } from './common.js';
 
+// #region VARIABLE DECLARATION
 const itemList = document.getElementById('productList');
-
-let items;
 let navigation;
 const state = {
     currentPage: 1,
     filteredItems: [],
     itemsPerPage: 50 
 };
+let items;
+// #endregion VARIABLE DECLARATION
 
 document.addEventListener('DOMContentLoaded', async () => {
     navigation = initializeNavigation(state, displayItems, state.itemsPerPage);
@@ -22,6 +23,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
+// #region FUNCTIONS
 function displayItems(filteredItems = items) {//Append items according to filters by reloading page
     state.filteredItems = filteredItems;
     state.itemsPerPage = parseInt(document.getElementById('itemsPerPage').value);
@@ -94,7 +96,9 @@ async function filterItems() {//Display items accodrding to filters
         console.error('Error applying filters:', error);
     }
 }
+// #endregion FUNCTIONS
 
+// #region EVENT LISTENERS
 document.getElementById('itemsPerPage').addEventListener('change', () => {// Reset to first page when changing itemsPerPage
     state.currentPage = 1; 
     filterItems();
@@ -107,3 +111,4 @@ document.getElementById('createNewButton').addEventListener('click', () => {//Go
 document.getElementById('codeFilter').addEventListener('input', filterItems);
 document.getElementById('nameFilter').addEventListener('input', filterItems);  
 document.getElementById('activeFilter').addEventListener('change', filterItems);
+// #endregion EVENT LISTENERS
