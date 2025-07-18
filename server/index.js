@@ -660,7 +660,7 @@ app.get('/api/getIndexPromoInfo', async (req, res) => {
     }
 });
 
-app.get('/api/getIndexDeviceInfo/:device?', async (req, res) => {
+app.get('/api/getIndexDeviceInfo/:device', async (req, res) => {
     try {
         const device = req.params.device && req.params.device !== 'null' ? req.params.device : null;
         const [rows] = await pool.query('CALL GetIndexDeviceInfo(?)', [device]);
