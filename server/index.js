@@ -638,3 +638,46 @@ app.get('/api/getFilteredPromos/:type/:maker', async (req, res) => {
         });
     }
 });
+// #endregion PROMOS
+
+// #region ADMIN
+app.get('/api/getIndexPromoInfo', async (req, res) => {
+    try {
+        const [rows] = await pool.query('CALL GetIndexPromoInfo()');
+        
+        console.log('Retrieved index promo info:', {
+            count: rows[0].length,
+            promos: rows[0]
+        });
+        
+        res.json(rows[0]);
+    } catch (error) {
+        console.error('Error fetching index promo info:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to fetch index promo info',
+            details: error.message 
+        });
+    }
+});
+
+app.get('/api/getIndexDeviceInfo/:device?', async (req, res) => {
+    try {
+        const device = req.params.device && req.params.device !== 'null' ? req.params.device : null;
+        const [rows] = await pool.query('CALL GetIndexDeviceInfo(?)', [device]);
+        
+        console.log('Retrieved index device info:', {
+            deviceFilter: device || 'NULL',
+            count: rows[0].length,
+            devices: rows[0]
+        });
+        
+        res.json(rows[0]);
+    } catch (error) {
+        console.error('Error fetching index device info:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to fetch index device info',
+            details: error.message 
+        });
+    }
+});
+// #endregion ADMIN

@@ -642,6 +642,52 @@ async function fetchMinigamePromosList(carousel) {
     }
 }
 
+// #region ADMIN
+async function fetchIndexPromoInfo() {
+    try {
+        const response = await fetch('http://localhost:3000/api/getIndexPromoInfo');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Index promo info:', {
+            count: data.length,
+            promos: data
+        });
+        
+        return data;
+    } catch (error) {
+        console.error('Error fetching index promo info:', error);
+        return [];
+    }
+}
+
+async function fetchIndexDeviceInfo(device = null) {
+    try {
+        const deviceParam = device || 'null';
+        const response = await fetch(`http://localhost:3000/api/getIndexDeviceInfo/${deviceParam}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Index device info:', {
+            deviceFilter: device || 'ALL',
+            count: data.length,
+            devices: data
+        });
+        
+        return data;
+    } catch (error) {
+        console.error('Error fetching index device info:', error);
+        return [];
+    }
+}
+// #endregion ADMIN
+
 export { 
     fetchCarouselProducts,
     fetchCarouselSettings,
@@ -673,4 +719,6 @@ export {
     fetchFilteredCarousels,
     fetchMinigamePromosList,
     fetchFilteredPromos,
+    fetchIndexPromoInfo,
+    fetchIndexDeviceInfo,
 };
