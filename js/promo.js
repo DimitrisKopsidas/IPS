@@ -1,7 +1,7 @@
 import {fillDropdown, getItemCardHtml} from "./common.js";
-import { fetchFilteredProducts, fetchMakers, fetchTypes, deleteProduct, 
-    deleteMaker, deleteType, deleteImage, updateProduct, insertProduct, 
-    fetchNextProductId, updateMaker, updateType, insertMaker, insertType } from './dbService.js';
+import { fetchFilteredProducts, fetchFilteredPromos, getAssociatedCarouselForPromo, getIssuedCount,
+    insertPromoLines, deletePromoLines, updatePromoLines, updatePromo, 
+    insertPromo, deletePromo } from './dbService.js';
 
 // #region VARIABLE DECLARATION
     // Form references
@@ -64,10 +64,7 @@ import { fetchFilteredProducts, fetchMakers, fetchTypes, deleteProduct,
     let formChanged = false;
     let pendingNavigationDirection = null;
     let validForInsert = true;
-    let currentSort = { field: 'code', direction: 'asc' };
     let pendingImageFile = null;
-    let currentModalType = null; // 'types' or 'makers'
-    let isNew = false;
 
     // Get URL parameters
     const urlParams = new URLSearchParams(window.location.search);
@@ -76,26 +73,20 @@ import { fetchFilteredProducts, fetchMakers, fetchTypes, deleteProduct,
     const selectedType = urlParams.get('type');
 
     // Data tables
-    let products = [];
-    let makers = [];
-    let types = [];
-    let nextProductId;
+    let promos = [];
+    let totalIssued;
+    let associatedCarousels;
     // #endregion
 
 document.addEventListener('DOMContentLoaded', async () => {
-    products = await fetchFilteredProducts(selectedType, selectedMaker);
-    makers = await fetchMakers();
-    types = await fetchTypes();
-    nextProductId = await fetchNextProductId();
+    promos = await fetchFilteredProducts(selectedType, selectedMaker);
 
-    populateGroupFilters(makers, types);
-
-    const productData = products.find(p => p.ID.toString() === productId);
+    const productData = promos.find(p => p.ID.toString() === productId);
     
     if (productData) {
-        loadProductData(productData);
+        loadPromoData(productData);
     }else if (productId === 'new') {
-        createNewProduct();
+        createNewPromo();
     } else {
         showWarningModal('Product not found');
     }
@@ -104,13 +95,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         const params = new URLSearchParams(window.location.search);
         const newProductId = params.get('id');
         
-        // Find product in current products array
-        const productData = products.find(p => p.ID.toString() === newProductId);
+        // Find product in current promos array
+        const productData = promos.find(p => p.ID.toString() === newProductId);
         
         if (productData) {
-            loadProductData(productData);
+            loadPromoData(productData);
         } else if (newProductId === 'new') {
-            createNewProduct();
+            createNewPromo();
         } else {
             showWarningModal('Product not found');
         }
@@ -155,7 +146,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     confirmCancelBtn.addEventListener('click', function() {
-        loadProductData(productData);
+        loadPromoData(productData);
         cancelConfirmationModal.style.display = 'none';
     });
 
@@ -244,27 +235,27 @@ document.addEventListener('DOMContentLoaded', async () => {
             const result = await deleteProduct(currentProductId);
             
             if (result.success) {
-                const productIndex = products.findIndex(p => p.ID === currentProductId);
+                const productIndex = promos.findIndex(p => p.ID === currentProductId);
                 if (productIndex !== -1) {
-                    products.splice(productIndex, 1);
+                    promos.splice(productIndex, 1);
                     
-                    if (products.length > 0) {
+                    if (promos.length > 0) {
                         let nextProduct;
-                        if (productIndex >= products.length) {
-                            nextProduct = products[products.length - 1];
+                        if (productIndex >= promos.length) {
+                            nextProduct = promos[promos.length - 1];
                         } else {
-                            nextProduct = products[productIndex];
+                            nextProduct = promos[productIndex];
                         }
                         
                         const params = new URLSearchParams(window.location.search);
                         params.set('id', nextProduct.ID);
                         window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
-                        loadProductData(nextProduct);
+                        loadPromoData(nextProduct);
                     } else {
                         const params = new URLSearchParams(window.location.search);
                         params.set('id', 'new');
                         window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
-                        createNewProduct();
+                        createNewPromo();
                     }
                 }
                 
@@ -282,10 +273,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     cancelDeleteBtn.addEventListener('click', function() {
         deleteConfirmationModal.style.display = 'none';
-    });
-
-    changeImageBtn.addEventListener('click', function() {
-        imageInput.click();
     });
 
     imageInput.addEventListener('change', async function(e) {
@@ -387,124 +374,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    document.querySelector('label[for="productMaker"]').addEventListener('click', function(e) {
-        e.preventDefault();
-        currentModalType = 'makers';
-        showGroupsModal();
-    });
-    
-    makerCodeInput.addEventListener('input', function() {
-        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3);
-        
-        const enteredCode = this.value;
-        
-        const matchingMaker = makers.find(maker => 
-            maker.CODE.toString().startsWith(enteredCode)
-        );
-
-        if (matchingMaker) {
-            productMaker.value = matchingMaker.NAME;
-        }
-    });
-    
-    document.getElementById('productType').addEventListener('change', function() {
-        const selectedType = types.find(t => t.NAME === this.value);
-        if (selectedType) {
-            groupCodeInput.value = selectedType.CODE;
-        }
-    });
-
-    document.getElementById('productMaker').addEventListener('change', function() {
-        const selectedMaker = makers.find(m => m.NAME === this.value);
-        if (selectedMaker) {
-            makerCodeInput.value = selectedMaker.CODE;
-        }
-    });
-
-    document.getElementById('addGroupBtn').addEventListener('click', function() {
-        const code = document.getElementById('newGroupCode').value.trim();
-        const name = document.getElementById('newGroupName').value.trim();
-        
-        if (!code || !name) {
-            showWarningModal('Both code and name are required');
-            return;
-        }
-
-        const newGroup = {
-            ID: null, 
-            CODE: parseInt(code),
-            NAME: name
-        };
-
-        if (currentModalType === 'types') {
-            types.unshift(newGroup);
-        } else {
-            makers.unshift(newGroup);
-        }
-        
-        const groupsList = document.getElementById('groupsList');
-        const item = document.createElement('div');
-        item.className = 'group-item new-group';
-        item.innerHTML = getItemCardHtml("group", newGroup);
-
-        if (groupsList.firstChild) {
-            groupsList.insertBefore(item, groupsList.firstChild);
-        } else {
-            groupsList.appendChild(item);
-        }
-
-        document.getElementById('newGroupCode').value = '';
-        document.getElementById('newGroupName').value = '';
-
-        if (currentModalType === 'types') {
-            fillDropdown(types, productType);
-        } else {
-            fillDropdown(makers, productMaker);
-        }
-
-        attachDeleteHandlers();
-    });
-
-    document.getElementById('groupCodeInput').addEventListener('input', function() {
-        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3);
-        
-        const enteredCode = this.value;
-        
-        const matchingType = types.find(type => 
-            type.CODE.toString().startsWith(enteredCode)
-        );
-
-        if (matchingType) {
-            productType.value = matchingType.NAME;
-        }
-    });
-
-    document.querySelector('label[for="productType"]').addEventListener('click', function(e) {
-        e.preventDefault();
-        currentModalType = 'types';
-        showGroupsModal();
-    });
-
-    document.querySelector('.groups-close').addEventListener('click', function() {
-        document.getElementById('groupsModal').style.display = 'none';
-        document.body.classList.remove('modal-open');
-    });
-
-    document.getElementById('saveGroupBtn').addEventListener('click', async function() {
-        try {
-            await saveGroupsData();
-            
-            showSaveNotification();
-            const modal = document.getElementById('groupsModal');
-            modal.style.display = 'none';
-            document.body.classList.remove('modal-open');
-            
-        } catch (error) {
-            console.error('Error saving groups data:', error);
-            showWarningModal(`Failed to save changes: ${error.message}`);
-        }
-    });
-
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             const modal = document.getElementById('groupsModal');
@@ -514,39 +383,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
     });
-
-    document.getElementById('sortByCode').addEventListener('click', function() {
-        sortGroups('code');
-    });
-
-    document.getElementById('sortByName').addEventListener('click', function() {
-        sortGroups('name');
-    });
-
-    document.getElementById('searchGroupCode').addEventListener('input', function() {
-        filterGroups();
-    });
-
-    document.getElementById('searchGroupName').addEventListener('input', function() {
-        filterGroups();
-    });
     // #endregion
 });
 
 // #region FUNCTIONS
     // #region PRODUCT FUNCTIONS
-    function loadProductData(productData) {
+    function loadPromoData(productData) {
         headerProductCode.value = productData.CODE;
         headerProductName.value = productData.NAME;
         priceInput.value = productData.PRICE;
         discountInput.value = productData.DISCOUNT * 100;
         finalPriceInput.value = productData.FINALPRICE;
-        productType.value = productData.TYPENAME;
-        const selectedType = types.find(t => t.ID === productData.TYPEID);
-        groupCodeInput.value = selectedType ? selectedType.CODE : '';
-        productMaker.value = productData.MAKERNAME;
-        const selectedMaker = makers.find(m => m.ID === productData.MAKERID);
-        makerCodeInput.value = selectedMaker ? selectedMaker.CODE : '';
         productNotes.value = productData.NOTES || '';
         mainProductImage.src = `media/${productData.ID}.png`;
 
@@ -561,19 +408,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             carouselList.appendChild(div);
         } else {
             carouselList.innerHTML = '<div class="no-data">No carousel assigned</div>';
-        }
-
-        promoList.innerHTML = '';
-        if (productData.PROMOCODE && productData.PROMODISCOUNT !== null) {
-            const div = document.createElement('div');
-            div.className = 'info-item';
-            div.textContent = `${productData.PROMOCODE} - ${(productData.PROMODISCOUNT * 100).toFixed(0)}% OFF`;
-            div.addEventListener('click', function() {
-                window.location.href = `promo.html?id=${productData.PROMOID}`;
-            });
-            promoList.appendChild(div);
-        } else {
-            promoList.innerHTML = '<div class="no-data">No promotions available</div>';
         }
 
         // Adjust text area height
@@ -630,8 +464,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 validForInsert = true;
                 formChanged = false;
                 
-                products = await fetchFilteredProducts('All', 'All');
-                const savedProduct = products.find(p => p.CODE === productData.code);
+                promos = await fetchFilteredProducts('All', 'All');
+                const savedProduct = promos.find(p => p.CODE === productData.code);
                 
                 if (savedProduct) {
                     if (productId === 'new') {
@@ -659,7 +493,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         }
                     }
                     
-                    loadProductData(savedProduct);
+                    loadPromoData(savedProduct);
                     showConfirmation();
                 } else {
                     throw new Error('Saved product not found in results');
@@ -682,7 +516,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    function createNewProduct() {
+    function createNewPromo() {
         headerProductCode.value = "";
         headerProductName.value = "";
         priceInput.value = "0";
@@ -707,336 +541,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentProductId = 'new';
     }
 
-    async function uploadNewProductImage(imageFile) {
-        try {
-            if (!imageFile) {
-                throw new Error('No image file provided');
-            }
-
-            if (!currentProductId || currentProductId === 'new') {
-                throw new Error('Product must be saved before uploading image');
-            }
-
-            const formData = new FormData();
-            formData.append('image', imageFile);
-
-            const response = await fetch(`http://localhost:3000/api/uploadNewProductImage/${currentProductId}`, {
-                method: 'POST',
-                body: formData
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-            }
-
-            const result = await response.json();
-            return {
-                success: true,
-                message: 'Image uploaded successfully',
-                productId: currentProductId
-            };
-        } catch (error) {
-            console.error('Error uploading new product image:', error);
-            return {
-                success: false,
-                error: error.message
-            };
-        }
-    }
-
-    // #endregion
-    // #region GROUPS FUNCTIONS
-    function displayGroups() {
-        const groupsList = document.getElementById('groupsList');
-        groupsList.innerHTML = '';
-        
-        const groups = currentModalType === 'types' ? types : makers;
-        
-        groups.forEach((group) => {
-            const item = document.createElement('div');
-            item.className = 'group-item';
-            item.innerHTML = getItemCardHtml("group", group);
-            groupsList.appendChild(item);
-        });
-
-        attachDeleteHandlers();
-    }
-
-    function displayFilteredGroups(filteredGroups) {
-        const groupsList = document.getElementById('groupsList');
-        groupsList.innerHTML = '';
-        
-        filteredGroups.forEach(group => {
-            const item = document.createElement('div');
-            item.className = 'group-item';
-            item.innerHTML = getItemCardHtml("group", group);
-            groupsList.appendChild(item);
-        });
-
-        attachDeleteHandlers();
-    }
-
-    function attachDeleteHandlers() {
-        document.querySelectorAll('.groups-btn-delete-item').forEach((btn, index) => {
-            btn.addEventListener('click', async function() {
-                if (confirm(`Are you sure you want to delete this ${currentModalType === 'types' ? 'type' : 'maker'}?`)) {
-                    try {
-                        const groupItem = this.closest('.group-item');
-                        const code = groupItem.querySelector('.groups-input.code').value;
-                        const name = groupItem.querySelector('.groups-input.name').value;
-                        
-                        const groups = currentModalType === 'types' ? types : makers;
-                        const itemToDelete = groups.find(g => g.CODE.toString() === code && g.NAME === name);
-                        
-                        if (!itemToDelete) {
-                            throw new Error('Item not found');
-                        }
-                        
-                        if (groupItem.classList.contains('new-group')) {
-                            const groupIndex = groups.findIndex(g => g.CODE.toString() === code);
-                            if (groupIndex !== -1) {
-                                groups.splice(groupIndex, 1);
-                            }
-                            groupItem.remove();
-                            
-                            if (currentModalType === 'types') {
-                                fillDropdown(types, productType);
-                            } else {
-                                fillDropdown(makers, productMaker);
-                            }
-                            return;
-                        }
-                        
-                        let deleteResult;
-                        if (currentModalType === 'types') {
-                            deleteResult = await deleteType(itemToDelete.ID);
-                        } else {
-                            deleteResult = await deleteMaker(itemToDelete.ID);
-                        }
-                        
-                        if (deleteResult.success) {
-                            const groupIndex = groups.findIndex(g => g.ID === itemToDelete.ID);
-                            if (groupIndex !== -1) {
-                                groups.splice(groupIndex, 1);
-                            }
-                            
-                            if (currentModalType === 'types') {
-                                fillDropdown(types, productType);
-                            } else {
-                                fillDropdown(makers, productMaker);
-                            }
-                            
-                            filterGroups();
-                            showWarningModal(`${currentModalType === 'types' ? 'Type' : 'Maker'} deleted successfully`);
-                        } else {
-                            throw new Error(deleteResult.error);
-                        }
-                    } catch (error) {
-                        console.error('Error deleting item:', error);
-                        showWarningModal(`Error deleting ${currentModalType === 'types' ? 'type' : 'maker'}: ${error.message}`);
-                    }
-                }
-            });
-        });
-    }
-
-    function sortGroups(field) {
-        const direction = field === currentSort.field && currentSort.direction === 'asc' ? 'desc' : 'asc';
-        currentSort = { field, direction };
-
-        const groups = currentModalType === 'types' ? types : makers;
-
-        groups.sort((a, b) => {
-            let compareA = field === 'code' ? parseInt(a.CODE) : a.NAME.toLowerCase();
-            let compareB = field === 'code' ? parseInt(b.CODE) : b.NAME.toLowerCase();
-
-            if (direction === 'asc') {
-                return compareA > compareB ? 1 : -1;
-            } else {
-                return compareA < compareB ? 1 : -1;
-            }
-        });
-
-        if (currentModalType === 'types') {
-            types = groups;
-        } else {
-            makers = groups;
-        }
-
-        displayGroups();
-        updateSortButtons();
-    }
-
-    function filterGroups() {
-        const codeFilter = document.getElementById('searchGroupCode').value.toLowerCase();
-        const nameFilter = document.getElementById('searchGroupName').value.toLowerCase();
-        
-        const groups = currentModalType === 'types' ? types : makers;
-        
-        const filteredGroups = groups.filter(group => {
-            const matchesCode = group.CODE.toString().includes(codeFilter);
-            const matchesName = group.NAME.toLowerCase().includes(nameFilter);
-            return matchesCode && matchesName;
-        });
-        
-        displayFilteredGroups(filteredGroups);
-    }
-
-    function populateGroupFilters(makers, types) {
-        makers.forEach(maker => {
-            const option = document.createElement('option');
-            option.value = maker.NAME;
-            option.textContent = maker.NAME;
-            productMaker.appendChild(option);
-        });
-
-        types.forEach(type => {
-            const option = document.createElement('option');
-            option.value = type.NAME;
-            option.textContent = type.NAME;
-            productType.appendChild(option);
-        });
-    }
-
-    function showGroupsModal() {
-        const modal = document.getElementById('groupsModal');
-        modal.style.display = 'flex';
-        document.body.classList.add('modal-open');
-        
-        document.getElementById('searchGroupCode').value = '';
-        document.getElementById('searchGroupName').value = '';
-        
-        if (currentModalType === 'types') {
-            fetchTypes().then(data => {
-                types = data;
-                displayGroups();
-            });
-        } else if (currentModalType === 'makers') {
-            fetchMakers().then(data => {
-                makers = data;
-                displayGroups();
-            });
-        }
-    }
-
-    async function saveGroupsData() {
-        const groupItems = document.querySelectorAll('.group-item');
-        
-        const promises = [];
-        const itemsToUpdate = [];
-        
-        for (const item of groupItems) {
-            const codeInput = item.querySelector('.groups-input.code');
-            const nameInput = item.querySelector('.groups-input.name');
-            
-            const currentCode = parseInt(codeInput.value);
-            const currentName = nameInput.value.trim();
-            const originalCode = parseInt(codeInput.dataset.originalCode);
-            const originalName = nameInput.dataset.originalName;
-            
-            if (item.classList.contains('new-group')) {
-                const insertData = {
-                    code: currentCode,
-                    name: currentName
-                };
-                
-                if (currentModalType === 'types') {
-                    promises.push(insertType(insertData));
-                } else {
-                    promises.push(insertMaker(insertData));
-                }
-                
-                itemsToUpdate.push({ item, isNew: true });
-            } else {
-                if (currentCode === originalCode && currentName === originalName) {
-                    continue;
-                }
-                
-                const groups = currentModalType === 'types' ? types : makers;
-                const existingItem = groups.find(g => g.CODE === originalCode && g.NAME === originalName);
-                
-                if (existingItem) {
-                    const updateData = {
-                        id: existingItem.ID,
-                        code: currentCode,
-                        name: currentName
-                    };
-                    
-                    if (currentModalType === 'types') {
-                        promises.push(updateType(updateData));
-                    } else {
-                        promises.push(updateMaker(updateData));
-                    }
-                    
-                    itemsToUpdate.push({ item, isNew: false, updateData });
-                }
-            }
-        }
-        
-        if (promises.length > 0) {
-            const results = await Promise.all(promises);
-            
-            const failures = results.filter(result => !result.success);
-            if (failures.length > 0) {
-                throw new Error(`Some operations failed: ${failures.map(f => f.error).join(', ')}`);
-            }
-            
-            itemsToUpdate.forEach(({ item, isNew, updateData }) => {
-                if (isNew) {
-                    item.classList.remove('new-group');
-                }
-                
-                if (updateData) {
-                    const codeInput = item.querySelector('.groups-input.code');
-                    const nameInput = item.querySelector('.groups-input.name');
-                    codeInput.dataset.originalCode = updateData.code;
-                    nameInput.dataset.originalName = updateData.name;
-                }
-            });
-            
-            if (currentModalType === 'types') {
-                types = await fetchTypes();
-                productType.innerHTML = '<option value="">Select Type</option>';
-                types.forEach(type => {
-                    const option = document.createElement('option');
-                    option.value = type.NAME;
-                    option.textContent = type.NAME;
-                    productType.appendChild(option);
-                });
-            } else {
-                makers = await fetchMakers();
-                // Update the productMaker dropdown
-                productMaker.innerHTML = '<option value="">Select Maker</option>';
-                makers.forEach(maker => {
-                    const option = document.createElement('option');
-                    option.value = maker.NAME;
-                    option.textContent = maker.NAME;
-                    productMaker.appendChild(option);
-                });
-            }
-            
-            displayGroups();
-            console.log(`Successfully saved ${promises.length} items to database`);
-        }
-    }
-
-    function updateSortButtons() {
-        const codeBtn = document.getElementById('sortByCode');
-        const nameBtn = document.getElementById('sortByName');
-        
-        codeBtn.classList.remove('active');
-        nameBtn.classList.remove('active');
-        
-        const activeBtn = currentSort.field === 'code' ? codeBtn : nameBtn;
-        activeBtn.classList.add('active');
-        
-        codeBtn.textContent = `Sort by Code ${currentSort.field === 'code' ? 
-            (currentSort.direction === 'asc' ? '↓' : '↑') : '↓'}`;
-        nameBtn.textContent = `Sort by Name ${currentSort.field === 'name' ? 
-            (currentSort.direction === 'asc' ? '↓' : '↑') : '↓'}`;
-    }
-    
     // #endregion
     // #region NAVIGATION FUNCTIONS
     function handleNavigation(direction) {// Handle navigation with unsaved changes check
@@ -1050,7 +554,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function navigateProduct(direction) {
         try {
-            const currentIndex = products.findIndex(p => p.ID === currentProductId);
+            const currentIndex = promos.findIndex(p => p.ID === currentProductId);
             if (currentIndex === -1) {
                 console.error('Current product not found in dataset');
                 return;
@@ -1059,13 +563,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             let targetProduct = null;
             
             if (direction === 'next') {
-                targetProduct = products[currentIndex + 1];
+                targetProduct = promos[currentIndex + 1];
             } else if (direction === 'prev') {
-                targetProduct = products[currentIndex - 1];
+                targetProduct = promos[currentIndex - 1];
             }
 
             if (targetProduct) {
-                loadProductData(targetProduct);
+                loadPromoData(targetProduct);
                 const params = new URLSearchParams(window.location.search);
                 params.set('id', targetProduct.ID);
                 const newUrl = `${window.location.pathname}?${params.toString()}`;
@@ -1073,15 +577,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         } catch (error) {
             console.error('Navigation error:', error);
-            showWarningModal('Failed to navigate between products');
+            showWarningModal('Failed to navigate between promos');
         }
     }
 
     function updateNavigationState() {
-        const currentIndex = products.findIndex(p => p.ID === currentProductId);
+        const currentIndex = promos.findIndex(p => p.ID === currentProductId);
 
         sidePrevBtn.disabled = currentIndex <= 0;
-        sideNextBtn.disabled = currentIndex >= products.length - 1;
+        sideNextBtn.disabled = currentIndex >= promos.length - 1;
         
         sidePrevBtn.style.opacity = sidePrevBtn.disabled ? '0.5' : '1';
         sideNextBtn.style.opacity = sideNextBtn.disabled ? '0.5' : '1';
@@ -1094,15 +598,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         const warningMessage = document.getElementById('warningMessage');
         warningMessage.textContent = message;
         warningModal.style.display = 'flex';
-    }
-
-    function showSaveNotification() {
-        const notification = document.querySelector('.groups-save-notification');
-        notification.style.display = 'block';
-        
-        setTimeout(() => {
-            notification.style.display = 'none';
-        }, 1000);
     }
 
     function showConfirmation() {// Update showConfirmation function to ensure modal is visible

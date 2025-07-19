@@ -638,6 +638,175 @@ app.get('/api/getFilteredPromos/:type/:maker', async (req, res) => {
         });
     }
 });
+
+app.delete('/api/deletePromo/:id', async (req, res) => {
+    try {
+        const promoId = req.params.id;
+        await pool.query('CALL DeletePromo(?)', [promoId]);
+        
+        console.log(`Deleted promo with ID: ${promoId}`);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error deleting promo:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
+    }
+});
+
+app.post('/api/insertPromo', async (req, res) => {
+    try {
+        const { code, product, type, maker, notes, discount, daysToLive } = req.body;
+
+        await pool.query('CALL InsertPromo(?, ?, ?, ?, ?, ?, ?)', [
+            code,
+            product,
+            type,
+            maker,
+            notes,
+            discount,
+            daysToLive
+        ]);
+
+        console.log('Inserted new promo:', { code, product, type, maker });
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error inserting promo:', error);
+        // Check for duplicate entry error (MySQL error code 1062)
+        if (error.code === 'ER_DUP_ENTRY') {
+            res.status(409).json({ 
+                success: false, 
+                error: `Promo code ${req.body.code} already exists. Please use a different code.`,
+                isDuplicateCode: true
+            });
+        } else {
+            res.status(500).json({ 
+                success: false, 
+                error: error.message 
+            });
+        }
+    }
+});
+
+app.put('/api/updatePromo/:id', async (req, res) => {
+    try {
+        const promoId = req.params.id;
+        const { code, product, type, maker, notes, discount, daysToLive } = req.body;
+
+        await pool.query('CALL UpdatePromo(?, ?, ?, ?, ?, ?, ?, ?)', [
+            promoId,
+            code,
+            product,
+            type,
+            maker,
+            notes,
+            discount,
+            daysToLive
+        ]);
+
+        console.log(`Updated promo with ID: ${promoId}`);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error updating promo:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
+    }
+});
+
+app.put('/api/updatePromoLines/:id', async (req, res) => {
+    try {
+        const promoLinesId = req.params.id;
+        const { promo, minigame, chance } = req.body;
+
+        await pool.query('CALL UpdatePromoLines(?, ?, ?, ?)', [
+            promoLinesId,
+            promo,
+            minigame,
+            chance
+        ]);
+
+        console.log(`Updated promo lines with ID: ${promoLinesId}`);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error updating promo lines:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
+    }
+});
+
+app.delete('/api/deletePromoLines/:id', async (req, res) => {
+    try {
+        const promoLinesId = req.params.id;
+        await pool.query('CALL DeletePromoLines(?)', [promoLinesId]);
+        
+        console.log(`Deleted promo lines with ID: ${promoLinesId}`);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error deleting promo lines:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
+    }
+});
+
+app.post('/api/insertPromoLines', async (req, res) => {
+    try {
+        const { promo, minigame, chance } = req.body;
+
+        await pool.query('CALL InsertPromoLines(?, ?, ?)', [
+            promo,
+            minigame,
+            chance
+        ]);
+
+        console.log('Inserted new promo lines:', { promo, minigame, chance });
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error inserting promo lines:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
+    }
+});
+
+app.get('/api/getIssuedCount/:promoId', async (req, res) => {
+    try {
+        const promoId = req.params.promoId;
+        const [rows] = await pool.query('CALL GetIssuedCount(?)', [promoId]);
+        
+        console.log(`Retrieved issued count for promo ${promoId}:`, rows[0][0]);
+        res.json(rows[0][0]);
+    } catch (error) {
+        console.error('Error fetching issued count:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to fetch issued count',
+            details: error.message 
+        });
+    }
+});
+
+app.get('/api/getAssociatedCarouselForPromo/:promoId', async (req, res) => {
+    try {
+        const promoId = req.params.promoId;
+        const [rows] = await pool.query('CALL GetAssociatedCarouselForPromo(?)', [promoId]);
+        
+        console.log(`Retrieved associated carousel for promo ${promoId}:`, rows[0]);
+        res.json(rows[0]);
+    } catch (error) {
+        console.error('Error fetching associated carousel for promo:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to fetch associated carousel for promo',
+            details: error.message 
+        });
+    }
+});
 // #endregion PROMOS
 
 // #region ADMIN

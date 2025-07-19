@@ -566,7 +566,7 @@ async function updateType(typeData) {
 }
 // #endregion PRODUCT
 
-
+// #region CAROUSEL
 async function fetchCarouselMinigame(carousel) {
     try {
         const response = await fetch(`http://localhost:3000/api/getCarouselMinigame/${carousel}`);
@@ -641,6 +641,210 @@ async function fetchMinigamePromosList(carousel) {
         return [];
     }
 }
+// #endregion CAROUSEL
+
+// #region PROMOS
+async function deletePromo(promoId) {
+    try {
+        console.log('Deleting promo:', promoId);
+        const response = await fetch(`http://localhost:3000/api/deletePromo/${promoId}`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('Promo deletion result:', result);
+        return { success: true };
+    } catch (error) {
+        console.error('Error deleting promo:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+async function insertPromo(promoData) {
+    try {
+        console.log('Inserting promo:', promoData);
+        const response = await fetch('http://localhost:3000/api/insertPromo', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                code: promoData.code,
+                product: promoData.product,
+                type: promoData.type,
+                maker: promoData.maker,
+                notes: promoData.notes,
+                discount: promoData.discount,
+                daysToLive: promoData.daysToLive
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Promo insert result:', result);
+        return result;
+    } catch (error) {
+        console.error('Error inserting promo:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+async function updatePromo(promoData) {
+    try {
+        console.log('Updating promo:', promoData);
+        const response = await fetch(`http://localhost:3000/api/updatePromo/${promoData.id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                code: promoData.code,
+                product: promoData.product,
+                type: promoData.type,
+                maker: promoData.maker,
+                notes: promoData.notes,
+                discount: promoData.discount,
+                daysToLive: promoData.daysToLive
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Promo update result:', result);
+        return result;
+    } catch (error) {
+        console.error('Error updating promo:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+async function updatePromoLines(promoLinesData) {
+    try {
+        console.log('Updating promo lines:', promoLinesData);
+        const response = await fetch(`http://localhost:3000/api/updatePromoLines/${promoLinesData.id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                promo: promoLinesData.promo,
+                minigame: promoLinesData.minigame,
+                chance: promoLinesData.chance
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Promo lines update result:', result);
+        return result;
+    } catch (error) {
+        console.error('Error updating promo lines:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+async function deletePromoLines(promoLinesId) {
+    try {
+        console.log('Deleting promo lines:', promoLinesId);
+        const response = await fetch(`http://localhost:3000/api/deletePromoLines/${promoLinesId}`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('Promo lines deletion result:', result);
+        return { success: true };
+    } catch (error) {
+        console.error('Error deleting promo lines:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+async function insertPromoLines(promoLinesData) {
+    try {
+        console.log('Inserting promo lines:', promoLinesData);
+        const response = await fetch('http://localhost:3000/api/insertPromoLines', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                promo: promoLinesData.promo,
+                minigame: promoLinesData.minigame,
+                chance: promoLinesData.chance
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Promo lines insert result:', result);
+        return result;
+    } catch (error) {
+        console.error('Error inserting promo lines:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+async function getIssuedCount(promoId) {
+    try {
+        console.log('Fetching issued count for promo:', promoId);
+        const response = await fetch(`http://localhost:3000/api/getIssuedCount/${promoId}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Issued count result:', data);
+        return data.TOTALISSUED || 0;
+    } catch (error) {
+        console.error('Error fetching issued count:', error);
+        return 0;
+    }
+}
+
+async function getAssociatedCarouselForPromo(promoId) {
+    try {
+        console.log('Fetching associated carousel for promo:', promoId);
+        const response = await fetch(`http://localhost:3000/api/getAssociatedCarouselForPromo/${promoId}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Associated carousel result:', {
+            promoId,
+            carousels: data
+        });
+        return data;
+    } catch (error) {
+        console.error('Error fetching associated carousel for promo:', error);
+        return [];
+    }
+}
+// #endregion PROMOS
 
 // #region ADMIN
 async function fetchIndexPromoInfo() {
@@ -721,4 +925,12 @@ export {
     fetchFilteredPromos,
     fetchIndexPromoInfo,
     fetchIndexDeviceInfo,
+    deletePromo,
+    insertPromo,
+    updatePromo,
+    updatePromoLines,
+    deletePromoLines,
+    insertPromoLines,
+    getIssuedCount,
+    getAssociatedCarouselForPromo
 };
