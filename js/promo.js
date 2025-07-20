@@ -63,7 +63,7 @@ import { fetchFilteredProducts, fetchFilteredPromos, getAssociatedCarouselForPro
 
     // Get URL parameters
     const urlParams = new URLSearchParams(window.location.search);
-    const promoID = urlParams.get('id');
+    let promoID = urlParams.get('id');
     const selectedMaker = urlParams.get('maker');
     const selectedType = urlParams.get('type');
 
@@ -422,8 +422,37 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function selectProduct(product) {
         selectedProductData = product;
-        headerProductCode.value = product.CODE;
-        headerProductName.value = product.NAME;
+
+        // For new promos, keep the user-entered promo code and fill product details
+        if (promoID === 'new') {
+            // Keep existing promo code, fill product name and details
+            headerProductName.value = product.NAME || '';
+            
+            // Fill price from selected product (use PRICE property)
+            priceInput.value = product.PRICE || 0;
+            
+            // Set product image by product ID
+            if (product.ID) {
+                mainProductImage.src = `media/${product.ID}.png`;
+            } else {
+                mainProductImage.src = "media/9997.png";
+            }
+            
+            // Clear associated data for new promos
+            totalIssued = 0;
+            associatedCarousels = [];
+            totalIssuedInput.value = 0;
+            carouselList.innerHTML = '<div class="no-data">No associated carousels found</div>';
+            
+            // Don't navigate away from new promo page - just close dropdown
+            productDropdown.classList.remove('active');
+            formChanged = true;
+            return; // Exit here - don't run the existing promo navigation code
+        }
+        
+        // For existing promos ONLY, do full navigation
+        headerProductCode.value = product.CODE || '';
+        headerProductName.value = product.NAME || '';
         
         // Refresh totalIssued and associated carousels for the selected product/promo
         totalIssued = await getIssuedCount(product.ID);
@@ -445,13 +474,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         headerProductCode.value = promoData.CODE;
         headerProductName.value = promoData.PRODUCTNAME;
         priceInput.value = promoData.PRICE;
-        discountInput.value = promoData.DISCOUNT * 100;
-        // Fix: Calculate final price correctly by applying discount to price
+        discountInput.value = (promoData.DISCOUNT * 100).toFixed(0);
         finalPriceInput.value = (promoData.PRICE - (promoData.PRICE * promoData.DISCOUNT)).toFixed(2);
         totalIssuedInput.value = totalIssued || 0;
-        daysToLiveInput.value = promoData.DAYSTOLIVE || 30;
+        daysToLiveInput.value = promoData.DAYSTOLIVE;
         productNotes.value = promoData.NOTES || '';
-        mainProductImage.src = `media/${promoData.PRODUCTID}.png`;
+        
+        if (promoData.PRODUCTID) {
+            mainProductImage.src = `media/${promoData.PRODUCTID}.png`;
+        } else {
+            mainProductImage.src = "media/9997.png";
+        }
 
         // Highlight selected product in dropdown
         updateDropdownSelection(promoData.ID);
@@ -528,25 +561,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         try {
-            // If we have selectedProductData, use it; otherwise create new product data
-            const promoData = selectedProductData ? {
-                id: selectedProductData.ID,
+            // Build promo data based on whether we're creating new or updating existing
+            const promoData = {
                 code: parseInt(headerProductCode.value),
-                product: selectedProductData.PRODUCTID,
-                type: selectedProductData.TYPEID,
-                maker: selectedProductData.MAKERID,
-                discount: parseFloat(discountInput.value) / 100,
-                daysToLive: parseInt(daysToLiveInput.value),
-                notes: productNotes.value
-            } : {
-                code: parseInt(headerProductCode.value),
-                product: null, // Will need to be set when linking to a product
-                type: null,
-                maker: null,
+                product: selectedProductData ? selectedProductData.ID : null,
+                type: selectedProductData ? selectedProductData.TYPEID : null,
+                maker: selectedProductData ? selectedProductData.MAKERID : null,
                 discount: parseFloat(discountInput.value) / 100,
                 daysToLive: parseInt(daysToLiveInput.value),
                 notes: productNotes.value
             };
+
+            // Add ID for updates
+            if (promoID !== 'new' && selectedProductData) {
+                promoData.id = selectedProductData.ID;
+            }
 
             const result = promoID === 'new' 
                 ? await insertPromo(promoData)
@@ -556,35 +585,87 @@ document.addEventListener('DOMContentLoaded', async () => {
                 validForInsert = true;
                 formChanged = false;
                 
-                // Reload data
-                promos = await fetchFilteredPromos(selectedType, selectedMaker);
-                
-                // Refresh totalIssued count if we have a saved promo
-                if (promoID !== 'new') {
-                    totalIssued = await getIssuedCount(currentProductId);
-                    totalIssuedInput.value = totalIssued || 0;
-                }
-                
-                // Refresh associated carousels
-                if (currentProductId !== 'new') {
-                    associatedCarousels = await getAssociatedCarouselForPromo(currentProductId);
-                }
-                
-                const savedPromo = promos.find(p => p.CODE === promoData.code);
-                
-                if (savedPromo) {
-                    if (promoID === 'new') {
-                        const params = new URLSearchParams(window.location.search);
-                        params.set('id', savedPromo.ID);
-                        window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
-                        currentProductId = savedPromo.ID;
-                    }
+                if (promoID === 'new') {
+                    // Try multiple properties for the returned ID
+                    const newPromoId = result.id || result.insertId || result.promoId || result.newId;
                     
-                    setupProductDropdown(); // Refresh dropdown
-                    loadPromoData(savedPromo);
-                    showConfirmation();
+                    if (newPromoId) {
+                        // Update URL to show the saved promo
+                        const params = new URLSearchParams(window.location.search);
+                        params.set('id', newPromoId);
+                        window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
+                        currentProductId = newPromoId;
+                        
+                        // Update the global promoID variable
+                        promoID = newPromoId.toString();
+                        
+                        // Refresh associated data for the saved promo
+                        totalIssued = await getIssuedCount(newPromoId);
+                        associatedCarousels = await getAssociatedCarouselForPromo(newPromoId);
+                        
+                        // Reload the promos list to include the new one
+                        promos = await fetchFilteredPromos(selectedType, selectedMaker);
+                        
+                        // Find the saved promo in the refreshed list by code (more reliable)
+                        const savedPromo = promos.find(p => p.CODE === parseInt(headerProductCode.value));
+                        
+                        if (savedPromo) {
+                            // Update with the actual promo ID from the database
+                            currentProductId = savedPromo.ID;
+                            promoID = savedPromo.ID.toString();
+                            
+                            // Update URL with correct ID
+                            const updatedParams = new URLSearchParams(window.location.search);
+                            updatedParams.set('id', savedPromo.ID);
+                            window.history.pushState({}, '', `${window.location.pathname}?${updatedParams.toString()}`);
+                            
+                            setupProductDropdown(); // Refresh dropdown
+                            loadPromoData(savedPromo);
+                            showConfirmation();
+                        } else {
+                            // If we can't find by code, just show success without loading data
+                            showConfirmation();
+                            showWarningModal('Promo saved successfully but page data may not be current. Please refresh or navigate away and back.');
+                        }
+                    } else {
+                        // If no ID returned, try to find the promo by code
+                        promos = await fetchFilteredPromos(selectedType, selectedMaker);
+                        const savedPromo = promos.find(p => p.CODE === parseInt(headerProductCode.value));
+                        
+                        if (savedPromo) {
+                            // Update URL to show the saved promo
+                            const params = new URLSearchParams(window.location.search);
+                            params.set('id', savedPromo.ID);
+                            window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
+                            currentProductId = savedPromo.ID;
+                            promoID = savedPromo.ID.toString();
+                            
+                            // Refresh associated data
+                            totalIssued = await getIssuedCount(savedPromo.ID);
+                            associatedCarousels = await getAssociatedCarouselForPromo(savedPromo.ID);
+                            
+                            setupProductDropdown(); // Refresh dropdown
+                            loadPromoData(savedPromo);
+                            showConfirmation();
+                        } else {
+                            showWarningModal('Promo saved successfully but could not load updated data. Please refresh the page.');
+                        }
+                    }
                 } else {
-                    throw new Error('Saved promo not found in results');
+                    // For existing promos, reload data normally
+                    promos = await fetchFilteredPromos(selectedType, selectedMaker);
+                    const savedPromo = promos.find(p => p.CODE === parseInt(headerProductCode.value));
+                    
+                    if (savedPromo) {
+                        totalIssued = await getIssuedCount(savedPromo.ID);
+                        associatedCarousels = await getAssociatedCarouselForPromo(savedPromo.ID);
+                        
+                        setupProductDropdown(); // Refresh dropdown
+                        loadPromoData(savedPromo);
+                        showConfirmation();
+                    } else {
+                        throw new Error('Updated promo not found in results');
+                    }
                 }
             } else {
                 if (result.isDuplicateCode) {
@@ -611,7 +692,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         discountInput.value = "0";
         finalPriceInput.value = "0";
         totalIssuedInput.value = "0";
-        daysToLiveInput.value = "30";
+        daysToLiveInput.value = "0";
         productNotes.value = "";
         mainProductImage.src = "media/9997.png";
         

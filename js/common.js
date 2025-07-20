@@ -108,7 +108,7 @@ export function getItemCardHtml(choice, item, date) {
                         <div class="product-header">
                             <span class="product-code">${item.CODE}</span>
                             <h2 class="product-name">${item.PRODUCTNAME}</h2>
-                            <span class="product-discount"><b>Discount: ${item.DISCOUNT}%</b></span>
+                            <span class="product-discount"><b>Discount: ${(item.DISCOUNT * 100).toFixed(0)}%</b></span>
                         </div>
                         <div class="product-info">
                             <div class="info-row">
