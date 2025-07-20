@@ -6,16 +6,9 @@ import { fetchFilteredProducts, fetchFilteredPromos, getAssociatedCarouselForPro
 // #region VARIABLE DECLARATION
     // Form references
     const productForm = document.getElementById('productForm');
-    const groupSelect = document.getElementById('productType');
-    const makerSelect = document.getElementById('productMaker');
     const priceInput = document.getElementById('productPrice');
     const discountInput = document.getElementById('productDiscount');
     const finalPriceInput = document.getElementById('productFinalPrice');
-    const groupCodeInput = document.getElementById('groupCodeInput');
-    const makerCodeInput = document.getElementById('makerCodeInput');
-    const productType = document.getElementById('productType');
-    const productMaker = document.getElementById('productMaker');
-    const changeImageTxt = document.getElementById('changeImageTxt');
 
     // Modal elements
     const saveConfirmation = document.getElementById('saveConfirmation');
@@ -40,16 +33,15 @@ import { fetchFilteredProducts, fetchFilteredPromos, getAssociatedCarouselForPro
 
     // Image elements
     const imageInput = document.getElementById('imageInput');
-    const changeImageBtn = document.getElementById('changeImageBtn');
     const mainProductImage = document.getElementById('mainProductImage');
 
     // Headers
     const headerProductCode = document.getElementById('headerProductCode');
     const headerProductName = document.getElementById('headerProductName');
+    const productDropdown = document.getElementById('productDropdown');
 
     //Carousel and promo lists
     const carouselList = document.getElementById('carouselList');
-    const promoList = document.getElementById('promoList');
 
     // Image Preview Modal functionality
     const imagePreviewModal = document.getElementById('imagePreviewModal');
@@ -65,48 +57,71 @@ import { fetchFilteredProducts, fetchFilteredPromos, getAssociatedCarouselForPro
     let pendingNavigationDirection = null;
     let validForInsert = true;
     let pendingImageFile = null;
+    let selectedProductData = null;
 
     // Get URL parameters
     const urlParams = new URLSearchParams(window.location.search);
-    const productId = urlParams.get('id');
+    const promoID = urlParams.get('id');
     const selectedMaker = urlParams.get('maker');
     const selectedType = urlParams.get('type');
 
     // Data tables
     let promos = [];
+    let allProducts = [];
     let totalIssued;
-    let associatedCarousels;
+    let associatedCarousels = [];
     // #endregion
 
 document.addEventListener('DOMContentLoaded', async () => {
-    promos = await fetchFilteredProducts(selectedType, selectedMaker);
-
-    const productData = promos.find(p => p.ID.toString() === productId);
+    // Load all products for the dropdown
+    allProducts = await fetchFilteredProducts('All', 'All');
     
-    if (productData) {
-        loadPromoData(productData);
-    }else if (productId === 'new') {
-        createNewPromo();
+    // Load filtered products for navigation
+    promos = await fetchFilteredPromos(selectedType, selectedMaker);
+    
+    // Only load associated carousels if we have a valid promo ID
+    if (promoID && promoID !== 'new') {
+        totalIssued = await getIssuedCount(promoID);
+        associatedCarousels = await getAssociatedCarouselForPromo(promoID);
     } else {
-        showWarningModal('Product not found');
+        totalIssued = 0;
+        associatedCarousels = [];
     }
 
-    window.addEventListener('popstate', async function() {// Reload the page correctly when navigating back
+    const promoData = promos.find(p => p.ID.toString() === promoID);
+    
+    if (promoData) {
+        loadPromoData(promoData);
+    } else if (promoID === 'new') {
+        createNewPromo();
+    } else {
+        showWarningModal('Promo not found');
+    }
+
+    setupProductDropdown();
+
+    window.addEventListener('popstate', async function() {
         const params = new URLSearchParams(window.location.search);
-        const newProductId = params.get('id');
+        const newPromoId = params.get('id');
         
-        // Find product in current promos array
-        const productData = promos.find(p => p.ID.toString() === newProductId);
+        // Refresh associated carousels for the new promo
+        if (newPromoId && newPromoId !== 'new') {
+            associatedCarousels = await getAssociatedCarouselForPromo(newPromoId);
+        } else {
+            associatedCarousels = [];
+        }
         
-        if (productData) {
-            loadPromoData(productData);
-        } else if (newProductId === 'new') {
+        const promoData = promos.find(p => p.ID.toString() === newPromoId);
+        
+        if (promoData) {
+            loadPromoData(promoData);
+        } else if (newPromoId === 'new') {
             createNewPromo();
         } else {
-            showWarningModal('Product not found');
+            showWarningModal('Promo not found');
         }
     });
-
+    
 // #region EVENT LISTENERS
     headerProductCode.addEventListener('input', function() {
         formChanged = true;
@@ -114,6 +129,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     headerProductName.addEventListener('input', function() {
         formChanged = true;
+        filterProductDropdown(this.value);
+    });
+
+    headerProductName.addEventListener('focus', function() {
+        productDropdown.classList.add('active');
+        filterProductDropdown(this.value);
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!headerProductName.contains(e.target) && !productDropdown.contains(e.target)) {
+            productDropdown.classList.remove('active');
+        }
     });
 
     sidePrevBtn.addEventListener('click', function() {
@@ -146,7 +174,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     confirmCancelBtn.addEventListener('click', function() {
-        loadPromoData(productData);
+        loadPromoData(selectedProductData);
         cancelConfirmationModal.style.display = 'none';
     });
 
@@ -275,53 +303,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         deleteConfirmationModal.style.display = 'none';
     });
 
-    imageInput.addEventListener('change', async function(e) {
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
-            
-            if (!file.type.match(/image\/(jpg|jpeg|png|gif)/)) {
-                showWarningModal('Please select an image file (JPG, PNG, or GIF)');
-                return;
-            }
-
-            if (file.size > 5 * 1024 * 1024) {//Change 5 to any MB desired
-                showWarningModal('Image file size must be less than 5MB');
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                mainProductImage.src = event.target.result;
-                formChanged = true;
-            };
-            reader.readAsDataURL(file);
-
-            if (currentProductId && currentProductId !== 'new') {
-                try {
-                    console.log('Deleting existing image for product:', currentProductId);
-                    const deleteResult = await deleteImage(currentProductId);
-                    
-                    if (!deleteResult.success) {
-                        console.warn('Warning: Could not delete existing image:', deleteResult.error);
-                    }
-                    const uploadResult = await uploadNewProductImage(file);
-                    
-                    if (uploadResult.success) {
-                        mainProductImage.src = `http://localhost:3000/media/${currentProductId}.png?t=${Date.now()}`;
-                        console.log('Image updated successfully for existing product');
-                    } else {
-                        throw new Error(uploadResult.error);
-                    }
-                } catch (error) {
-                    console.error('Error updating image:', error);
-                    showWarningModal(`Image update failed: ${error.message}`);
-                }
-            } else {
-                pendingImageFile = file;
-            }
-        }
-    });
-
     mainProductImage.addEventListener('click', function() {
         imagePreviewModal.style.display = 'flex';
         previewImage.src = this.src;
@@ -387,36 +368,128 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // #region FUNCTIONS
-    // #region PRODUCT FUNCTIONS
-    function loadPromoData(productData) {
-        headerProductCode.value = productData.CODE;
-        headerProductName.value = productData.NAME;
-        priceInput.value = productData.PRICE;
-        discountInput.value = productData.DISCOUNT * 100;
-        finalPriceInput.value = productData.FINALPRICE;
-        productNotes.value = productData.NOTES || '';
-        mainProductImage.src = `media/${productData.ID}.png`;
+    // #region DROPDOWN FUNCTIONS
+    function setupProductDropdown() {
+        populateProductDropdown(allProducts);
+    }
 
-        carouselList.innerHTML = '';
-        if (productData.CAROUSELCODE && productData.CAROUSELNAME) {
-            const div = document.createElement('div');
-            div.className = 'info-item';
-            div.textContent = `${productData.CAROUSELCODE} - ${productData.CAROUSELNAME}`;
-            div.addEventListener('click', function() {
-                window.location.href = `carousel.html?id=${productData.CAROUSELID}`;
+    function populateProductDropdown(products) {
+        productDropdown.innerHTML = '';
+        
+        products.forEach(product => {
+            const option = document.createElement('div');
+            option.className = 'product-option';
+            option.dataset.promoID = product.ID;
+            
+            const makerName = product.MAKERNAME || 'Unknown';
+            const typeName = product.TYPENAME || 'Unknown';
+            
+            option.innerHTML = `
+                <span class="product-code">${product.CODE}</span>
+                <span class="product-name">${product.NAME}</span>
+                <span class="product-details">(${makerName}, ${typeName})</span>
+            `;
+            
+            option.addEventListener('click', function() {
+                selectProduct(product);
             });
-            carouselList.appendChild(div);
+            
+            productDropdown.appendChild(option);
+        });
+    }
+
+    function filterProductDropdown(searchText) {
+        if (!searchText.trim()) {
+            populateProductDropdown(allProducts);
+            return;
+        }
+
+        const filtered = allProducts.filter(product => {
+            const makerName = product.MAKERNAME || 'Unknown';
+            const typeName = product.TYPENAME || 'Unknown';
+            const searchString = `${product.CODE} ${product.NAME} ${makerName} ${typeName}`.toLowerCase();
+            return searchString.includes(searchText.toLowerCase());
+        });
+
+        populateProductDropdown(filtered);
+        
+        if (!productDropdown.classList.contains('active')) {
+            productDropdown.classList.add('active');
+        }
+    }
+
+    async function selectProduct(product) {
+        selectedProductData = product;
+        headerProductCode.value = product.CODE;
+        headerProductName.value = product.NAME;
+        
+        // Refresh associated carousels for the selected product/promo
+        associatedCarousels = await getAssociatedCarouselForPromo(product.ID);
+        
+        // Update URL and load product data
+        const params = new URLSearchParams(window.location.search);
+        params.set('id', product.ID);
+        window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
+        
+        loadPromoData(product);
+        productDropdown.classList.remove('active');
+        formChanged = true;
+    }
+    // #endregion
+    // #region PRODUCT FUNCTIONS
+    function loadPromoData(promoData) {
+        selectedProductData = promoData;
+        headerProductCode.value = promoData.CODE;
+        headerProductName.value = promoData.PRODUCTNAME;
+        priceInput.value = promoData.PRICE;
+        discountInput.value = promoData.DISCOUNT * 100;
+        finalPriceInput.value = (promoData.PRICE * promoData.DISCOUNT).toFixed(2);
+        productNotes.value = promoData.NOTES || '';
+        mainProductImage.src = `media/${promoData.PRODUCTID}.png`;
+
+        // Highlight selected product in dropdown
+        updateDropdownSelection(promoData.ID);
+
+        // Populate carousel list with associated carousels
+        carouselList.innerHTML = '';
+        if (associatedCarousels && associatedCarousels.length > 0) {
+            associatedCarousels.forEach(carousel => {
+                const div = document.createElement('div');
+                div.className = 'info-item';
+                div.innerHTML = `
+                    <span class="carousel-info">${carousel.CAROUSELCODE} - ${carousel.CAROUSELNAME}</span>
+                    <span class="carousel-chance">(${(carousel.CHANCE * 100).toFixed(1)}% chance)</span>
+                `;
+                div.addEventListener('click', function() {
+                    window.location.href = `carousel.html?id=${carousel.CAROUSELID}`;
+                });
+                carouselList.appendChild(div);
+            });
         } else {
-            carouselList.innerHTML = '<div class="no-data">No carousel assigned</div>';
+            carouselList.innerHTML = '<div class="no-data">No associated carousels found</div>';
         }
 
         // Adjust text area height
         productNotes.style.height = 'auto';
         productNotes.style.height = (productNotes.scrollHeight) + 'px';
 
-        currentProductId = productData.ID;
+        currentProductId = promoData.ID;
         formChanged = false;
         updateNavigationState();
+    }
+
+    function updateDropdownSelection(promoID) {
+        // Remove previous selection
+        const previouslySelected = productDropdown.querySelector('.product-option.selected');
+        if (previouslySelected) {
+            previouslySelected.classList.remove('selected');
+        }
+        
+        // Add selection to current product
+        const currentOption = productDropdown.querySelector(`[data-product-id="${promoID}"]`);
+        if (currentOption) {
+            currentOption.classList.add('selected');
+        }
     }
 
     async function saveProductData() {
@@ -442,33 +515,44 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         try {
-            const selectedType = types.find(t => t.NAME === productType.value);
-            const selectedMaker = makers.find(m => m.NAME === productMaker.value);
-
-            const productData = {
+            // If we have selectedProductData, use it; otherwise create new product data
+            const promoData = selectedProductData ? {
+                id: selectedProductData.ID,
                 code: parseInt(headerProductCode.value),
                 name: headerProductName.value,
-                type: selectedType ? selectedType.ID : null,
-                maker: selectedMaker ? selectedMaker.ID : null,
+                type: selectedProductData.TYPEID,
+                maker: selectedProductData.MAKERID,
+                price: parseFloat(priceInput.value),
+                discount: parseFloat(discountInput.value) / 100,
+                finalPrice: parseFloat(finalPriceInput.value),
+                notes: productNotes.value
+            } : {
+                code: parseInt(headerProductCode.value),
+                name: headerProductName.value,
+                type: null,
+                maker: null,
                 price: parseFloat(priceInput.value),
                 discount: parseFloat(discountInput.value) / 100,
                 finalPrice: parseFloat(finalPriceInput.value),
                 notes: productNotes.value
             };
 
-            const result = productId === 'new' 
-                ? await insertProduct(productData)
-                : await updateProduct({ id: currentProductId, ...productData });
+            const result = promoID === 'new' 
+                ? await insertProduct(promoData)
+                : await updateProduct(promoData);
 
             if (result.success) {
                 validForInsert = true;
                 formChanged = false;
                 
-                promos = await fetchFilteredProducts('All', 'All');
-                const savedProduct = promos.find(p => p.CODE === productData.code);
+                // Reload data
+                allProducts = await fetchFilteredProducts('All', 'All');
+                promos = await fetchFilteredProducts(selectedType, selectedMaker);
+                
+                const savedProduct = allProducts.find(p => p.CODE === promoData.code);
                 
                 if (savedProduct) {
-                    if (productId === 'new') {
+                    if (promoID === 'new') {
                         const params = new URLSearchParams(window.location.search);
                         params.set('id', savedProduct.ID);
                         window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
@@ -493,13 +577,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                         }
                     }
                     
+                    setupProductDropdown(); // Refresh dropdown
                     loadPromoData(savedProduct);
                     showConfirmation();
                 } else {
                     throw new Error('Saved product not found in results');
                 }
             } else {
-                // Check if it's a duplicate code error
                 if (result.isDuplicateCode) {
                     showWarningModal(result.error);
                     headerProductCode.focus();
@@ -517,24 +601,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function createNewPromo() {
+        selectedProductData = null;
         headerProductCode.value = "";
         headerProductName.value = "";
         priceInput.value = "0";
         discountInput.value = "0";
         finalPriceInput.value = "0";
-        groupSelect.value = '';
-        makerSelect.value = '';
         productNotes.value = "";
         mainProductImage.src = "media/9997.png";
-        groupCodeInput.value = "";
-        makerCodeInput.value = "";
-        changeImageTxt.innerText = 'Upload Image';
         
         pendingImageFile = null;
         carouselList.innerHTML = '';
-        promoList.innerHTML = '';
 
-        headerProductCode.focus()
+        // Clear dropdown selection
+        const previouslySelected = productDropdown.querySelector('.product-option.selected');
+        if (previouslySelected) {
+            previouslySelected.classList.remove('selected');
+        }
+
+        headerProductCode.focus();
         updateNavigationState();
 
         formChanged = true;
@@ -556,7 +641,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             const currentIndex = promos.findIndex(p => p.ID === currentProductId);
             if (currentIndex === -1) {
-                console.error('Current product not found in dataset');
+                console.error('Current promo not found in dataset');
                 return;
             }
 
@@ -569,6 +654,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             if (targetProduct) {
+                // Refresh associated carousels for the target promo
+                associatedCarousels = await getAssociatedCarouselForPromo(targetProduct.ID);
+                
                 loadPromoData(targetProduct);
                 const params = new URLSearchParams(window.location.search);
                 params.set('id', targetProduct.ID);

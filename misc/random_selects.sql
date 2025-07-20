@@ -1,1 +1,0 @@
-CALL GetMinigamePromos(1);

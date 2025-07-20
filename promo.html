@@ -15,7 +15,7 @@
             <span class="app-name">Crystal</span>
         </div>
         <ul>
-            <li><a href="admin.html">Admin</a></li>
+            <li><a href="index.html">Admin</a></li>
             <li><a href="products.html">Products</a></li>
             <li><a href="carousels.html">Carousels</a></li>
             <li><a href="promos.html">Promos</a></li>
@@ -28,7 +28,10 @@
             <div class="title-section">
                 <div class="product-header">
                     <input type="number" id="headerProductCode" class="header-input code" placeholder="0000" readonly>
-                    <input type="text" id="headerProductName" class="header-input name" placeholder="Enter Product Name" readonly>
+                    <div class="product-select-container">
+                        <input type="text" id="headerProductName" class="header-input name" placeholder="Search products..." autocomplete="off">
+                        <div class="product-dropdown" id="productDropdown"></div>
+                    </div>
                 </div>
             </div>
             <div class="navigation-buttons">
@@ -62,7 +65,7 @@
                             <input type="number" id="productPrice" name="price" required>
                         </div>
                         <div class="form-group half">
-                            <label for="productDiscount">Discount (%):</label>
+                            <label for="productDiscount">Promo Discount (%):</label>
                             <input type="number" id="productDiscount" name="discount" value="0" step="1" min="0" max="100">
                         </div>
                         <div class="form-group half">
