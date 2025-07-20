@@ -9,6 +9,8 @@ import { fetchFilteredProducts, fetchFilteredPromos, getAssociatedCarouselForPro
     const priceInput = document.getElementById('productPrice');
     const discountInput = document.getElementById('productDiscount');
     const finalPriceInput = document.getElementById('productFinalPrice');
+    const totalIssuedInput = document.getElementById('totalIssued');
+    const daysToLiveInput = document.getElementById('daysToLive');
 
     // Modal elements
     const saveConfirmation = document.getElementById('saveConfirmation');
@@ -423,7 +425,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         headerProductCode.value = product.CODE;
         headerProductName.value = product.NAME;
         
-        // Refresh associated carousels for the selected product/promo
+        // Refresh totalIssued and associated carousels for the selected product/promo
+        totalIssued = await getIssuedCount(product.ID);
         associatedCarousels = await getAssociatedCarouselForPromo(product.ID);
         
         // Update URL and load product data
@@ -443,7 +446,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         headerProductName.value = promoData.PRODUCTNAME;
         priceInput.value = promoData.PRICE;
         discountInput.value = promoData.DISCOUNT * 100;
-        finalPriceInput.value = (promoData.PRICE * promoData.DISCOUNT).toFixed(2);
+        // Fix: Calculate final price correctly by applying discount to price
+        finalPriceInput.value = (promoData.PRICE - (promoData.PRICE * promoData.DISCOUNT)).toFixed(2);
+        totalIssuedInput.value = totalIssued || 0;
+        daysToLiveInput.value = promoData.DAYSTOLIVE || 30;
         productNotes.value = promoData.NOTES || '';
         mainProductImage.src = `media/${promoData.PRODUCTID}.png`;
 
@@ -458,7 +464,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 div.className = 'info-item';
                 div.innerHTML = `
                     <span class="carousel-info">${carousel.CAROUSELCODE} - ${carousel.CAROUSELNAME}</span>
-                    <span class="carousel-chance">(${(carousel.CHANCE * 100).toFixed(1)}% chance)</span>
+                    <span class="carousel-chance">(${(carousel.CHANCE * 100).toFixed(0)}% chance)</span>
                 `;
                 div.addEventListener('click', function() {
                     window.location.href = `carousel.html?id=${carousel.CAROUSELID}`;
@@ -514,74 +520,71 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
+        if (!daysToLiveInput.value || daysToLiveInput.value <= 0) {
+            showWarningModal('Days to Live must be greater than 0');
+            daysToLiveInput.focus();
+            validForInsert = false;
+            return;
+        }
+
         try {
             // If we have selectedProductData, use it; otherwise create new product data
             const promoData = selectedProductData ? {
                 id: selectedProductData.ID,
                 code: parseInt(headerProductCode.value),
-                name: headerProductName.value,
+                product: selectedProductData.PRODUCTID,
                 type: selectedProductData.TYPEID,
                 maker: selectedProductData.MAKERID,
-                price: parseFloat(priceInput.value),
                 discount: parseFloat(discountInput.value) / 100,
-                finalPrice: parseFloat(finalPriceInput.value),
+                daysToLive: parseInt(daysToLiveInput.value),
                 notes: productNotes.value
             } : {
                 code: parseInt(headerProductCode.value),
-                name: headerProductName.value,
+                product: null, // Will need to be set when linking to a product
                 type: null,
                 maker: null,
-                price: parseFloat(priceInput.value),
                 discount: parseFloat(discountInput.value) / 100,
-                finalPrice: parseFloat(finalPriceInput.value),
+                daysToLive: parseInt(daysToLiveInput.value),
                 notes: productNotes.value
             };
 
             const result = promoID === 'new' 
-                ? await insertProduct(promoData)
-                : await updateProduct(promoData);
+                ? await insertPromo(promoData)
+                : await updatePromo(promoData);
 
             if (result.success) {
                 validForInsert = true;
                 formChanged = false;
                 
                 // Reload data
-                allProducts = await fetchFilteredProducts('All', 'All');
-                promos = await fetchFilteredProducts(selectedType, selectedMaker);
+                promos = await fetchFilteredPromos(selectedType, selectedMaker);
                 
-                const savedProduct = allProducts.find(p => p.CODE === promoData.code);
+                // Refresh totalIssued count if we have a saved promo
+                if (promoID !== 'new') {
+                    totalIssued = await getIssuedCount(currentProductId);
+                    totalIssuedInput.value = totalIssued || 0;
+                }
                 
-                if (savedProduct) {
+                // Refresh associated carousels
+                if (currentProductId !== 'new') {
+                    associatedCarousels = await getAssociatedCarouselForPromo(currentProductId);
+                }
+                
+                const savedPromo = promos.find(p => p.CODE === promoData.code);
+                
+                if (savedPromo) {
                     if (promoID === 'new') {
                         const params = new URLSearchParams(window.location.search);
-                        params.set('id', savedProduct.ID);
+                        params.set('id', savedPromo.ID);
                         window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
-                        currentProductId = savedProduct.ID;
-                        
-                        if (pendingImageFile) {
-                            try {
-                                const imageResult = await uploadNewProductImage(pendingImageFile);
-                                
-                                if (imageResult.success) {
-                                    mainProductImage.src = `http://localhost:3000/media/${savedProduct.ID}.png?t=${Date.now()}`;
-                                    pendingImageFile = null;
-                                    console.log('Image uploaded successfully for new product');
-                                } else {
-                                    console.error('Image upload failed:', imageResult.error);
-                                    showWarningModal(`Product saved but image upload failed: ${imageResult.error}`);
-                                }
-                            } catch (imageError) {
-                                console.error('Error uploading image:', imageError);
-                                showWarningModal(`Product saved but image upload failed: ${imageError.message}`);
-                            }
-                        }
+                        currentProductId = savedPromo.ID;
                     }
                     
                     setupProductDropdown(); // Refresh dropdown
-                    loadPromoData(savedProduct);
+                    loadPromoData(savedPromo);
                     showConfirmation();
                 } else {
-                    throw new Error('Saved product not found in results');
+                    throw new Error('Saved promo not found in results');
                 }
             } else {
                 if (result.isDuplicateCode) {
@@ -594,7 +597,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 validForInsert = false;
             }
         } catch (error) {
-            console.error('Error saving product:', error);
+            console.error('Error saving promo:', error);
             showWarningModal(`Failed to save changes: ${error.message}`);
             validForInsert = false;
         }
@@ -607,6 +610,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         priceInput.value = "0";
         discountInput.value = "0";
         finalPriceInput.value = "0";
+        totalIssuedInput.value = "0";
+        daysToLiveInput.value = "30";
         productNotes.value = "";
         mainProductImage.src = "media/9997.png";
         
@@ -624,6 +629,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         formChanged = true;
         currentProductId = 'new';
+        totalIssued = 0;
+        associatedCarousels = [];
     }
 
     // #endregion
@@ -654,7 +661,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             if (targetProduct) {
-                // Refresh associated carousels for the target promo
+                // Refresh totalIssued and associated carousels for the target promo
+                totalIssued = await getIssuedCount(targetProduct.ID);
                 associatedCarousels = await getAssociatedCarouselForPromo(targetProduct.ID);
                 
                 loadPromoData(targetProduct);

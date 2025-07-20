@@ -68,9 +68,23 @@
                             <label for="productDiscount">Promo Discount (%):</label>
                             <input type="number" id="productDiscount" name="discount" value="0" step="1" min="0" max="100">
                         </div>
+                    </div>
+
+                    <div class="form-row">
                         <div class="form-group half">
-                            <label for="productDiscount">Final Price ($):</label>
-                            <input type="number" id="productFinalPrice" name="finalprice" value="0" step="1" min="0" max="100">
+                            <label for="productFinalPrice">Final Price ($):</label>
+                            <input type="number" id="productFinalPrice" name="finalprice" value="0" step="0.01" min="0">
+                        </div>
+                        <div class="form-group half">
+                            <label for="totalIssued">Total Issued:</label>
+                            <input type="number" id="totalIssued" name="totalissued" value="0" readonly>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="daysToLive">Days to Live:</label>
+                            <input type="number" id="daysToLive" name="daystolive" value="30" min="1" max="365" required>
                         </div>
                     </div>
 
