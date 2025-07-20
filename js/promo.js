@@ -101,6 +101,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     setupProductDropdown();
+    updateButtonVisibility(); // Add this line
 
     window.addEventListener('popstate', async function() {
         const params = new URLSearchParams(window.location.search);
@@ -122,6 +123,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
             showWarningModal('Promo not found');
         }
+        updateButtonVisibility(); // Add this line
     });
     
 // #region EVENT LISTENERS
@@ -465,6 +467,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         loadPromoData(product);
         productDropdown.classList.remove('active');
+        updateButtonVisibility(); // Add this line
         formChanged = true;
     }
     // #endregion
@@ -515,6 +518,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         currentProductId = promoData.ID;
         formChanged = false;
         updateNavigationState();
+        updateButtonVisibility(); // Add this line
     }
 
     function updateDropdownSelection(promoID) {
@@ -603,10 +607,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                         totalIssued = await getIssuedCount(newPromoId);
                         associatedCarousels = await getAssociatedCarouselForPromo(newPromoId);
                         
-                        // Reload the promos list to include the new one
-                        promos = await fetchFilteredPromos(selectedType, selectedMaker);
+                        // Reload the promos list - use 'All' for type/maker if they're null/undefined
+                        const filterType = selectedType || 'All';
+                        const filterMaker = selectedMaker || 'All';
+                        promos = await fetchFilteredPromos(filterType, filterMaker);
                         
-                        // Find the saved promo in the refreshed list by code (more reliable)
+                        // Find the saved promo in the refreshed list by code
                         const savedPromo = promos.find(p => p.CODE === parseInt(headerProductCode.value));
                         
                         if (savedPromo) {
@@ -623,13 +629,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                             loadPromoData(savedPromo);
                             showConfirmation();
                         } else {
-                            // If we can't find by code, just show success without loading data
+                            // If we can't find by code, show success but warn about data
                             showConfirmation();
-                            showWarningModal('Promo saved successfully but page data may not be current. Please refresh or navigate away and back.');
+                            console.log('Promo saved but not found in filtered results. This may be due to filtering constraints.');
                         }
                     } else {
-                        // If no ID returned, try to find the promo by code
-                        promos = await fetchFilteredPromos(selectedType, selectedMaker);
+                        // If no ID returned, try to find the promo by code with broader search
+                        const filterType = selectedType || 'All';
+                        const filterMaker = selectedMaker || 'All';
+                        promos = await fetchFilteredPromos(filterType, filterMaker);
                         const savedPromo = promos.find(p => p.CODE === parseInt(headerProductCode.value));
                         
                         if (savedPromo) {
@@ -648,12 +656,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                             loadPromoData(savedPromo);
                             showConfirmation();
                         } else {
-                            showWarningModal('Promo saved successfully but could not load updated data. Please refresh the page.');
+                            // Promo saved but can't be found - likely due to filtering
+                            showConfirmation();
+                            console.log('Promo saved successfully but may not match current filter criteria.');
                         }
                     }
                 } else {
                     // For existing promos, reload data normally
-                    promos = await fetchFilteredPromos(selectedType, selectedMaker);
+                    const filterType = selectedType || 'All';
+                    const filterMaker = selectedMaker || 'All';
+                    promos = await fetchFilteredPromos(filterType, filterMaker);
                     const savedPromo = promos.find(p => p.CODE === parseInt(headerProductCode.value));
                     
                     if (savedPromo) {
@@ -707,12 +719,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         headerProductCode.focus();
         updateNavigationState();
+        updateButtonVisibility(); // Add this line
 
         formChanged = true;
         currentProductId = 'new';
         totalIssued = 0;
         associatedCarousels = [];
     }
+
+    
 
     // #endregion
     // #region NAVIGATION FUNCTIONS
@@ -751,6 +766,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 params.set('id', targetProduct.ID);
                 const newUrl = `${window.location.pathname}?${params.toString()}`;
                 window.history.pushState({}, '', newUrl);
+                updateButtonVisibility(); // Add this line
             }
         } catch (error) {
             console.error('Navigation error:', error);
@@ -788,6 +804,41 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     function showUnsavedChangesModal() {
         unsavedChangesModal.style.display = 'flex';
+    }
+
+    function updateButtonVisibility() {
+        const currentParams = new URLSearchParams(window.location.search);
+        const currentPromoID = currentParams.get('id');
+        const isNewPromo = currentPromoID === 'new';
+        
+        // Show/hide Save and Cancel buttons based on whether it's a new promo
+        saveBtn.style.display = isNewPromo ? 'inline-block' : 'none';
+        cancelBtn.style.display = isNewPromo ? 'inline-block' : 'none';
+        
+        // Make all form fields readonly if not a new promo
+        const formInputs = productForm.querySelectorAll('input, textarea');
+        formInputs.forEach(input => {
+            if (!isNewPromo) {
+                input.setAttribute('readonly', true);
+                input.classList.add('readonly-mode');
+            } else {
+                input.removeAttribute('readonly');
+                input.classList.remove('readonly-mode');
+                // Exception: totalIssued should always be readonly
+                if (input.id === 'totalIssued') {
+                    input.setAttribute('readonly', true);
+                    input.classList.add('readonly-mode');
+                }
+            }
+        });
+        
+        // Special handling for dropdown - disable in readonly mode
+        headerProductName.disabled = !isNewPromo;
+        if (!isNewPromo) {
+            productDropdown.style.display = 'none';
+        } else {
+            productDropdown.style.display = '';
+        }
     }
     // #endregion
     // #endregion
