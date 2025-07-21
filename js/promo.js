@@ -517,22 +517,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function saveProductData() {
         if (!headerProductCode.value.trim()) {
-            showWarningModal('Product Code is required');
+            showWarningModal('Promo Code is required');
             headerProductCode.focus();
             validForInsert = false;
             return;
         }
 
         if (!headerProductName.value.trim()) {
-            showWarningModal('Product Name is required');
+            showWarningModal('Product is required');
             headerProductName.focus();
             validForInsert = false;
             return;
         }
 
-        if (priceInput.value == 0) {
-            showWarningModal('Product Price is required');
-            priceInput.focus();
+        if (discountInput.value == 0) {
+            showWarningModal('Promo discount is required');
+            discountInput.focus();
             validForInsert = false;
             return;
         }

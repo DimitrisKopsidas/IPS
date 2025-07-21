@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product Administration</title>
-    <link rel="stylesheet" href="css/promo.css">
-    <script type="module" src="js/promo.js"></script>
+    <link rel="stylesheet" href="css/carousel.css">
+    <script type="module" src="js/carousel.js"></script>
 </head>
 <body>
     <nav class="top-nav">
@@ -41,12 +41,36 @@
         
         <div class="product-container">
             <div class="product-section-left">
-                <!-- Product Image Section -->
-                <div class="product-image">
-                    <img alt="Product Image" id="mainProductImage">
-                </div>
-                <div class="image-upload">
-                    <input type="file" id="imageInput" accept="image/*" class="hidden-input">
+                <!-- Carousel Settings -->
+                <div class="form-section">
+                    <h3>Carousel settings:</h3>
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="device">Device</label>
+                            <select id="device" name="device">
+                                <!-- Options will be populated dynamically -->
+                            </select>
+                        </div>
+                        <div class="form-group half">
+                            <label for="autoplaywait">Autoplay Wait (s)</label>
+                            <input type="number" id="autoplaywait" name="autoplaywait" value="0">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="speed">Speed</label>
+                            <input type="number" id="speed" name="speed" value="0">
+                        </div>
+                        <div class="form-group half">
+                            <label for="gamecount">Game Count</label>
+                            <input type="number" id="gamecount" name="gamecount" value="0">
+                        </div>
+                    </div>
+                    <div class="form-group half">
+                        <h3>Associated Products</h3>
+                        <div class="info-carousel" id="carouselList"></div>
+                    </div>
                 </div>
                 <!-- Action buttons -->
                 <div class="action-buttons">
@@ -55,51 +79,37 @@
                     <button type="button" class="btn btn-danger" id="deleteBtn">Delete</button>
                 </div>
             </div>
-            
-            <!-- Product Details Section -->
+          
+            <!-- Minigame Settings -->
             <div class="product-details">
                 <form id="productForm">
-                    <div class="form-row">
-                        <div class="form-group half">
-                            <label for="productPrice">Price ($):</label>
-                            <input type="number" id="productPrice" name="price" required>
-                        </div>
-                        <div class="form-group half">
-                            <label for="productDiscount">Promo Discount (%):</label>
-                            <input type="number" id="productDiscount" name="discount" value="0" step="1" min="0" max="100">
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group half">
-                            <label for="productFinalPrice">Final Price ($):</label>
-                            <input type="number" id="productFinalPrice" name="finalprice" value="0" step="0.01" min="0">
-                        </div>
-                        <div class="form-group half">
-                            <label for="totalIssued">Total Issued:</label>
-                            <input type="number" id="totalIssued" name="totalissued" value="0" readonly>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group half">
-                            <label for="daysToLive">Days to Live:</label>
-                            <input type="number" id="daysToLive" name="daystolive" min="1" max="365" required>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group half">
-                            <label for="productNotes">Notes:</label>
-                            <textarea id="productNotes" name="notes" class="auto-grow" rows="1"></textarea>
-                        </div>
-                    </div>
-                    
                     <div class="form-section">
-                        <h3>Associated Carousels</h3>
-                        <div class="info-carousel" id="carouselList"></div>
-                    </div>
-                    
+                        <h3>Minigame settings:</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="revolutions">Revolutions</label>
+                                <input type="number" id="revolutions" name="revolutions" value="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="spinduration">Spin Duration (s)</label>
+                                <input type="number" id="spinduration" name="spinduration" value="0">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="onstoptime">On Stop Time (s)</label>
+                                <input type="number" id="onstoptime" name="onstoptime" value="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="inactivitytime">Inactivity Time (s)</label>
+                                <input type="number" id="inactivitytime" name="inactivitytime" value="0">
+                            </div>
+                        </div>
+                        <div class="form-group half">
+                            <h3>Associated Promos</h3>
+                            <div class="info-carousel" id="carouselList"></div>
+                        </div>
+                    </div>                    
                 </form>
             </div>
         </div>

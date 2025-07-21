@@ -1,15 +1,23 @@
 import {fillDropdown, getItemCardHtml} from "./common.js";
-import { fetchFilteredProducts, fetchFilteredPromos, getAssociatedCarouselForPromo, 
-    getIssuedCount, updatePromo, insertPromo, deletePromo } from './dbService.js';
+import { fetchFilteredProducts, fetchFilteredPromos, fetchFilteredCarousels,
+    updatePromoLines, insertPromoLines, deletePromoLines,
+    /*updateProductLines, insertProductLines, deleteProductLines*/ } from './dbService.js';
 
 // #region VARIABLE DECLARATION
     // Form references
     const productForm = document.getElementById('productForm');
-    const priceInput = document.getElementById('productPrice');
-    const discountInput = document.getElementById('productDiscount');
-    const finalPriceInput = document.getElementById('productFinalPrice');
-    const totalIssuedInput = document.getElementById('totalIssued');
-    const daysToLiveInput = document.getElementById('daysToLive');
+
+    // Carousel Settings Inputs
+    const deviceSelect = document.getElementById('device');
+    const autoplayWaitInput = document.getElementById('autoplaywait');
+    const speedInput = document.getElementById('speed');
+    const gameCountInput = document.getElementById('gamecount');
+
+    // Minigame Settings Inputs
+    const revolutionsInput = document.getElementById('revolutions');
+    const spinDurationInput = document.getElementById('spinduration');
+    const onStopTimeInput = document.getElementById('onstoptime');
+    const inactivityTimeInput = document.getElementById('inactivitytime');
 
     // Modal elements
     const saveConfirmation = document.getElementById('saveConfirmation');
@@ -52,7 +60,7 @@ import { fetchFilteredProducts, fetchFilteredPromos, getAssociatedCarouselForPro
     const productNotes = document.getElementById('productNotes');
 
     // State variables
-    let currentPromoId = 1;
+    let currentCarouselId = 1;
     let formChanged = false;
     let pendingNavigationDirection = null;
     let validForInsert = true;
@@ -66,56 +74,48 @@ import { fetchFilteredProducts, fetchFilteredPromos, getAssociatedCarouselForPro
 
     // Data tables
     let promos = [];
-    let allProducts = [];
-    let totalIssued;
-    let associatedCarousels = [];
+    let products = [];
+    let carousels = [];
+    let productlines = [];
+    let promolines = [];
     // #endregion
 
 document.addEventListener('DOMContentLoaded', async () => {
-    allProducts = await fetchFilteredProducts('All', 'All');
-    promos = await fetchFilteredPromos(selectedType, selectedMaker);
-    
-    if (promoID && promoID !== 'new') {
-        totalIssued = await getIssuedCount(promoID);
-        associatedCarousels = await getAssociatedCarouselForPromo(promoID);
-    } else {
-        totalIssued = 0;
-        associatedCarousels = [];
-    }
+    products = await fetchFilteredProducts('All', 'All');
+    promos = await fetchFilteredPromos('All', 'All');
+    carousels = await fetchFilteredCarousels(true);
 
-    const promoData = promos.find(p => p.ID.toString() === promoID);
+    const data = carousels.find(p => p.ID.toString() === promoID);
     
-    if (promoData) {
-        loadPromoData(promoData);
+    if (data) {
+        loadCarouselData(data);
     } else if (promoID === 'new') {
-        createNewPromo();
+        createNewCarousel();
     } else {
         showWarningModal('Promo not found');
     }
 
     setupProductDropdown();
-    updateButtonVisibility();
 
     window.addEventListener('popstate', async function() {
         const params = new URLSearchParams(window.location.search);
-        const newPromoId = params.get('id');
+        const newCarouselId = params.get('id');
 
-        if (newPromoId && newPromoId !== 'new') {
-            associatedCarousels = await getAssociatedCarouselForPromo(newPromoId);
+        if (newCarouselId && newCarouselId !== 'new') {
+            associatedCarousels = await getAssociatedCarouselForPromo(newCarouselId);
         } else {
             associatedCarousels = [];
         }
         
-        const promoData = promos.find(p => p.ID.toString() === newPromoId);
+        const data = promos.find(p => p.ID.toString() === newCarouselId);
         
-        if (promoData) {
-            loadPromoData(promoData);
-        } else if (newPromoId === 'new') {
-            createNewPromo();
+        if (data) {
+            loadCarouselData(data);
+        } else if (newCarouselId === 'new') {
+            createNewCarousel();
         } else {
             showWarningModal('Promo not found');
         }
-        updateButtonVisibility();
     });
     
 // #region EVENT LISTENERS
@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     confirmCancelBtn.addEventListener('click', function() {
-        loadPromoData(selectedProductData);
+        loadCarouselData(selectedProductData);
         cancelConfirmationModal.style.display = 'none';
     });
 
@@ -229,37 +229,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    discountInput.addEventListener('input', function() {
-        const price = parseFloat(priceInput.value) || 0;
-        const discount = parseFloat(discountInput.value) || 0;
-        if (price > 0 && discount >= 0 && discount <= 100) {
-            finalPriceInput.value = (price - (price * (discount / 100))).toFixed(2);
-        }
-    });
-
-    finalPriceInput.addEventListener('input', function() {
-        const price = parseFloat(priceInput.value) || 0;
-        const finalPrice = parseFloat(finalPriceInput.value) || 0;
-        if (price > 0 && finalPrice >= 0 && finalPrice <= price) {
-            discountInput.value = (((price - finalPrice) / price) * 100).toFixed(2);
-        }
-    });
-
     deleteBtn.addEventListener('click', function() {
         deleteConfirmationModal.style.display = 'flex';
     });
 
     confirmDeleteBtn.addEventListener('click', async function() {//IMAGE AND DB DELETION
         try {
-            const imageResult = await deleteImage(currentPromoId);
+            const imageResult = await deleteImage(currentCarouselId);
             if (!imageResult.success) {
                 throw new Error(`Failed to delete image: ${imageResult.error}`);
             }
 
-            const result = await deletePromo(currentPromoId);
+            const result = await deletePromo(currentCarouselId);
             
             if (result.success) {
-                const promoIndex = promos.findIndex(p => p.ID === currentPromoId);
+                const promoIndex = promos.findIndex(p => p.ID === currentCarouselId);
                 if (promoIndex !== -1) {
                     promos.splice(promoIndex, 1);
                     
@@ -274,12 +258,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                         const params = new URLSearchParams(window.location.search);
                         params.set('id', nextProduct.ID);
                         window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
-                        loadPromoData(nextProduct);
+                        loadCarouselData(nextProduct);
                     } else {
                         const params = new URLSearchParams(window.location.search);
                         params.set('id', 'new');
                         window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
-                        createNewPromo();
+                        createNewCarousel();
                     }
                 }
                 
@@ -299,11 +283,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         deleteConfirmationModal.style.display = 'none';
     });
 
-    mainProductImage.addEventListener('click', function() {
-        imagePreviewModal.style.display = 'flex';
-        previewImage.src = this.src;
-    });
-
     closeModal.addEventListener('click', function() {
         imagePreviewModal.style.display = 'none';
     });
@@ -318,11 +297,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (e.key === 'Escape' && imagePreviewModal.style.display === 'flex') {
             imagePreviewModal.style.display = 'none';
         }
-    });
-
-    productNotes.addEventListener('input', function() {
-        this.style.height = 'auto';
-        this.style.height = (this.scrollHeight) + 'px';
     });
     
     createNewBtn.addEventListener('click', function() {
@@ -366,7 +340,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 // #region FUNCTIONS
     // #region DROPDOWN FUNCTIONS
     function setupProductDropdown() {
-        populateProductDropdown(allProducts);
+        populateProductDropdown(products);
     }
 
     function populateProductDropdown(products) {
@@ -396,11 +370,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function filterProductDropdown(searchText) {
         if (!searchText.trim()) {
-            populateProductDropdown(allProducts);
+            populateProductDropdown(products);
             return;
         }
 
-        const filtered = allProducts.filter(product => {
+        const filtered = products.filter(product => {
             const makerName = product.MAKERNAME || 'Unknown';
             const typeName = product.TYPENAME || 'Unknown';
             const searchString = `${product.CODE} ${product.NAME} ${makerName} ${typeName}`.toLowerCase();
@@ -415,93 +389,52 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function selectProduct(product) {
-        selectedProductData = product;
-
-        // For new promos, keep the user-entered promo code and fill product details
-        if (promoID === 'new') {
-            headerProductName.value = product.NAME || '';
-            priceInput.value = product.PRICE || 0;
-            if (product.ID) {
-                mainProductImage.src = `media/${product.ID}.png`;
-            } else {
-                mainProductImage.src = "media/9997.png";
-            }
-            totalIssued = 0;
-            associatedCarousels = [];
-            totalIssuedInput.value = 0;
-            carouselList.innerHTML = '<div class="no-data">No associated carousels found</div>';
-            
-            // Don't navigate away from new promo page - just close dropdown
-            productDropdown.classList.remove('active');
-            formChanged = true;
-            return; // Exit here - don't run the existing promo navigation code
-        }
         
-        headerProductCode.value = product.CODE || '';
-        headerProductName.value = product.NAME || '';
-        totalIssued = await getIssuedCount(product.ID);
-        associatedCarousels = await getAssociatedCarouselForPromo(product.ID);
-        const params = new URLSearchParams(window.location.search);
-        params.set('id', product.ID);
-        window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
-        
-        loadPromoData(product);
-        productDropdown.classList.remove('active');
-        updateButtonVisibility();
-        formChanged = true;
     }
     // #endregion
     // #region PRODUCT FUNCTIONS
-    function loadPromoData(promoData) {
-        selectedProductData = promoData;
-        headerProductCode.value = promoData.CODE;
-        headerProductName.value = promoData.PRODUCTNAME;
-        priceInput.value = promoData.PRICE;
-        discountInput.value = (promoData.DISCOUNT * 100).toFixed(0);
-        finalPriceInput.value = (promoData.PRICE - (promoData.PRICE * promoData.DISCOUNT)).toFixed(2);
-        totalIssuedInput.value = totalIssued || 0;
-        daysToLiveInput.value = promoData.DAYSTOLIVE;
-        productNotes.value = promoData.NOTES || '';
+    function loadCarouselData(data) {
+        headerProductCode.value = data.CODE || '';
+        headerProductName.value = data.NAME || '';
+
+        // Populate carousel and minigame settings
+        deviceSelect.value = data.DEVICEID || '';
+        autoplayWaitInput.value = data.AUTOPLAYWAIT || 0;
+        speedInput.value = data.SPEED || 0;
+        gameCountInput.value = data.GAMECOUNT || 0;
         
-        if (promoData.PRODUCTID) {
-            mainProductImage.src = `media/${promoData.PRODUCTID}.png`;
-        } else {
-            mainProductImage.src = "media/9997.png";
-        }
+        revolutionsInput.value = data.REVOLUTIONS || 0;
+        spinDurationInput.value = data.SPINDURATION || 0;
+        onStopTimeInput.value = data.ONSTOPTIME || 0;
+        inactivityTimeInput.value = data.INACTIVITYTIME || 0;
 
         // Highlight selected product in dropdown
-        updateDropdownSelection(promoData.ID);
+        updateDropdownSelection(data.ID);
 
-        // Populate carousel list with associated carousels
+        // Populate associated products list
         carouselList.innerHTML = '';
-        if (associatedCarousels && associatedCarousels.length > 0) {
-            associatedCarousels.forEach(carousel => {
+        if (data.products && data.products.length > 0) {
+            data.products.forEach(product => {
                 const div = document.createElement('div');
                 div.className = 'info-item';
                 div.innerHTML = `
-                    <span class="carousel-info">${carousel.CAROUSELCODE} - ${carousel.CAROUSELNAME}</span>
-                    <span class="carousel-chance">(${(carousel.CHANCE * 100).toFixed(0)}% chance)</span>
+                    <span class="product-info">${product.CODE} - ${product.NAME}</span>
                 `;
                 div.addEventListener('click', function() {
-                    window.location.href = `carousel.html?id=${carousel.CAROUSELID}`;
+                    window.location.href = `product.html?id=${product.ID}`;
                 });
                 carouselList.appendChild(div);
             });
         } else {
-            carouselList.innerHTML = '<div class="no-data">No associated carousels found</div>';
+            carouselList.innerHTML = '<div class="no-data">No associated products found</div>';
         }
-
-        // Adjust text area height
-        productNotes.style.height = 'auto';
-        productNotes.style.height = (productNotes.scrollHeight) + 'px';
-
-        currentPromoId = promoData.ID;
+        
+        currentCarouselId = data.ID;
         formChanged = false;
         updateNavigationState();
-        updateButtonVisibility(); // Add this line
     }
 
-    function updateDropdownSelection(promoID) {
+    function updateDropdownSelection(carouselID) {
         // Remove previous selection
         const previouslySelected = productDropdown.querySelector('.product-option.selected');
         if (previouslySelected) {
@@ -509,44 +442,44 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         
         // Add selection to current product
-        const currentOption = productDropdown.querySelector(`[data-product-id="${promoID}"]`);
+        const currentOption = productDropdown.querySelector(`[data-product-id="${carouselID}"]`);
         if (currentOption) {
             currentOption.classList.add('selected');
         }
     }
 
     async function saveProductData() {
-        if (!headerProductCode.value.trim()) {
-            showWarningModal('Product Code is required');
-            headerProductCode.focus();
-            validForInsert = false;
-            return;
-        }
+        // if (!headerProductCode.value.trim()) {
+        //     showWarningModal('Product Code is required');
+        //     headerProductCode.focus();
+        //     validForInsert = false;
+        //     return;
+        // }
 
-        if (!headerProductName.value.trim()) {
-            showWarningModal('Product Name is required');
-            headerProductName.focus();
-            validForInsert = false;
-            return;
-        }
+        // if (!headerProductName.value.trim()) {
+        //     showWarningModal('Product Name is required');
+        //     headerProductName.focus();
+        //     validForInsert = false;
+        //     return;
+        // }
 
-        if (priceInput.value == 0) {
-            showWarningModal('Product Price is required');
-            priceInput.focus();
-            validForInsert = false;
-            return;
-        }
+        // if (priceInput.value == 0) {
+        //     showWarningModal('Product Price is required');
+        //     priceInput.focus();
+        //     validForInsert = false;
+        //     return;
+        // }
 
-        if (!daysToLiveInput.value || daysToLiveInput.value <= 0) {
-            showWarningModal('Days to Live must be greater than 0');
-            daysToLiveInput.focus();
-            validForInsert = false;
-            return;
-        }
+        // if (!daysToLiveInput.value || daysToLiveInput.value <= 0) {
+        //     showWarningModal('Days to Live must be greater than 0');
+        //     daysToLiveInput.focus();
+        //     validForInsert = false;
+        //     return;
+        // }
 
         try {
             // Build promo data based on whether we're creating new or updating existing
-            const promoData = {
+            const data = {
                 code: parseInt(headerProductCode.value),
                 product: selectedProductData ? selectedProductData.ID : null,
                 type: selectedProductData ? selectedProductData.TYPEID : null,
@@ -558,12 +491,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // Add ID for updates
             if (promoID !== 'new' && selectedProductData) {
-                promoData.id = selectedProductData.ID;
+                data.id = selectedProductData.ID;
             }
 
             const result = promoID === 'new' 
-                ? await insertPromo(promoData)
-                : await updatePromo(promoData);
+                ? await insertPromo(data)
+                : await updatePromo(data);
 
             if (result.success) {
                 validForInsert = true;
@@ -571,21 +504,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                 
                 if (promoID === 'new') {
                     // Try multiple properties for the returned ID
-                    const newPromoId = result.id || result.insertId || result.promoId || result.newId;
+                    const newCarouselId = result.id || result.insertId || result.promoId || result.newId;
                     
-                    if (newPromoId) {
+                    if (newCarouselId) {
                         // Update URL to show the saved promo
                         const params = new URLSearchParams(window.location.search);
-                        params.set('id', newPromoId);
+                        params.set('id', newCarouselId);
                         window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
-                        currentPromoId = newPromoId;
+                        currentCarouselId = newCarouselId;
                         
                         // Update the global promoID variable
-                        promoID = newPromoId.toString();
-                        
-                        // Refresh associated data for the saved promo
-                        totalIssued = await getIssuedCount(newPromoId);
-                        associatedCarousels = await getAssociatedCarouselForPromo(newPromoId);
+                        promoID = newCarouselId.toString();
                         
                         // Reload the promos list - use 'All' for type/maker if they're null/undefined
                         const filterType = selectedType || 'All';
@@ -597,7 +526,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         
                         if (savedPromo) {
                             // Update with the actual promo ID from the database
-                            currentPromoId = savedPromo.ID;
+                            currentCarouselId = savedPromo.ID;
                             promoID = savedPromo.ID.toString();
                             
                             // Update URL with correct ID
@@ -606,7 +535,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             window.history.pushState({}, '', `${window.location.pathname}?${updatedParams.toString()}`);
                             
                             setupProductDropdown(); // Refresh dropdown
-                            loadPromoData(savedPromo);
+                            loadCarouselData(savedPromo);
                             showConfirmation();
                         } else {
                             // If we can't find by code, show success but warn about data
@@ -625,15 +554,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                             const params = new URLSearchParams(window.location.search);
                             params.set('id', savedPromo.ID);
                             window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
-                            currentPromoId = savedPromo.ID;
+                            currentCarouselId = savedPromo.ID;
                             promoID = savedPromo.ID.toString();
                             
-                            // Refresh associated data
-                            totalIssued = await getIssuedCount(savedPromo.ID);
-                            associatedCarousels = await getAssociatedCarouselForPromo(savedPromo.ID);
-                            
                             setupProductDropdown(); // Refresh dropdown
-                            loadPromoData(savedPromo);
+                            loadCarouselData(savedPromo);
                             showConfirmation();
                         } else {
                             // Promo saved but can't be found - likely due to filtering
@@ -648,12 +573,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     promos = await fetchFilteredPromos(filterType, filterMaker);
                     const savedPromo = promos.find(p => p.CODE === parseInt(headerProductCode.value));
                     
-                    if (savedPromo) {
-                        totalIssued = await getIssuedCount(savedPromo.ID);
-                        associatedCarousels = await getAssociatedCarouselForPromo(savedPromo.ID);
-                        
+                    if (savedPromo) {                        
                         setupProductDropdown(); // Refresh dropdown
-                        loadPromoData(savedPromo);
+                        loadCarouselData(savedPromo);
                         showConfirmation();
                     } else {
                         throw new Error('Updated promo not found in results');
@@ -676,7 +598,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    function createNewPromo() {
+    function createNewCarousel() {
         selectedProductData = null;
         headerProductCode.value = "";
         headerProductName.value = "";
@@ -698,10 +620,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         headerProductCode.focus();
         updateNavigationState();
-        updateButtonVisibility(); // Add this line
 
         formChanged = true;
-        currentPromoId = 'new';
+        currentCarouselId = 'new';
         totalIssued = 0;
         associatedCarousels = [];
     }
@@ -721,7 +642,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function navigateProduct(direction) {
         try {
-            const currentIndex = promos.findIndex(p => p.ID === currentPromoId);
+            const currentIndex = promos.findIndex(p => p.ID === currentCarouselId);
             if (currentIndex === -1) {
                 console.error('Current promo not found in dataset');
                 return;
@@ -736,16 +657,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             if (targetProduct) {
-                // Refresh totalIssued and associated carousels for the target promo
-                totalIssued = await getIssuedCount(targetProduct.ID);
-                associatedCarousels = await getAssociatedCarouselForPromo(targetProduct.ID);
-                
-                loadPromoData(targetProduct);
+                loadCarouselData(targetProduct);
                 const params = new URLSearchParams(window.location.search);
                 params.set('id', targetProduct.ID);
                 const newUrl = `${window.location.pathname}?${params.toString()}`;
                 window.history.pushState({}, '', newUrl);
-                updateButtonVisibility(); // Add this line
             }
         } catch (error) {
             console.error('Navigation error:', error);
@@ -763,7 +679,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         sidePrevBtn.style.display = 'flex';
         sideNextBtn.style.display = 'flex';
 
-        const currentIndex = promos.findIndex(p => p.ID === currentPromoId);
+        const currentIndex = promos.findIndex(p => p.ID === currentCarouselId);
 
         sidePrevBtn.disabled = currentIndex <= 0;
         sideNextBtn.disabled = currentIndex >= promos.length - 1;
@@ -792,41 +708,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     function showUnsavedChangesModal() {
         unsavedChangesModal.style.display = 'flex';
-    }
-
-    function updateButtonVisibility() {
-        const currentParams = new URLSearchParams(window.location.search);
-        const currentPromoID = currentParams.get('id');
-        const isNewPromo = currentPromoID === 'new';
-        
-        // Show/hide Save and Cancel buttons based on whether it's a new promo
-        saveBtn.style.display = isNewPromo ? 'inline-block' : 'none';
-        cancelBtn.style.display = isNewPromo ? 'inline-block' : 'none';
-        
-        // Make all form fields readonly if not a new promo
-        const formInputs = productForm.querySelectorAll('input, textarea');
-        formInputs.forEach(input => {
-            if (!isNewPromo) {
-                input.setAttribute('readonly', true);
-                input.classList.add('readonly-mode');
-            } else {
-                input.removeAttribute('readonly');
-                input.classList.remove('readonly-mode');
-                // Exception: totalIssued should always be readonly
-                if (input.id === 'totalIssued') {
-                    input.setAttribute('readonly', true);
-                    input.classList.add('readonly-mode');
-                }
-            }
-        });
-        
-        // Special handling for dropdown - disable in readonly mode
-        headerProductName.disabled = !isNewPromo;
-        if (!isNewPromo) {
-            productDropdown.style.display = 'none';
-        } else {
-            productDropdown.style.display = '';
-        }
     }
     // #endregion
     // #endregion
