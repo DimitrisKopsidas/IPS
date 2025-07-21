@@ -71,7 +71,7 @@ import { fetchFilteredProducts, fetchMakers, fetchTypes, deleteProduct,
 
     // Get URL parameters
     const urlParams = new URLSearchParams(window.location.search);
-    const productId = urlParams.get('id');
+    let productId = urlParams.get('id');
     const selectedMaker = urlParams.get('maker');
     const selectedType = urlParams.get('type');
 
@@ -1078,6 +1078,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function updateNavigationState() {
+        if (productId === 'new') {
+            sidePrevBtn.style.display = 'none';
+            sideNextBtn.style.display = 'none';
+            return; // Exit early
+        }
+    
+        sidePrevBtn.style.display = 'flex';
+        sideNextBtn.style.display = 'flex';
+
         const currentIndex = products.findIndex(p => p.ID === currentProductId);
 
         sidePrevBtn.disabled = currentIndex <= 0;
