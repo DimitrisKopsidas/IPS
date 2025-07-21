@@ -613,6 +613,128 @@ app.get('/api/getMinigamePromos/:carousel', async (req, res) => {
         });
     }
 });
+
+app.get('/api/getAllDevices', async (req, res) => {
+    try {
+        const [rows] = await pool.query('CALL GetAllDevices()');
+        
+        console.log('Retrieved all devices:', {
+            count: rows[0].length,
+            devices: rows[0]
+        });
+        
+        res.json(rows[0]);
+    } catch (error) {
+        console.error('Error fetching all devices:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to fetch all devices',
+            details: error.message 
+        });
+    }
+});
+
+app.put('/api/updateProductLines/:id', async (req, res) => {
+    try {
+        const productLinesId = req.params.id;
+        const { carousel, product, queue } = req.body;
+
+        await pool.query('CALL UpdateProductlines(?, ?, ?, ?)', [
+            productLinesId,
+            carousel,
+            product,
+            queue
+        ]);
+
+        console.log(`Updated product lines with ID: ${productLinesId}`);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error updating product lines:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
+    }
+});
+
+app.delete('/api/deleteProductLines/:carousel/:product/:queue', async (req, res) => {
+    try {
+        const carousel = req.params.carousel;
+        const product = req.params.product;
+        const queue = req.params.queue;
+        
+        await pool.query('CALL DeleteProductlines(?, ?, ?)', [carousel, product, queue]);
+        
+        console.log(`Deleted product lines: carousel=${carousel}, product=${product}, queue=${queue}`);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error deleting product lines:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
+    }
+});
+
+app.post('/api/insertProductLines', async (req, res) => {
+    try {
+        const { carousel, product, queue } = req.body;
+
+        await pool.query('CALL InsertProductlines(?, ?, ?)', [
+            carousel,
+            product,
+            queue
+        ]);
+
+        console.log('Inserted new product lines:', { carousel, product, queue });
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error inserting product lines:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
+    }
+});
+
+app.get('/api/getProductLinesByCarousel/:carouselId', async (req, res) => {
+    try {
+        const carouselId = req.params.carouselId;
+        const [rows] = await pool.query('CALL GetProductLinesByCarousel(?)', [carouselId]);
+        
+        console.log(`Retrieved product lines for carousel ${carouselId}:`, {
+            count: rows[0].length,
+            productLines: rows[0]
+        });
+        
+        res.json(rows[0]);
+    } catch (error) {
+        console.error('Error fetching product lines by carousel:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to fetch product lines by carousel',
+            details: error.message 
+        });
+    }
+});
+
+app.get('/api/getPromoLinesByCarousel/:carouselId', async (req, res) => {
+    try {
+        const carouselId = req.params.carouselId;
+        const [rows] = await pool.query('CALL GetPromoLinesByCarousel(?)', [carouselId]);
+        
+        console.log(`Retrieved promo lines for carousel ${carouselId}:`, {
+            count: rows[0].length,
+            promoLines: rows[0]
+        });
+        
+        res.json(rows[0]);
+    } catch (error) {
+        console.error('Error fetching promo lines by carousel:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to fetch promo lines by carousel',
+            details: error.message 
+        });
+    }
+});
 // #endregion
 
 // #region PROMOS

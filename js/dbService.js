@@ -641,6 +641,139 @@ async function fetchMinigamePromosList(carousel) {
         return [];
     }
 }
+
+async function getAllDevices() {
+    try {
+        const response = await fetch('http://localhost:3000/api/getAllDevices');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('All devices data:', {
+            count: data.length,
+            devices: data
+        });
+        return data;
+    } catch (error) {
+        console.error('Error fetching all devices:', error);
+        return [];
+    }
+}
+
+async function updateProductLines(productLinesData) {
+    try {
+        console.log('Updating product lines:', productLinesData);
+        const response = await fetch(`http://localhost:3000/api/updateProductLines/${productLinesData.id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                carousel: productLinesData.carousel,
+                product: productLinesData.product,
+                queue: productLinesData.queue
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Product lines update result:', result);
+        return result;
+    } catch (error) {
+        console.error('Error updating product lines:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+async function deleteProductLines(productLinesData) {
+    try {
+        console.log('Deleting product lines:', productLinesData);
+        const response = await fetch(`http://localhost:3000/api/deleteProductLines/${productLinesData.carousel}/${productLinesData.product}/${productLinesData.queue}`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('Product lines deletion result:', result);
+        return { success: true };
+    } catch (error) {
+        console.error('Error deleting product lines:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+async function insertProductLines(productLinesData) {
+    try {
+        console.log('Inserting product lines:', productLinesData);
+        const response = await fetch('http://localhost:3000/api/insertProductLines', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                carousel: productLinesData.carousel,
+                product: productLinesData.product,
+                queue: productLinesData.queue
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Product lines insert result:', result);
+        return result;
+    } catch (error) {
+        console.error('Error inserting product lines:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+async function getProductLinesByCarousel(carouselId) {
+    try {
+        const response = await fetch(`http://localhost:3000/api/getProductLinesByCarousel/${carouselId}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Product lines by carousel:', {
+            carouselId,
+            count: data.length,
+            productLines: data
+        });
+        return data;
+    } catch (error) {
+        console.error('Error fetching product lines by carousel:', error);
+        return [];
+    }
+}
+
+async function getPromoLinesByCarousel(carouselId) {
+    try {
+        const response = await fetch(`http://localhost:3000/api/getPromoLinesByCarousel/${carouselId}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Promo lines by carousel:', {
+            carouselId,
+            count: data.length,
+            promoLines: data
+        });
+        return data;
+    } catch (error) {
+        console.error('Error fetching promo lines by carousel:', error);
+        return [];
+    }
+}
 // #endregion CAROUSEL
 
 // #region PROMOS
@@ -932,5 +1065,11 @@ export {
     deletePromoLines,
     insertPromoLines,
     getIssuedCount,
-    getAssociatedCarouselForPromo
+    getAssociatedCarouselForPromo,
+    getAllDevices,
+    updateProductLines,
+    deleteProductLines,
+    insertProductLines,
+    getProductLinesByCarousel,
+    getPromoLinesByCarousel
 };

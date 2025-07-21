@@ -1,7 +1,7 @@
 import {fillDropdown, getItemCardHtml} from "./common.js";
 import { fetchFilteredProducts, fetchFilteredPromos, fetchFilteredCarousels,
-    updatePromoLines, insertPromoLines, deletePromoLines,
-    /*updateProductLines, insertProductLines, deleteProductLines*/ } from './dbService.js';
+    updatePromoLines, insertPromoLines, deletePromoLines, getAllDevices, getProductLinesByCarousel, getPromoLinesByCarousel,
+    updateProductLines, insertProductLines, deleteProductLines } from './dbService.js';
 
 // #region VARIABLE DECLARATION
     // Form references
