@@ -413,13 +413,30 @@ document.addEventListener('DOMContentLoaded', async () => {
                         div.className = 'info-item';
                         div.innerHTML = `
                             <span class="product-info">${product.PRODUCTCODE} - ${product.PRODUCTNAME}</span>
-                            <input type="number" class="queue-input" value="${product.QUEUE ?? ''}" min="0" style="width:60px; margin-left:10px;" title="Queue">
+                            <input type="number" class="queue-input" value="${product.QUEUE ?? ''}" min="0" max="99" style="width:2.5em; margin-left:10px;" title="Queue">
                         `;
                         div.addEventListener('click', function(e) {
                             // Prevent navigation if clicking the input
                             if (e.target.tagName.toLowerCase() === 'input') return;
                             window.location.href = `product.html?id=${product.PRODUCTID}&type=All&maker=All`;
                         });
+
+                        // Restrict queue-input to 2 digits
+                        const queueInput = div.querySelector('.queue-input');
+                        if (queueInput) {
+                            queueInput.addEventListener('input', function() {
+                                if (this.value.length > 2) {
+                                    this.value = this.value.slice(0, 2);
+                                }
+                            });
+                            queueInput.addEventListener('keypress', function(e) {
+                                // Prevent entering more than 2 characters
+                                if (this.value.length >= 2 && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                                    e.preventDefault();
+                                }
+                            });
+                        }
+
                         associatedProducts.appendChild(div);
                     });
                 } else {

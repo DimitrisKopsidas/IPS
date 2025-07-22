@@ -1486,3 +1486,12 @@ select:focus {
         padding: 8px 10px;
     }
 }
+
+.queue-input::-webkit-inner-spin-button,
+.queue-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.queue-input {
+    -moz-appearance: textfield;
+}
