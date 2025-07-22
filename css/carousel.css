@@ -1495,3 +1495,10 @@ select:focus {
 .queue-input {
     -moz-appearance: textfield;
 }
+
+.info-item.dragElem {
+    opacity: 0.4;
+}
+.info-item.over {
+    border: 2px dashed #007bff;
+}

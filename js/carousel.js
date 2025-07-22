@@ -408,21 +408,67 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const productLines = await getProductLinesByCarousel(data.ID);
                 if (productLines && productLines.length > 0) {
                     associatedProducts.innerHTML = '';
-                    productLines.forEach(product => {
-                        const div = document.createElement('div');
-                        div.className = 'info-item';
-                        div.innerHTML = `
-                            <span class="product-info">${product.PRODUCTCODE} - ${product.PRODUCTNAME}</span>
-                            <input type="number" class="queue-input" value="${product.QUEUE ?? ''}" min="0" max="99" style="width:2.5em; margin-left:10px;" title="Queue">
-                        `;
-                        div.addEventListener('click', function(e) {
-                            // Prevent navigation if clicking the input
-                            if (e.target.tagName.toLowerCase() === 'input') return;
-                            window.location.href = `product.html?id=${product.PRODUCTID}&type=All&maker=All`;
+
+                    // Helper to update queue values after drag
+                    function updateQueueInputs() {
+                        const items = associatedProducts.querySelectorAll('.info-item');
+                        items.forEach((item, idx) => {
+                            const input = item.querySelector('.queue-input');
+                            if (input) input.value = (idx + 1).toString().padStart(2, '0');
                         });
+                    }
+
+                    // Drag and drop handlers
+                    let dragSrcEl = null;
+
+                    function handleDragStart(e) {
+                        dragSrcEl = this;
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.dataTransfer.setData('text/html', this.outerHTML);
+                        this.classList.add('dragElem');
+                    }
+
+                    function handleDragOver(e) {
+                        if (e.preventDefault) e.preventDefault();
+                        this.classList.add('over');
+                        e.dataTransfer.dropEffect = 'move';
+                        return false;
+                    }
+
+                    function handleDragLeave(e) {
+                        this.classList.remove('over');
+                    }
+
+                    function handleDrop(e) {
+                        if (e.stopPropagation) e.stopPropagation();
+                        if (dragSrcEl !== this) {
+                            this.parentNode.removeChild(dragSrcEl);
+                            const dropHTML = e.dataTransfer.getData('text/html');
+                            this.insertAdjacentHTML('beforebegin', dropHTML);
+                            const droppedElem = this.previousSibling;
+                            addDnDEvents(droppedElem);
+                            updateQueueInputs();
+                        }
+                        this.classList.remove('over');
+                        return false;
+                    }
+
+                    function handleDragEnd(e) {
+                        this.classList.remove('dragElem');
+                        const items = associatedProducts.querySelectorAll('.info-item');
+                        items.forEach(item => item.classList.remove('over'));
+                    }
+
+                    function addDnDEvents(elem) {
+                        elem.setAttribute('draggable', 'true');
+                        elem.addEventListener('dragstart', handleDragStart, false);
+                        elem.addEventListener('dragover', handleDragOver, false);
+                        elem.addEventListener('dragleave', handleDragLeave, false);
+                        elem.addEventListener('drop', handleDrop, false);
+                        elem.addEventListener('dragend', handleDragEnd, false);
 
                         // Restrict queue-input to 2 digits
-                        const queueInput = div.querySelector('.queue-input');
+                        const queueInput = elem.querySelector('.queue-input');
                         if (queueInput) {
                             queueInput.addEventListener('input', function() {
                                 if (this.value.length > 2) {
@@ -430,15 +476,30 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 }
                             });
                             queueInput.addEventListener('keypress', function(e) {
-                                // Prevent entering more than 2 characters
                                 if (this.value.length >= 2 && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
                                     e.preventDefault();
                                 }
                             });
                         }
+                    }
 
+                    productLines.forEach((product, idx) => {
+                        const div = document.createElement('div');
+                        div.className = 'info-item';
+                        div.setAttribute('draggable', 'true');
+                        div.innerHTML = `
+                            <span class="product-info">${product.PRODUCTCODE} - ${product.PRODUCTNAME}</span>
+                            <input type="number" class="queue-input" value="${(idx + 1).toString().padStart(2, '0')}" min="0" max="99" style="width:2.5em; margin-left:10px;" title="Queue">
+                        `;
+                        div.addEventListener('click', function(e) {
+                            if (e.target.tagName.toLowerCase() === 'input') return;
+                            window.location.href = `product.html?id=${product.PRODUCTID}&type=All&maker=All`;
+                        });
+                        addDnDEvents(div);
                         associatedProducts.appendChild(div);
                     });
+
+                    updateQueueInputs();
                 } else {
                     associatedProducts.innerHTML = '<div class="no-data">No associated products found</div>';
                 }
