@@ -204,10 +204,12 @@ input[type="text"]::-webkit-inner-spin-button {
 }
 
 .info-carousel .info-item {
-    display: block; /* Each item takes a full line */
-    width: 100%; /* Ensure the item spans the full width */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
     padding: 10px;
-    margin-bottom: 5px; /* Add spacing between items */
+    margin-bottom: 5px;
     background-color: #fff;
     border: 1px solid #ddd;
     border-radius: 4px;

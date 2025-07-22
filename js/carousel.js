@@ -384,7 +384,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     // #endregion
     // #region PRODUCT FUNCTIONS
-    function loadCarouselData(data) {
+    async function loadCarouselData(data) {
         headerProductCode.value = data.CODE || '';
         headerProductName.value = data.NAME || '';
 
@@ -393,7 +393,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         autoplayWaitInput.value = data.AUTOPLAYWAIT || 0;
         speedInput.value = data.SPEED || 0;
         gameCountInput.value = data.GAMECOUNT || 0;
-        
         revolutionsInput.value = data.REVOLUTIONS || 0;
         spinDurationInput.value = data.SPINDURATION || 0;
         onStopTimeInput.value = data.ONSTOPTIME || 0;
@@ -401,6 +400,35 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Highlight selected product in dropdown
         updateDropdownSelection(data.ID);
+
+        // --- Associated Products ---
+        if (associatedProducts) {
+            associatedProducts.innerHTML = '<div class="no-data">Loading associated products...</div>';
+            try {
+                const productLines = await getProductLinesByCarousel(data.ID);
+                if (productLines && productLines.length > 0) {
+                    associatedProducts.innerHTML = '';
+                    productLines.forEach(product => {
+                        const div = document.createElement('div');
+                        div.className = 'info-item';
+                        div.innerHTML = `
+                            <span class="product-info">${product.PRODUCTCODE} - ${product.PRODUCTNAME}</span>
+                            <input type="number" class="queue-input" value="${product.QUEUE ?? ''}" min="0" style="width:60px; margin-left:10px;" title="Queue">
+                        `;
+                        div.addEventListener('click', function(e) {
+                            // Prevent navigation if clicking the input
+                            if (e.target.tagName.toLowerCase() === 'input') return;
+                            window.location.href = `product.html?id=${product.PRODUCTID}&type=All&maker=All`;
+                        });
+                        associatedProducts.appendChild(div);
+                    });
+                } else {
+                    associatedProducts.innerHTML = '<div class="no-data">No associated products found</div>';
+                }
+            } catch (err) {
+                associatedProducts.innerHTML = '<div class="no-data">Failed to load associated products</div>';
+            }
+        }
 
         currentCarouselId = data.ID;
         formChanged = false;
