@@ -121,7 +121,20 @@
                             </div>
                         </div>
                         <div class="form-group half">
-                            <h3>Associated Promos</h3>
+                            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
+                                <h3 style="margin: 0;">Associated Promos</h3>
+                                <div class="product-select-container" style="flex: 1; position: relative;">
+                                    <input 
+                                        type="text" 
+                                        id="associatedPromoSearch" 
+                                        class="header-input" 
+                                        placeholder="Add new promo..."
+                                        autocomplete="off"
+                                        style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;"
+                                    >
+                                    <div class="product-dropdown" id="associatedPromoDropdown"></div>
+                                </div>
+                            </div>
                             <div class="info-carousel" id="associatedPromos"></div>
                         </div>
                     </div>                    

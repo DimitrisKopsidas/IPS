@@ -10,6 +10,8 @@ import { fetchFilteredProducts, fetchFilteredPromos, fetchFilteredCarousels,
     const carouselSettingsForm = document.getElementById('CarouselSettingsForm');
     const associatedProductSearch = document.getElementById('associatedProductSearch');
     const associatedProductDropdown = document.getElementById('associatedProductDropdown');
+    const associatedPromoSearch = document.getElementById('associatedPromoSearch');
+    const associatedPromoDropdown = document.getElementById('associatedPromoDropdown');
 
 
     // Carousel Settings Inputs
@@ -311,7 +313,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 }
-    // #endregion
+
+if (associatedPromoSearch && associatedPromoDropdown) {
+    associatedPromoSearch.addEventListener('input', function() {
+        filterAssociatedPromoDropdown(this.value);
+    });
+
+    // Hide dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!associatedPromoSearch.contains(e.target) && !associatedPromoDropdown.contains(e.target)) {
+            associatedPromoDropdown.classList.remove('active');
+        }
+    });
+}
+// #endregion
 });
 
 // #region FUNCTIONS
@@ -485,7 +500,7 @@ function selectAssociatedProduct(product) {
     associatedProductDropdown.classList.remove('active');
 }
 
-// Add these global drag and drop variables after your existing variable declarations
+// Add these variables to your VARIABLE DECLARATION section (after associatedProductDropdown)
 let dragSrcEl = null;
 
 // Move all drag and drop functions to global scope, outside of loadCarouselData
@@ -624,6 +639,70 @@ async function loadCarouselData(data) {
             }
         } catch (err) {
             associatedProducts.innerHTML = '<div class="no-data">Failed to load associated products</div>';
+        }
+    }
+
+    // --- Associated Promos ---
+    if (associatedPromos) {
+        associatedPromos.innerHTML = '<div class="no-data">Loading associated promos...</div>';
+        try {
+            const promoLines = await getPromoLinesByCarousel(data.ID);
+            if (promoLines && promoLines.length > 0) {
+                associatedPromos.innerHTML = '';
+
+                promoLines.forEach((promo, idx) => {
+                    const div = document.createElement('div');
+                    div.className = 'info-item';
+                    div.innerHTML = `
+                        <span class="product-info">${promo.PROMOCODE} - ${promo.PRODUCTNAME || 'Unknown Product'}</span>
+                        <div style="display: flex; align-items: center; margin-left: auto;">
+                            <input type="number" class="queue-input" value="${(idx + 1).toString().padStart(2, '0')}" min="0" max="99" style="width:2.5em; margin-right:10px;" title="Queue">
+                            <button class="delete-promo-btn" title="Remove Promo" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:#dc3545;">✕</button>
+                        </div>
+                    `;
+                    
+                    // Add click handler for navigation
+                    div.addEventListener('click', function(e) {
+                        if (e.target.tagName.toLowerCase() === 'input' || e.target.classList.contains('delete-promo-btn')) return;
+                        window.location.href = `promo.html?id=${promo.PROMOID}&type=All&maker=All`;
+                    });
+                    
+                    // Add delete handler
+                    const deleteBtn = div.querySelector('.delete-promo-btn');
+                    deleteBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        if (confirm('Remove this promo from the carousel?')) {
+                            div.remove();
+                            updatePromoQueueNumbers();
+                            formChanged = true;
+                        }
+                    });
+
+                    // Add queue input event listeners
+                    const queueInput = div.querySelector('.queue-input');
+                    if (queueInput) {
+                        queueInput.addEventListener('input', function() {
+                            if (this.value.length > 2) {
+                                this.value = this.value.slice(0, 2);
+                            }
+                            formChanged = true;
+                        });
+                        queueInput.addEventListener('keypress', function(e) {
+                            if (this.value.length >= 2 && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                                e.preventDefault();
+                            }
+                        });
+                    }
+                    
+                    associatedPromos.appendChild(div);
+                });
+
+                updatePromoQueueNumbers();
+            } else {
+                associatedPromos.innerHTML = '<div class="no-data">No associated promos found</div>';
+            }
+        } catch (err) {
+            associatedPromos.innerHTML = '<div class="no-data">Failed to load associated promos</div>';
         }
     }
 
@@ -815,3 +894,139 @@ function updateQueueNumbers() {
         }
     });
 }
+
+function populateAssociatedPromoDropdown(promos) {
+    associatedPromoDropdown.innerHTML = '';
+    
+    promos.forEach(promo => {
+        const option = document.createElement('div');
+        option.className = 'product-option';
+        option.dataset.promoId = promo.ID;
+        
+        option.innerHTML = `
+            <span class="product-code">${promo.CODE}</span>
+            <span class="product-name">${promo.PRODUCTNAME || 'Unknown Product'}</span>
+            <span class="product-details">(${promo.DISCOUNT}% off, ${promo.DAYSTOLIVE} days)</span>
+        `;
+        
+        option.addEventListener('click', function() {
+            selectAssociatedPromo(promo);
+        });
+        
+        associatedPromoDropdown.appendChild(option);
+    });
+}
+
+function filterAssociatedPromoDropdown(searchText) {
+    if (!searchText.trim()) {
+        associatedPromoDropdown.innerHTML = '';
+        associatedPromoDropdown.classList.remove('active');
+        return;
+    }
+
+    const filtered = promos.filter(promo => {
+        const productName = promo.PRODUCTNAME || 'Unknown';
+        const searchString = `${promo.CODE} ${productName}`.toLowerCase();
+        return searchString.includes(searchText.toLowerCase());
+    });
+
+    if (filtered.length === 0) {
+        associatedPromoDropdown.innerHTML = '<div class="product-option">No promos found</div>';
+        associatedPromoDropdown.classList.add('active');
+        return;
+    }
+
+    populateAssociatedPromoDropdown(filtered);
+    
+    if (!associatedPromoDropdown.classList.contains('active')) {
+        associatedPromoDropdown.classList.add('active');
+    }
+}
+
+function selectAssociatedPromo(promo) {
+    // Check if promo is already in the list
+    const existingItems = associatedPromos.querySelectorAll('.info-item');
+    for (let item of existingItems) {
+        const promoInfo = item.querySelector('.product-info').textContent;
+        if (promoInfo.includes(promo.CODE)) {
+            showWarningModal('Promo is already in the carousel');
+            associatedPromoSearch.value = '';
+            associatedPromoDropdown.classList.remove('active');
+            return;
+        }
+    }
+
+    // Clear "no data" message if it exists
+    if (associatedPromos.querySelector('.no-data')) {
+        associatedPromos.innerHTML = '';
+    }
+
+    // Create new promo item
+    const div = document.createElement('div');
+    div.className = 'info-item';
+    
+    // Get the next queue number
+    const currentItems = associatedPromos.querySelectorAll('.info-item');
+    const nextQueueNum = (currentItems.length + 1).toString().padStart(2, '0');
+    
+    div.innerHTML = `
+        <span class="product-info">${promo.CODE} - ${promo.PRODUCTNAME || 'Unknown Product'}</span>
+        <div style="display: flex; align-items: center; margin-left: auto;">
+            <input type="number" class="queue-input" value="${nextQueueNum}" min="0" max="99" style="width:2.5em; margin-right:10px;" title="Queue">
+            <button class="delete-promo-btn" title="Remove Promo" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:#dc3545;">✕</button>
+        </div>
+    `;
+    
+    // Add click handler for navigation
+    div.addEventListener('click', function(e) {
+        if (e.target.tagName.toLowerCase() === 'input' || e.target.classList.contains('delete-promo-btn')) return;
+        window.location.href = `promo.html?id=${promo.ID}&type=All&maker=All`;
+    });
+    
+    // Add delete handler
+    const deleteBtn = div.querySelector('.delete-promo-btn');
+    deleteBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (confirm('Remove this promo from the carousel?')) {
+            div.remove();
+            updatePromoQueueNumbers();
+            formChanged = true;
+        }
+    });
+
+    // Add queue input event listeners
+    const queueInput = div.querySelector('.queue-input');
+    if (queueInput) {
+        queueInput.addEventListener('input', function() {
+            if (this.value.length > 2) {
+                this.value = this.value.slice(0, 2);
+            }
+            formChanged = true;
+        });
+        queueInput.addEventListener('keypress', function(e) {
+            if (this.value.length >= 2 && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+    }
+    
+    associatedPromos.appendChild(div);
+    updatePromoQueueNumbers();
+    formChanged = true;
+
+    // Clear search and hide dropdown
+    associatedPromoSearch.value = '';
+    associatedPromoDropdown.classList.remove('active');
+}
+
+// Add this helper function
+function updatePromoQueueNumbers() {
+    const items = associatedPromos.querySelectorAll('.info-item');
+    items.forEach((item, idx) => {
+        const queueInput = item.querySelector('.queue-input');
+        if (queueInput) {
+            queueInput.value = (idx + 1).toString().padStart(2, '0');
+        }
+    });
+}
+    // #endregion
