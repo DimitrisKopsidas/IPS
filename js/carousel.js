@@ -1,6 +1,7 @@
 import {fillDropdown, getItemCardHtml} from "./common.js";
 import { fetchFilteredProducts, fetchFilteredPromos, fetchFilteredCarousels,
-    updatePromoLines, insertPromoLines, deletePromoLines, getAllDevices, getProductLinesByCarousel, getPromoLinesByCarousel,
+    updatePromoLines, insertPromoLines, deletePromoLines, getAllDevices, 
+    getProductLinesByCarousel, getPromoLinesByCarousel,
     updateProductLines, insertProductLines, deleteProductLines } from './dbService.js';
 
 // #region VARIABLE DECLARATION
@@ -49,15 +50,8 @@ import { fetchFilteredProducts, fetchFilteredPromos, fetchFilteredCarousels,
     const productDropdown = document.getElementById('productDropdown');
 
     //Carousel list
-    const carouselList = document.getElementById('carouselList');
-
-    // Image Preview Modal functionality
-    const imagePreviewModal = document.getElementById('imagePreviewModal');
-    const previewImage = document.getElementById('previewImage');
-    const closeModal = document.querySelector('.preview-close-modal');
-
-    // Notes
-    const productNotes = document.getElementById('productNotes');
+    const associatedProducts = document.getElementById('associatedProducts');
+    const associatedPromos = document.getElementById('associatedPromos');
 
     // State variables
     let currentCarouselId = 1;
@@ -96,6 +90,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     setupProductDropdown();
+    await populateDeviceDropdown();
 
     window.addEventListener('popstate', async function() {
         const params = new URLSearchParams(window.location.search);
@@ -283,10 +278,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         deleteConfirmationModal.style.display = 'none';
     });
 
-    closeModal.addEventListener('click', function() {
-        imagePreviewModal.style.display = 'none';
-    });
-
     imagePreviewModal.addEventListener('click', function(e) {
         if (e.target === this) {
             imagePreviewModal.style.display = 'none';
@@ -411,24 +402,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Highlight selected product in dropdown
         updateDropdownSelection(data.ID);
 
-        // Populate associated products list
-        carouselList.innerHTML = '';
-        if (data.products && data.products.length > 0) {
-            data.products.forEach(product => {
-                const div = document.createElement('div');
-                div.className = 'info-item';
-                div.innerHTML = `
-                    <span class="product-info">${product.CODE} - ${product.NAME}</span>
-                `;
-                div.addEventListener('click', function() {
-                    window.location.href = `product.html?id=${product.ID}`;
-                });
-                carouselList.appendChild(div);
-            });
-        } else {
-            carouselList.innerHTML = '<div class="no-data">No associated products found</div>';
-        }
-        
         currentCarouselId = data.ID;
         formChanged = false;
         updateNavigationState();
@@ -627,7 +600,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         associatedCarousels = [];
     }
 
-    
+    async function populateDeviceDropdown() {
+        try {
+            const response = await fetch('http://localhost:3000/api/getAllDevices');
+            if (!response.ok) throw new Error('Failed to fetch devices');
+            const devices = await response.json();
+            deviceSelect.innerHTML = '<option value="">-- Select a Device --</option>';
+            devices.forEach(device => {
+                const option = document.createElement('option');
+                option.value = device.ID;
+                option.textContent = `${device.NAME} (${device.CONNECTKEY})`;
+                deviceSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Error populating devices:', error);
+            deviceSelect.innerHTML = '<option value="">Error loading devices</option>';
+        }
+    }
 
     // #endregion
     // #region NAVIGATION FUNCTIONS
