@@ -27,9 +27,9 @@
         <div class="header-container">
             <div class="title-section">
                 <div class="product-header">
-                    <input type="number" id="headerProductCode" class="header-input code" placeholder="0000">
+                    <input type="number" id="headerCarouselCode" class="header-input code" placeholder="0000">
                     <div class="product-select-container">
-                        <input type="text" id="headerProductName" class="header-input name" placeholder="Search products..." autocomplete="off">
+                        <input type="text" id="headerCarouselName" class="header-input name" placeholder="Search products..." autocomplete="off">
                         <div class="product-dropdown" id="productDropdown"></div>
                     </div>
                 </div>
@@ -42,36 +42,38 @@
         <div class="product-container">
             <div class="product-section-left">
                 <!-- Carousel Settings -->
-                <div class="form-section">
-                    <h3>Carousel settings:</h3>
-                    <div class="form-row">
-                        <div class="form-group half">
-                            <label for="device">Device</label>
-                            <select id="device" name="device">
-                                <!-- Options will be populated dynamically -->
-                            </select>
+                <form id="CarouselSettingsForm">
+                    <div class="form-section">
+                        <h3>Carousel settings:</h3>
+                        <div class="form-row">
+                            <div class="form-group half">
+                                <label for="device">Device</label>
+                                <select id="device" name="device">
+                                    <!-- Options will be populated dynamically -->
+                                </select>
+                            </div>
+                            <div class="form-group half">
+                                <label for="autoplaywait">Autoplay Wait (ms)</label>
+                                <input type="number" id="autoplaywait" name="autoplaywait" value="0">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group half">
+                                <label for="speed">Speed</label>
+                                <input type="number" id="speed" name="speed" value="0">
+                            </div>
+                            <div class="form-group half">
+                                <label for="gamecount">Game Count</label>
+                                <input type="number" id="gamecount" name="gamecount" value="0">
+                            </div>
                         </div>
                         <div class="form-group half">
-                            <label for="autoplaywait">Autoplay Wait (ms)</label>
-                            <input type="number" id="autoplaywait" name="autoplaywait" value="0">
+                            <h3>Associated Products</h3>
+                            <div class="info-carousel" id="associatedProducts"></div>
                         </div>
                     </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group half">
-                            <label for="speed">Speed</label>
-                            <input type="number" id="speed" name="speed" value="0">
-                        </div>
-                        <div class="form-group half">
-                            <label for="gamecount">Game Count</label>
-                            <input type="number" id="gamecount" name="gamecount" value="0">
-                        </div>
-                    </div>
-                    <div class="form-group half">
-                        <h3>Associated Products</h3>
-                        <div class="info-carousel" id="associatedProducts"></div>
-                    </div>
-                </div>
+                </form>
                 <!-- Action buttons -->
                 <div class="action-buttons">
                     <button type="submit" class="btn btn-primary" id="saveBtn">Save Changes</button>
@@ -82,7 +84,7 @@
           
             <!-- Minigame Settings -->
             <div class="product-details">
-                <form id="productForm">
+                <form id="MinigameSettingsForm">
                     <div class="form-section">
                         <h3>Minigame settings:</h3>
                         <div class="form-row">

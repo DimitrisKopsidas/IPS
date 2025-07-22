@@ -6,7 +6,8 @@ import { fetchFilteredProducts, fetchFilteredPromos, fetchFilteredCarousels,
 
 // #region VARIABLE DECLARATION
     // Form references
-    const productForm = document.getElementById('productForm');
+    const minigameSettingsForm = document.getElementById('MinigameSettingsForm');
+    const carouselSettingsForm = document.getElementById('CarouselSettingsForm');
 
     // Carousel Settings Inputs
     const deviceSelect = document.getElementById('device');
@@ -41,13 +42,9 @@ import { fetchFilteredProducts, fetchFilteredPromos, fetchFilteredCarousels,
     const discardAndContinueBtn = document.getElementById('discardAndContinueBtn');
     const cancelNavigationBtn = document.getElementById('cancelNavigationBtn');
 
-    // Image elements
-    const mainProductImage = document.getElementById('mainProductImage');
-
     // Headers
-    const headerProductCode = document.getElementById('headerProductCode');
-    const headerProductName = document.getElementById('headerProductName');
-    const productDropdown = document.getElementById('productDropdown');
+    const headerCarouselCode = document.getElementById('headerCarouselCode');
+    const headerCarouselName = document.getElementById('headerCarouselName');
 
     //Carousel list
     const associatedProducts = document.getElementById('associatedProducts');
@@ -63,8 +60,6 @@ import { fetchFilteredProducts, fetchFilteredPromos, fetchFilteredCarousels,
     // Get URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     let carouselId = urlParams.get('id');
-    const selectedMaker = urlParams.get('maker');
-    const selectedType = urlParams.get('type');
 
     // Data tables
     let promos = [];
@@ -87,18 +82,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else if (carouselId === 'new') {
         createNewCarousel();
     } else {
-        showWarningModal('Promo not found');
+        showWarningModal('Carousel not found');
     }
 
     window.addEventListener('popstate', async function() {
         const params = new URLSearchParams(window.location.search);
         const newCarouselId = params.get('id');
-
-        if (newCarouselId && newCarouselId !== 'new') {
-            associatedCarousels = await getAssociatedCarouselForPromo(newCarouselId);
-        } else {
-            associatedCarousels = [];
-        }
         
         const data = carousels.find(p => p.ID.toString() === newCarouselId);
         
@@ -107,30 +96,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else if (newCarouselId === 'new') {
             createNewCarousel();
         } else {
-            showWarningModal('Promo not found');
+            showWarningModal('Carousel not found');
         }
     });
     
 // #region EVENT LISTENERS
-    headerProductCode.addEventListener('input', function() {
+    headerCarouselCode.addEventListener('input', function() {
         formChanged = true;
     });
 
-    headerProductName.addEventListener('input', function() {
+    headerCarouselName.addEventListener('input', function() {
         formChanged = true;
         filterProductDropdown(this.value);
-    });
-
-    headerProductName.addEventListener('focus', function() {
-        productDropdown.classList.add('active');
-        filterProductDropdown(this.value);
-    });
-
-    // Close dropdown when clicking outside
-    document.addEventListener('click', function(e) {
-        if (!headerProductName.contains(e.target) && !productDropdown.contains(e.target)) {
-            productDropdown.classList.remove('active');
-        }
     });
 
     sidePrevBtn.addEventListener('click', function() {
@@ -141,13 +118,30 @@ document.addEventListener('DOMContentLoaded', async () => {
         handleNavigation('next');
     });
 
-    productForm.addEventListener('input', function() {
+    minigameSettingsForm.addEventListener('input', function() {
         formChanged = true;
     });
 
-    productForm.addEventListener('submit', function(e) {
+    carouselSettingsForm.addEventListener('input', function() {
+        formChanged = true;
+    });
+
+    minigameSettingsForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        saveProductData();
+        saveCarouselData();
+        formChanged = false;
+
+        if (pendingNavigationDirection) {
+            navigateProduct(pendingNavigationDirection);
+            pendingNavigationDirection = null;
+        } else {
+            showConfirmation();
+        }
+    });
+
+    carouselSettingsForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveCarouselData();
         formChanged = false;
 
         if (pendingNavigationDirection) {
@@ -188,7 +182,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     saveAndContinueBtn.addEventListener('click', function() {
-        saveProductData();
+        saveCarouselData();
         formChanged = false;
         if (pendingNavigationDirection === 'new') {
             const params = new URLSearchParams(window.location.search);
@@ -215,7 +209,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     saveBtn.addEventListener('click', function(e) {
         e.preventDefault(); // Prevent default form submission
-        saveProductData();
+        saveCarouselData();
         formChanged = false;
         if (validForInsert){
             showConfirmation();
@@ -276,18 +270,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         deleteConfirmationModal.style.display = 'none';
     });
 
-    imagePreviewModal.addEventListener('click', function(e) {
-        if (e.target === this) {
-            imagePreviewModal.style.display = 'none';
-        }
-    });
-
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && imagePreviewModal.style.display === 'flex') {
-            imagePreviewModal.style.display = 'none';
-        }
-    });
-    
     createNewBtn.addEventListener('click', function() {
         if (formChanged) {
             pendingNavigationDirection = 'new';
@@ -311,16 +293,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('warningModal').addEventListener('click', function(e) {
         if (e.target === this) {
             this.style.display = 'none';
-        }
-    });
-
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            const modal = document.getElementById('groupsModal');
-            if (modal.style.display === 'flex') {
-                modal.style.display = 'none';
-                document.body.classList.remove('modal-open');
-            }
         }
     });
     // #endregion
@@ -381,10 +353,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         
     }
     // #endregion
-    // #region PRODUCT FUNCTIONS
+    // #region CAROUSEL FUNCTIONS
     async function loadCarouselData(data) {
-        headerProductCode.value = data.CODE || '';
-        headerProductName.value = data.NAME || '';
+        headerCarouselCode.value = data.CODE || '';
+        headerCarouselName.value = data.NAME || '';
 
         // Populate carousel and minigame settings
         deviceSelect.value = data.DEVICE || '';
@@ -525,31 +497,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    async function saveProductData() {
+    async function saveCarouselData() {
         // if (!headerProductCode.value.trim()) {
         //     showWarningModal('Product Code is required');
         //     headerProductCode.focus();
-        //     validForInsert = false;
-        //     return;
-        // }
-
-        // if (!headerProductName.value.trim()) {
-        //     showWarningModal('Product Name is required');
-        //     headerProductName.focus();
-        //     validForInsert = false;
-        //     return;
-        // }
-
-        // if (priceInput.value == 0) {
-        //     showWarningModal('Product Price is required');
-        //     priceInput.focus();
-        //     validForInsert = false;
-        //     return;
-        // }
-
-        // if (!daysToLiveInput.value || daysToLiveInput.value <= 0) {
-        //     showWarningModal('Days to Live must be greater than 0');
-        //     daysToLiveInput.focus();
         //     validForInsert = false;
         //     return;
         // }
@@ -565,143 +516,40 @@ document.addEventListener('DOMContentLoaded', async () => {
                 daysToLive: parseInt(daysToLiveInput.value),
                 notes: productNotes.value
             };
-
-            // Add ID for updates
-            if (carouselId !== 'new' && selectedProductData) {
-                data.id = selectedProductData.ID;
-            }
-
-            const result = carouselId === 'new' 
-                ? await insertPromo(data)
-                : await updatePromo(data);
-
-            if (result.success) {
-                validForInsert = true;
-                formChanged = false;
-                
-                if (carouselId === 'new') {
-                    // Try multiple properties for the returned ID
-                    const newCarouselId = result.id || result.insertId || result.promoId || result.newId;
-                    
-                    if (newCarouselId) {
-                        // Update URL to show the saved promo
-                        const params = new URLSearchParams(window.location.search);
-                        params.set('id', newCarouselId);
-                        window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
-                        currentCarouselId = newCarouselId;
-                        
-                        // Update the global carouselId variable
-                        carouselId = newCarouselId.toString();
-                        
-                        // Reload the promos list - use 'All' for type/maker if they're null/undefined
-                        const filterType = selectedType || 'All';
-                        const filterMaker = selectedMaker || 'All';
-                        promos = await fetchFilteredPromos(filterType, filterMaker);
-                        
-                        // Find the saved promo in the refreshed list by code
-                        const savedPromo = promos.find(p => p.CODE === parseInt(headerProductCode.value));
-                        
-                        if (savedPromo) {
-                            // Update with the actual promo ID from the database
-                            currentCarouselId = savedPromo.ID;
-                            carouselId = savedPromo.ID.toString();
-                            
-                            // Update URL with correct ID
-                            const updatedParams = new URLSearchParams(window.location.search);
-                            updatedParams.set('id', savedPromo.ID);
-                            window.history.pushState({}, '', `${window.location.pathname}?${updatedParams.toString()}`);
-                            
-                            setupProductDropdown(); // Refresh dropdown
-                            loadCarouselData(savedPromo);
-                            showConfirmation();
-                        } else {
-                            // If we can't find by code, show success but warn about data
-                            showConfirmation();
-                            console.log('Promo saved but not found in filtered results. This may be due to filtering constraints.');
-                        }
-                    } else {
-                        // If no ID returned, try to find the promo by code with broader search
-                        const filterType = selectedType || 'All';
-                        const filterMaker = selectedMaker || 'All';
-                        promos = await fetchFilteredPromos(filterType, filterMaker);
-                        const savedPromo = promos.find(p => p.CODE === parseInt(headerProductCode.value));
-                        
-                        if (savedPromo) {
-                            // Update URL to show the saved promo
-                            const params = new URLSearchParams(window.location.search);
-                            params.set('id', savedPromo.ID);
-                            window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
-                            currentCarouselId = savedPromo.ID;
-                            carouselId = savedPromo.ID.toString();
-                            
-                            setupProductDropdown(); // Refresh dropdown
-                            loadCarouselData(savedPromo);
-                            showConfirmation();
-                        } else {
-                            // Promo saved but can't be found - likely due to filtering
-                            showConfirmation();
-                            console.log('Promo saved successfully but may not match current filter criteria.');
-                        }
-                    }
-                } else {
-                    // For existing promos, reload data normally
-                    const filterType = selectedType || 'All';
-                    const filterMaker = selectedMaker || 'All';
-                    promos = await fetchFilteredPromos(filterType, filterMaker);
-                    const savedPromo = promos.find(p => p.CODE === parseInt(headerProductCode.value));
-                    
-                    if (savedPromo) {                        
-                        setupProductDropdown(); // Refresh dropdown
-                        loadCarouselData(savedPromo);
-                        showConfirmation();
-                    } else {
-                        throw new Error('Updated promo not found in results');
-                    }
-                }
-            } else {
-                if (result.isDuplicateCode) {
-                    showWarningModal(result.error);
-                    headerProductCode.focus();
-                    headerProductCode.select();
-                } else {
-                    throw new Error(result.error);
-                }
-                validForInsert = false;
-            }
         } catch (error) {
-            console.error('Error saving promo:', error);
+            console.error('Error saving carousel:', error);
             showWarningModal(`Failed to save changes: ${error.message}`);
             validForInsert = false;
         }
     }
 
     function createNewCarousel() {
-        selectedProductData = null;
-        headerProductCode.value = "";
-        headerProductName.value = "";
-        priceInput.value = "0";
-        discountInput.value = "0";
-        finalPriceInput.value = "0";
-        totalIssuedInput.value = "0";
-        daysToLiveInput.value = "0";
-        productNotes.value = "";
-        mainProductImage.src = "media/9997.png";
-        
-        carouselList.innerHTML = '';
+        // Header fields
+        if (headerCarouselCode) headerCarouselCode.value = "";
+        if (headerCarouselName) headerCarouselName.value = "";
 
-        // Clear dropdown selection
-        const previouslySelected = productDropdown.querySelector('.product-option.selected');
-        if (previouslySelected) {
-            previouslySelected.classList.remove('selected');
-        }
+        // Carousel settings
+        if (deviceSelect) deviceSelect.value = "";
+        if (autoplayWaitInput) autoplayWaitInput.value = "0";
+        if (speedInput) speedInput.value = "0";
+        if (gameCountInput) gameCountInput.value = "0";
 
-        headerProductCode.focus();
+        // Minigame settings
+        if (revolutionsInput) revolutionsInput.value = "0";
+        if (spinDurationInput) spinDurationInput.value = "0";
+        if (onStopTimeInput) onStopTimeInput.value = "0";
+        if (inactivityTimeInput) inactivityTimeInput.value = "0";
+
+        // Associated lists
+        if (associatedProducts) associatedProducts.innerHTML = '';
+        if (associatedPromos) associatedPromos.innerHTML = '';
+
+        // Reset navigation and state
         updateNavigationState();
-
         formChanged = true;
         currentCarouselId = 'new';
-        totalIssued = 0;
-        associatedCarousels = [];
+        // Focus first field
+        if (headerCarouselCode) headerCarouselCode.focus();
     }
 
     async function populateDeviceDropdown() {
@@ -709,7 +557,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const response = await fetch('http://localhost:3000/api/getAllDevices');
             if (!response.ok) throw new Error('Failed to fetch devices');
             const devices = await response.json();
-            deviceSelect.innerHTML = '<option value="">-- Select a Device --</option>';
+            deviceSelect.innerHTML = '<option value="">-- No device selected --</option>';
             devices.forEach(device => {
                 const option = document.createElement('option');
                 option.value = device.DEVICE;
@@ -723,6 +571,65 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // #endregion
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     // #region NAVIGATION FUNCTIONS
     function handleNavigation(direction) {// Handle navigation with unsaved changes check
         if (formChanged) {
