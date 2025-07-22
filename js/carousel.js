@@ -62,7 +62,7 @@ import { fetchFilteredProducts, fetchFilteredPromos, fetchFilteredCarousels,
 
     // Get URL parameters
     const urlParams = new URLSearchParams(window.location.search);
-    let promoID = urlParams.get('id');
+    let carouselId = urlParams.get('id');
     const selectedMaker = urlParams.get('maker');
     const selectedType = urlParams.get('type');
 
@@ -78,19 +78,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     products = await fetchFilteredProducts('All', 'All');
     promos = await fetchFilteredPromos('All', 'All');
     carousels = await fetchFilteredCarousels(true);
+    await populateDeviceDropdown();
 
-    const data = carousels.find(p => p.ID.toString() === promoID);
+    const data = carousels.find(p => p.ID.toString() === carouselId);
     
     if (data) {
         loadCarouselData(data);
-    } else if (promoID === 'new') {
+    } else if (carouselId === 'new') {
         createNewCarousel();
     } else {
         showWarningModal('Promo not found');
     }
-
-    setupProductDropdown();
-    await populateDeviceDropdown();
 
     window.addEventListener('popstate', async function() {
         const params = new URLSearchParams(window.location.search);
@@ -102,7 +100,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             associatedCarousels = [];
         }
         
-        const data = promos.find(p => p.ID.toString() === newCarouselId);
+        const data = carousels.find(p => p.ID.toString() === newCarouselId);
         
         if (data) {
             loadCarouselData(data);
@@ -340,7 +338,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         products.forEach(product => {
             const option = document.createElement('div');
             option.className = 'product-option';
-            option.dataset.promoID = product.ID;
+            option.dataset.carouselId = product.ID;
             
             const makerName = product.MAKERNAME || 'Unknown';
             const typeName = product.TYPENAME || 'Unknown';
@@ -389,7 +387,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         headerProductName.value = data.NAME || '';
 
         // Populate carousel and minigame settings
-        deviceSelect.value = data.DEVICEID || '';
+        deviceSelect.value = data.DEVICE || '';
         autoplayWaitInput.value = data.AUTOPLAYWAIT || 0;
         speedInput.value = data.SPEED || 0;
         gameCountInput.value = data.GAMECOUNT || 0;
@@ -569,11 +567,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             };
 
             // Add ID for updates
-            if (promoID !== 'new' && selectedProductData) {
+            if (carouselId !== 'new' && selectedProductData) {
                 data.id = selectedProductData.ID;
             }
 
-            const result = promoID === 'new' 
+            const result = carouselId === 'new' 
                 ? await insertPromo(data)
                 : await updatePromo(data);
 
@@ -581,7 +579,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 validForInsert = true;
                 formChanged = false;
                 
-                if (promoID === 'new') {
+                if (carouselId === 'new') {
                     // Try multiple properties for the returned ID
                     const newCarouselId = result.id || result.insertId || result.promoId || result.newId;
                     
@@ -592,8 +590,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                         window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
                         currentCarouselId = newCarouselId;
                         
-                        // Update the global promoID variable
-                        promoID = newCarouselId.toString();
+                        // Update the global carouselId variable
+                        carouselId = newCarouselId.toString();
                         
                         // Reload the promos list - use 'All' for type/maker if they're null/undefined
                         const filterType = selectedType || 'All';
@@ -606,7 +604,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         if (savedPromo) {
                             // Update with the actual promo ID from the database
                             currentCarouselId = savedPromo.ID;
-                            promoID = savedPromo.ID.toString();
+                            carouselId = savedPromo.ID.toString();
                             
                             // Update URL with correct ID
                             const updatedParams = new URLSearchParams(window.location.search);
@@ -634,7 +632,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             params.set('id', savedPromo.ID);
                             window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
                             currentCarouselId = savedPromo.ID;
-                            promoID = savedPromo.ID.toString();
+                            carouselId = savedPromo.ID.toString();
                             
                             setupProductDropdown(); // Refresh dropdown
                             loadCarouselData(savedPromo);
@@ -714,7 +712,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             deviceSelect.innerHTML = '<option value="">-- Select a Device --</option>';
             devices.forEach(device => {
                 const option = document.createElement('option');
-                option.value = device.ID;
+                option.value = device.DEVICE;
                 option.textContent = `${device.NAME} (${device.CONNECTKEY})`;
                 deviceSelect.appendChild(option);
             });
@@ -737,7 +735,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function navigateProduct(direction) {
         try {
-            const currentIndex = promos.findIndex(p => p.ID === currentCarouselId);
+            const currentIndex = carousels.findIndex(p => p.ID === currentCarouselId);
             if (currentIndex === -1) {
                 console.error('Current promo not found in dataset');
                 return;
@@ -746,9 +744,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             let targetProduct = null;
             
             if (direction === 'next') {
-                targetProduct = promos[currentIndex + 1];
+                targetProduct = carousels[currentIndex + 1];
             } else if (direction === 'prev') {
-                targetProduct = promos[currentIndex - 1];
+                targetProduct = carousels[currentIndex - 1];
             }
 
             if (targetProduct) {
@@ -760,12 +758,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         } catch (error) {
             console.error('Navigation error:', error);
-            showWarningModal('Failed to navigate between promos');
+            showWarningModal('Failed to navigate between carousels');
         }
     }
 
     function updateNavigationState() {
-        if (promoID === 'new') {
+        if (carouselId === 'new') {
             sidePrevBtn.style.display = 'none';
             sideNextBtn.style.display = 'none';
             return; // Exit early
@@ -774,10 +772,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         sidePrevBtn.style.display = 'flex';
         sideNextBtn.style.display = 'flex';
 
-        const currentIndex = promos.findIndex(p => p.ID === currentCarouselId);
+        const currentIndex = carousels.findIndex(p => p.ID === currentCarouselId);
 
         sidePrevBtn.disabled = currentIndex <= 0;
-        sideNextBtn.disabled = currentIndex >= promos.length - 1;
+        sideNextBtn.disabled = currentIndex >= carousels.length - 1;
         
         sidePrevBtn.style.opacity = sidePrevBtn.disabled ? '0.5' : '1';
         sideNextBtn.style.opacity = sideNextBtn.disabled ? '0.5' : '1';
