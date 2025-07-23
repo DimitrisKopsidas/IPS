@@ -228,44 +228,49 @@ document.addEventListener('DOMContentLoaded', async () => {
         deleteConfirmationModal.style.display = 'flex';
     });
 
-    confirmDeleteBtn.addEventListener('click', async function() {//IMAGE AND DB DELETION
+    confirmDeleteBtn.addEventListener('click', async function() {
         try {
-            const imageResult = await deleteImage(currentCarouselId);
-            if (!imageResult.success) {
-                throw new Error(`Failed to delete image: ${imageResult.error}`);
-            }
-
-            const result = await deletePromo(currentCarouselId);
+            // Use the correct function to delete carousel and minigame
+            const result = await DeleteCarouselAndMinigame(currentCarouselId);
             
             if (result.success) {
-                const promoIndex = promos.findIndex(p => p.ID === currentCarouselId);
-                if (promoIndex !== -1) {
-                    promos.splice(promoIndex, 1);
+                // Find and remove the deleted carousel from the carousels array
+                const carouselIndex = carousels.findIndex(c => c.ID === currentCarouselId);
+                if (carouselIndex !== -1) {
+                    carousels.splice(carouselIndex, 1);
                     
-                    if (promos.length > 0) {
-                        let nextProduct;
-                        if (promoIndex >= promos.length) {
-                            nextProduct = promos[promos.length - 1];
+                    // Navigate to next available carousel or create new one
+                    if (carousels.length > 0) {
+                        let nextCarousel;
+                        if (carouselIndex >= carousels.length) {
+                            // If we deleted the last one, go to the previous
+                            nextCarousel = carousels[carousels.length - 1];
                         } else {
-                            nextProduct = promos[promoIndex];
+                            // Otherwise go to the one that took this position
+                            nextCarousel = carousels[carouselIndex];
                         }
                         
+                        // Update URL and load the next carousel
                         const params = new URLSearchParams(window.location.search);
-                        params.set('id', nextProduct.ID);
+                        params.set('id', nextCarousel.ID);
                         window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
-                        loadCarouselData(nextProduct);
+                        carouselId = nextCarousel.ID.toString(); // Update global carouselId
+                        loadCarouselData(nextCarousel);
                     } else {
+                        // No more carousels, create a new one
                         const params = new URLSearchParams(window.location.search);
                         params.set('id', 'new');
                         window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
+                        carouselId = 'new'; // Update global carouselId
                         createNewCarousel();
                     }
                 }
                 
+                // Close the modal and show success message
                 deleteConfirmationModal.style.display = 'none';
-                showWarningModal('Product and associated image deleted successfully');
+                showWarningModal('Carousel and associated data deleted successfully');
             } else {
-                throw new Error('Product deletion failed');
+                throw new Error(result.error || 'Carousel deletion failed');
             }
         } catch (error) {
             console.error('Error during deletion:', error);
@@ -763,13 +768,20 @@ async function loadCarouselData(data) {
         if (inactivityTimeInput) inactivityTimeInput.value = "0";
 
         // Associated lists
-        if (associatedProducts) associatedProducts.innerHTML = '';
-        if (associatedPromos) associatedPromos.innerHTML = '';
+        if (associatedProducts) associatedProducts.innerHTML = '<div class="no-data">No associated products found</div>';
+        if (associatedPromos) associatedPromos.innerHTML = '<div class="no-data">No associated promos found</div>';
+
+        // Clear any promo chance total display
+        const totalDisplay = document.getElementById('promoChanceTotal');
+        if (totalDisplay) {
+            totalDisplay.remove();
+        }
 
         // Reset navigation and state
-        updateNavigationState();
-        formChanged = true;
         currentCarouselId = 'new';
+        updateNavigationState();
+        formChanged = false; // Reset form changed state
+        
         // Focus first field
         if (headerCarouselCode) headerCarouselCode.focus();
     }
