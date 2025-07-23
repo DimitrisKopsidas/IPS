@@ -215,7 +215,7 @@ input[type="text"]::-webkit-inner-spin-button {
     border-radius: 4px;
     font-size: 1rem;
     color: #555;
-    cursor: pointer;
+    cursor: default; /* Change from pointer to default */
     transition: background-color 0.2s ease;
 }
 
@@ -230,16 +230,16 @@ input[type="text"]::-webkit-inner-spin-button {
 }
 
 .info-promo .info-item {
-    display: block; /* Each item takes a full line */
-    width: 100%; /* Ensure the item spans the full width */
+    display: block;
+    width: 100%;
     padding: 10px;
-    margin-bottom: 5px; /* Add spacing between items */
+    margin-bottom: 5px;
     background-color: #fff;
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 1rem;
     color: #555;
-    cursor: pointer;
+    cursor: default; /* Change from pointer to default */
     transition: background-color 0.2s ease;
 }
 
@@ -1501,4 +1501,14 @@ select:focus {
 }
 .info-item.over {
     border: 2px dashed #007bff;
+}
+
+.chance-input::-webkit-inner-spin-button,
+.chance-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.chance-input {
+    -moz-appearance: textfield;
 }

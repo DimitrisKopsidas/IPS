@@ -72,6 +72,8 @@ import { fetchFilteredProducts, fetchFilteredPromos, fetchFilteredCarousels,
     let carousels = [];
     let productlines = [];
     let promolines = [];
+    let carouselPreviewURL;
+    let minigamePreviewURL;
     // #endregion
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -464,16 +466,17 @@ function selectAssociatedProduct(product) {
     const nextQueueNum = (currentItems.length + 1).toString().padStart(2, '0');
     
     div.innerHTML = `
-        <span class="product-info">${product.CODE} - ${product.NAME}</span>
+        <span class="product-info" style="cursor:pointer; text-decoration:underline; color:#007bff;">${product.CODE} - ${product.NAME}</span>
         <div style="display: flex; align-items: center; margin-left: auto;">
             <input type="number" class="queue-input" value="${nextQueueNum}" min="0" max="99" style="width:2.5em; margin-right:10px;" title="Queue">
             <button class="delete-product-btn" title="Remove Product" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:#dc3545;">✕</button>
         </div>
     `;
     
-    // Add click handler for navigation
-    div.addEventListener('click', function(e) {
-        if (e.target.tagName.toLowerCase() === 'input' || e.target.classList.contains('delete-product-btn')) return;
+    // Add click handler for navigation only on the text
+    const productInfo = div.querySelector('.product-info');
+    productInfo.addEventListener('click', function(e) {
+        e.stopPropagation();
         window.location.href = `product.html?id=${product.ID}&type=All&maker=All`;
     });
     
@@ -605,16 +608,17 @@ async function loadCarouselData(data) {
                     div.className = 'info-item';
                     div.setAttribute('draggable', 'true');
                     div.innerHTML = `
-                        <span class="product-info">${product.PRODUCTCODE} - ${product.PRODUCTNAME}</span>
+                        <span class="product-info" style="cursor:pointer; text-decoration:underline; color:#007bff;">${product.PRODUCTCODE} - ${product.PRODUCTNAME}</span>
                         <div style="display: flex; align-items: center; margin-left: auto;">
                             <input type="number" class="queue-input" value="${(idx + 1).toString().padStart(2, '0')}" min="0" max="99" style="width:2.5em; margin-right:10px;" title="Queue">
                             <button class="delete-product-btn" title="Remove Product" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:#dc3545;">✕</button>
                         </div>
                     `;
                     
-                    // Add click handler for navigation
-                    div.addEventListener('click', function(e) {
-                        if (e.target.tagName.toLowerCase() === 'input' || e.target.classList.contains('delete-product-btn')) return;
+                    // Add click handler for navigation only on the text
+                    const productInfo = div.querySelector('.product-info');
+                    productInfo.addEventListener('click', function(e) {
+                        e.stopPropagation();
                         window.location.href = `product.html?id=${product.PRODUCTID}&type=All&maker=All`;
                     });
                     
@@ -654,16 +658,18 @@ async function loadCarouselData(data) {
                     const div = document.createElement('div');
                     div.className = 'info-item';
                     div.innerHTML = `
-                        <span class="product-info">${promo.PROMOCODE} - ${promo.PRODUCTNAME || 'Unknown Product'}</span>
+                        <span class="product-info" style="cursor:pointer; text-decoration:underline; color:#007bff;">${promo.PROMOCODE} - ${promo.PRODUCTNAME || 'Unknown Product'}</span>
                         <div style="display: flex; align-items: center; margin-left: auto;">
-                            <input type="number" class="queue-input" value="${(idx + 1).toString().padStart(2, '0')}" min="0" max="99" style="width:2.5em; margin-right:10px;" title="Queue">
+                            <input type="number" class="chance-input" value="${promo.CHANCE *100 || 0}" min="0" max="100" style="width:3em; margin-right:5px;" title="Chance %">
+                            <span style="margin-right:10px;">%</span>
                             <button class="delete-promo-btn" title="Remove Promo" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:#dc3545;">✕</button>
                         </div>
                     `;
                     
-                    // Add click handler for navigation
-                    div.addEventListener('click', function(e) {
-                        if (e.target.tagName.toLowerCase() === 'input' || e.target.classList.contains('delete-promo-btn')) return;
+                    // Add click handler for navigation only on the text
+                    const productInfo = div.querySelector('.product-info');
+                    productInfo.addEventListener('click', function(e) {
+                        e.stopPropagation();
                         window.location.href = `promo.html?id=${promo.PROMOID}&type=All&maker=All`;
                     });
                     
@@ -673,31 +679,21 @@ async function loadCarouselData(data) {
                         e.stopPropagation();
                         if (confirm('Remove this promo from the carousel?')) {
                             div.remove();
-                            updatePromoQueueNumbers();
+                            redistributePromoChances();
                             formChanged = true;
                         }
                     });
 
-                    // Add queue input event listeners
-                    const queueInput = div.querySelector('.queue-input');
-                    if (queueInput) {
-                        queueInput.addEventListener('input', function() {
-                            if (this.value.length > 2) {
-                                this.value = this.value.slice(0, 2);
-                            }
-                            formChanged = true;
-                        });
-                        queueInput.addEventListener('keypress', function(e) {
-                            if (this.value.length >= 2 && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-                                e.preventDefault();
-                            }
-                        });
+                    // Add chance input event listeners
+                    const chanceInput = div.querySelector('.chance-input');
+                    if (chanceInput) {
+                        addChanceInputEvents(chanceInput);
                     }
                     
                     associatedPromos.appendChild(div);
                 });
 
-                updatePromoQueueNumbers();
+                updatePromoChanceTotal();
             } else {
                 associatedPromos.innerHTML = '<div class="no-data">No associated promos found</div>';
             }
@@ -728,31 +724,7 @@ async function loadCarouselData(data) {
         }
     }
 
-    async function saveCarouselData() {
-        // if (!headerProductCode.value.trim()) {
-        //     showWarningModal('Product Code is required');
-        //     headerProductCode.focus();
-        //     validForInsert = false;
-        //     return;
-        // }
 
-        try {
-            // Build promo data based on whether we're creating new or updating existing
-            const data = {
-                code: parseInt(headerProductCode.value),
-                product: selectedProductData ? selectedProductData.ID : null,
-                type: selectedProductData ? selectedProductData.TYPEID : null,
-                maker: selectedProductData ? selectedProductData.MAKERID : null,
-                discount: parseFloat(discountInput.value) / 100,
-                daysToLive: parseInt(daysToLiveInput.value),
-                notes: productNotes.value
-            };
-        } catch (error) {
-            console.error('Error saving carousel:', error);
-            showWarningModal(`Failed to save changes: ${error.message}`);
-            validForInsert = false;
-        }
-    }
 
     function createNewCarousel() {
         // Header fields
@@ -965,21 +937,23 @@ function selectAssociatedPromo(promo) {
     const div = document.createElement('div');
     div.className = 'info-item';
     
-    // Get the next queue number
+    // Calculate default chance
     const currentItems = associatedPromos.querySelectorAll('.info-item');
-    const nextQueueNum = (currentItems.length + 1).toString().padStart(2, '0');
+    const defaultChance = currentItems.length === 0 ? 100 : Math.floor(100 / (currentItems.length + 1));
     
     div.innerHTML = `
-        <span class="product-info">${promo.CODE} - ${promo.PRODUCTNAME || 'Unknown Product'}</span>
+        <span class="product-info" style="cursor:pointer; text-decoration:underline; color:#007bff;">${promo.CODE} - ${promo.PRODUCTNAME || 'Unknown Product'}</span>
         <div style="display: flex; align-items: center; margin-left: auto;">
-            <input type="number" class="queue-input" value="${nextQueueNum}" min="0" max="99" style="width:2.5em; margin-right:10px;" title="Queue">
+            <input type="number" class="chance-input" value="${defaultChance}" min="0" max="100" style="width:3em; margin-right:5px;" title="Chance %">
+            <span style="margin-right:10px;">%</span>
             <button class="delete-promo-btn" title="Remove Promo" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:#dc3545;">✕</button>
         </div>
     `;
     
-    // Add click handler for navigation
-    div.addEventListener('click', function(e) {
-        if (e.target.tagName.toLowerCase() === 'input' || e.target.classList.contains('delete-promo-btn')) return;
+    // Add click handler for navigation only on the text
+    const productInfo = div.querySelector('.product-info');
+    productInfo.addEventListener('click', function(e) {
+        e.stopPropagation();
         window.location.href = `promo.html?id=${promo.ID}&type=All&maker=All`;
     });
     
@@ -989,29 +963,19 @@ function selectAssociatedPromo(promo) {
         e.stopPropagation();
         if (confirm('Remove this promo from the carousel?')) {
             div.remove();
-            updatePromoQueueNumbers();
+            redistributePromoChances();
             formChanged = true;
         }
     });
 
-    // Add queue input event listeners
-    const queueInput = div.querySelector('.queue-input');
-    if (queueInput) {
-        queueInput.addEventListener('input', function() {
-            if (this.value.length > 2) {
-                this.value = this.value.slice(0, 2);
-            }
-            formChanged = true;
-        });
-        queueInput.addEventListener('keypress', function(e) {
-            if (this.value.length >= 2 && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-                e.preventDefault();
-            }
-        });
+    // Add chance input event listeners
+    const chanceInput = div.querySelector('.chance-input');
+    if (chanceInput) {
+        addChanceInputEvents(chanceInput);
     }
     
     associatedPromos.appendChild(div);
-    updatePromoQueueNumbers();
+    redistributePromoChances();
     formChanged = true;
 
     // Clear search and hide dropdown
@@ -1019,14 +983,147 @@ function selectAssociatedPromo(promo) {
     associatedPromoDropdown.classList.remove('active');
 }
 
-// Add this helper function
-function updatePromoQueueNumbers() {
+// Add new functions for chance management
+function redistributePromoChances() {
     const items = associatedPromos.querySelectorAll('.info-item');
+    if (items.length === 0) return;
+    
+    const equalChance = Math.floor(100 / items.length);
+    const remainder = 100 % items.length;
+    
     items.forEach((item, idx) => {
-        const queueInput = item.querySelector('.queue-input');
-        if (queueInput) {
-            queueInput.value = (idx + 1).toString().padStart(2, '0');
+        const chanceInput = item.querySelector('.chance-input');
+        if (chanceInput) {
+            const chance = equalChance + (idx < remainder ? 1 : 0);
+            chanceInput.value = chance;
+        }
+    });
+    
+    updatePromoChanceTotal();
+}
+
+function updatePromoChanceTotal() {
+    const items = associatedPromos.querySelectorAll('.info-item');
+    let total = 0;
+    
+    items.forEach(item => {
+        const chanceInput = item.querySelector('.chance-input');
+        if (chanceInput) {
+            total += parseInt(chanceInput.value) || 0;
+        }
+    });
+    
+    updatePromoChanceTotalDisplay(total);
+    return total;
+}
+
+function updatePromoChanceTotalDisplay(total) {
+    let totalDisplay = document.getElementById('promoChanceTotal');
+    if (!totalDisplay) {
+        totalDisplay = document.createElement('div');
+        totalDisplay.id = 'promoChanceTotal';
+        totalDisplay.style.cssText = 'margin-top: 10px; padding: 8px; border-radius: 4px; font-weight: bold; text-align: center;';
+        associatedPromos.parentNode.appendChild(totalDisplay);
+    }
+    
+    if (total === 100) {
+        totalDisplay.textContent = `Total Chance: ${total}% ✓`;
+        totalDisplay.style.backgroundColor = '#d4edda';
+        totalDisplay.style.color = '#155724';
+        totalDisplay.style.border = '1px solid #c3e6cb';
+    } else {
+        totalDisplay.textContent = `Total Chance: ${total}% (Must equal 100%)`;
+        totalDisplay.style.backgroundColor = '#f8d7da';
+        totalDisplay.style.color = '#721c24';
+        totalDisplay.style.border = '1px solid #f5c6cb';
+    }
+}
+
+// Update saveCarouselData function to include validation
+async function saveCarouselData() {
+    // Validate promo chances
+    const items = associatedPromos.querySelectorAll('.info-item');
+    if (items.length > 0) {
+        const total = updatePromoChanceTotal();
+        if (total !== 100) {
+            showWarningModal('Promo chances must total exactly 100% before saving.');
+            validForInsert = false;
+            return;
+        }
+    }
+
+    try {
+        // Build promo data based on whether we're creating new or updating existing
+        const data = {
+            code: parseInt(headerCarouselCode.value),
+            name: headerCarouselName.value,
+            device: deviceSelect.value,
+            autoplayWait: parseInt(autoplayWaitInput.value),
+            speed: parseInt(speedInput.value),
+            gameCount: parseInt(gameCountInput.value),
+            revolutions: parseInt(revolutionsInput.value),
+            spinDuration: parseInt(spinDurationInput.value),
+            onStopTime: parseInt(onStopTimeInput.value),
+            inactivityTime: parseInt(inactivityTimeInput.value)
+        };
+        
+        validForInsert = true;
+    } catch (error) {
+        console.error('Error saving carousel:', error);
+        showWarningModal(`Failed to save changes: ${error.message}`);
+        validForInsert = false;
+    }
+}
+
+// Update updatePromoQueueNumbers to work with chances
+function updatePromoQueueNumbers() {
+    updatePromoChanceTotal();
+}
+
+function addChanceInputEvents(chanceInput) {
+    let originalValue = chanceInput.value;
+    
+    // Store original value when input gains focus (clicked)
+    chanceInput.addEventListener('focus', function() {
+        originalValue = this.value;
+        this.value = '';
+    });
+    
+    // Revert to original value if input is empty when losing focus
+    chanceInput.addEventListener('blur', function() {
+        if (this.value.trim() === '') {
+            this.value = originalValue;
+        } else {
+            // Validate and update
+            if (this.value.length > 3) {
+                this.value = this.value.slice(0, 3);
+            }
+            if (parseInt(this.value) > 100) {
+                this.value = 100;
+            }
+            originalValue = this.value; // Update original value
+        }
+        formChanged = true;
+        updatePromoChanceTotal();
+    });
+    
+    // Handle input validation during typing
+    chanceInput.addEventListener('input', function() {
+        if (this.value.length > 3) {
+            this.value = this.value.slice(0, 3);
+        }
+        if (parseInt(this.value) > 100) {
+            this.value = 100;
+        }
+    });
+    
+    // Handle Enter key to confirm input without triggering parent events
+    chanceInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.stopPropagation(); // Prevent event from bubbling up
+            e.preventDefault(); // Prevent any default behavior
+            this.blur(); // Trigger blur event to validate and save
         }
     });
 }
-    // #endregion
+// #endregion
