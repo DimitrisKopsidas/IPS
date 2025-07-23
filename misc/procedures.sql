@@ -1,6 +1,13 @@
 DELIMITER $$
-CREATE DEFINER=`root`@`localhost` PROCEDURE `DeleteCarousel`(IN p_carousel_id INT)
+CREATE DEFINER=`root`@`localhost` PROCEDURE `DeleteCarouselAndMinigame`(
+    IN p_carousel_id INT
+)
 BEGIN
+    -- Delete the associated MINIGAME first (due to foreign key constraint)
+    DELETE FROM MINIGAME
+    WHERE CAROUSEL = p_carousel_id;
+
+    -- Then delete the CAROUSEL
     DELETE FROM CAROUSEL
     WHERE CAROUSEL = p_carousel_id;
 END$$
@@ -70,9 +77,13 @@ DELIMITER $$
 CREATE DEFINER=`root`@`localhost` PROCEDURE `GetAllDevices`()
 BEGIN
     SELECT 
-		*
-	FROM
-		DEVICE;
+		D.* 
+	FROM 
+		DEVICE D
+	LEFT JOIN 
+		CAROUSEL C ON D.DEVICE = C.DEVICE
+	WHERE C.DEVICE IS NULL; 
+	
 	END$$
 DELIMITER ;
 
@@ -180,10 +191,9 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `GetFilteredCarousels`(IN filterPara
 BEGIN
     SELECT 
         C.CAROUSEL AS ID,
-        CODE,
-        NAME,
-        DEVICE,
-        NOTES,
+        C.CODE,
+        C.NAME,
+        C.DEVICE,
         AUTOPLAYWAIT,
         SPEED,
         GAMECOUNT,
@@ -191,13 +201,18 @@ BEGIN
         REVOLUTIONS,
         SPINDURATION,
         ONSTOPTIME,
-        INACTIVITYTIME
+        INACTIVITYTIME,
+        D.CODE AS DEVICECODE,
+        D.NAME AS DEVICENAME,
+        D.CONNECTKEY AS DEVICECONNECTKEY
     FROM 
-        CAROUSEL c
+        CAROUSEL C
 	INNER JOIN 
 		MINIGAME M ON M.CAROUSEL = C.CAROUSEL
+	LEFT JOIN 
+		DEVICE D ON D.DEVICE = C.DEVICE
     WHERE 
-        (filterParam = TRUE OR (DEVICE IS NOT NULL AND DEVICE != 0));
+        (filterParam = TRUE OR (C.DEVICE IS NOT NULL AND C.DEVICE != 0));
 END$$
 DELIMITER ;
 
@@ -584,24 +599,40 @@ END$$
 DELIMITER ;
 
 DELIMITER $$
-CREATE DEFINER=`root`@`localhost` PROCEDURE `InsertCarousel`(
-    IN p_CODE INT,
-    IN p_NAME VARCHAR(255),
-    IN p_DEVICE INT,
-    IN p_NOTES VARCHAR(255),
-    IN p_AUTOPLAYWAIT INT,
-    IN p_SPEED INT,
-    IN p_GAMECOUNT INT,
-    IN p_STATE INT
+CREATE DEFINER=`root`@`localhost` PROCEDURE `InsertCarouselAndMinigame`(
+    -- CAROUSEL fields
+    IN p_code INT,
+    IN p_name VARCHAR(255),
+    IN p_device INT,
+    IN p_autoplaywait INT,
+    IN p_speed INT,
+    IN p_gamecount INT,
+    IN p_state INT,
+
+    -- MINIGAME fields
+    IN p_revolutions INT,
+    IN p_spinduration INT,
+    IN p_onstoptime INT,
+    IN p_inactivitytime INT
 )
 BEGIN
+    DECLARE new_carousel_id INT;
+
+    -- Insert into CAROUSEL
     INSERT INTO CAROUSEL (
-        CODE, NAME, DEVICE, NOTES,
-        AUTOPLAYWAIT, SPEED, GAMECOUNT, STATE
-    )
-    VALUES (
-        p_CODE, p_NAME, p_DEVICE, p_NOTES,
-        p_AUTOPLAYWAIT, p_SPEED, p_GAMECOUNT, p_STATE
+        CODE, NAME, DEVICE, AUTOPLAYWAIT, SPEED, GAMECOUNT, STATE
+    ) VALUES (
+        p_code, p_name, p_device, p_autoplaywait, p_speed, p_gamecount, p_state
+    );
+
+    -- Get the auto-generated ID
+    SET new_carousel_id = LAST_INSERT_ID();
+
+    -- Insert into MINIGAME
+    INSERT INTO MINIGAME (
+        CAROUSEL, REVOLUTIONS, SPINDURATION, ONSTOPTIME, INACTIVITYTIME
+    ) VALUES (
+        new_carousel_id, p_revolutions, p_spinduration, p_onstoptime, p_inactivitytime
     );
 END$$
 DELIMITER ;
@@ -790,29 +821,45 @@ END$$
 DELIMITER ;
 
 DELIMITER $$
-CREATE DEFINER=`root`@`localhost` PROCEDURE `UpdateCarousel`(
-    IN p_CAROUSEL INT,
-    IN p_CODE INT,
-    IN p_NAME VARCHAR(255),
-    IN p_DEVICE INT,
-    IN p_NOTES VARCHAR(255),
-    IN p_AUTOPLAYWAIT INT,
-    IN p_SPEED INT,
-    IN p_GAMECOUNT INT,
-    IN p_STATE INT
+CREATE DEFINER=`root`@`localhost` PROCEDURE `UpdateCarouselAndMinigame`(
+    IN p_carousel_id INT,
+
+    -- CAROUSEL fields
+    IN p_code INT,
+    IN p_name VARCHAR(255),
+    IN p_device INT,
+    IN p_autoplaywait INT,
+    IN p_speed INT,
+    IN p_gamecount INT,
+    IN p_state INT,
+
+    -- MINIGAME fields
+    IN p_revolutions INT,
+    IN p_spinduration INT,
+    IN p_onstoptime INT,
+    IN p_inactivitytime INT
 )
 BEGIN
+    -- Update CAROUSEL
     UPDATE CAROUSEL
+    SET 
+        CODE = p_code,
+        NAME = p_name,
+        DEVICE = p_device,
+        AUTOPLAYWAIT = p_autoplaywait,
+        SPEED = p_speed,
+        GAMECOUNT = p_gamecount,
+        STATE = p_state
+    WHERE CAROUSEL = p_carousel_id;
+
+    -- Update MINIGAME associated with this CAROUSEL
+    UPDATE MINIGAME
     SET
-        CODE = p_CODE,
-        NAME = p_NAME,
-        DEVICE = p_DEVICE,
-        NOTES = p_NOTES,
-        AUTOPLAYWAIT = p_AUTOPLAYWAIT,
-        SPEED = p_SPEED,
-        GAMECOUNT = p_GAMECOUNT,
-        STATE = p_STATE
-    WHERE CAROUSEL = p_CAROUSEL;
+        REVOLUTIONS = p_revolutions,
+        SPINDURATION = p_spinduration,
+        ONSTOPTIME = p_onstoptime,
+        INACTIVITYTIME = p_inactivitytime
+    WHERE CAROUSEL = p_carousel_id;
 END$$
 DELIMITER ;
 
