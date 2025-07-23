@@ -2,7 +2,8 @@ import {fillDropdown, getItemCardHtml} from "./common.js";
 import { fetchFilteredProducts, fetchFilteredPromos, fetchFilteredCarousels,
     updatePromoLines, insertPromoLines, deletePromoLines, getAllDevices, 
     getProductLinesByCarousel, getPromoLinesByCarousel,
-    updateProductLines, insertProductLines, deleteProductLines } from './dbService.js';
+    updateProductLines, insertProductLines, deleteProductLines,
+    DeleteCarouselAndMinigame, UpdateCarouselAndMinigame, InsertCarouselAndMinigame } from './dbService.js';
 
 // #region VARIABLE DECLARATION
     // Form references
@@ -1072,25 +1073,149 @@ async function saveCarouselData() {
     }
 
     try {
-        // Build promo data based on whether we're creating new or updating existing
-        const data = {
-            code: parseInt(headerCarouselCode.value),
-            name: headerCarouselName.value,
-            device: deviceSelect.value,
-            autoplayWait: parseInt(autoplayWaitInput.value),
-            speed: parseInt(speedInput.value),
-            gameCount: parseInt(gameCountInput.value),
-            revolutions: parseInt(revolutionsInput.value),
-            spinDuration: parseInt(spinDurationInput.value),
-            onStopTime: parseInt(onStopTimeInput.value),
-            inactivityTime: parseInt(inactivityTimeInput.value)
+        // Validate required fields
+        if (!headerCarouselCode.value || !headerCarouselCode.value.trim()) {
+            throw new Error('Carousel Code is required');
+        }
+
+        if (!headerCarouselName.value || !headerCarouselName.value.trim()) {
+            throw new Error('Carousel Name is required');
+        }
+
+        if (!deviceSelect.value || deviceSelect.value === 'null' || deviceSelect.value === '') {
+            throw new Error('Device selection is required');
+        }
+
+        // Validate numeric settings
+        const code = parseInt(headerCarouselCode.value);
+        const autoplayWait = parseInt(autoplayWaitInput.value);
+        const speed = parseInt(speedInput.value);
+        const gameCount = parseInt(gameCountInput.value);
+        const revolutions = parseInt(revolutionsInput.value);
+        const spinDuration = parseInt(spinDurationInput.value);
+        const onStopTime = parseInt(onStopTimeInput.value);
+        const inactivityTime = parseInt(inactivityTimeInput.value);
+
+        if (isNaN(code) || code <= 0) {
+            throw new Error('Carousel Code must be a valid number greater than 0');
+        }
+
+        if (isNaN(autoplayWait) || autoplayWait < 0) {
+            throw new Error('Autoplay Wait must be a valid number (0 or greater)');
+        }
+
+        if (isNaN(speed) || speed < 0) {
+            throw new Error('Speed must be a valid number (0 or greater)');
+        }
+
+        if (isNaN(gameCount) || gameCount < 0) {
+            throw new Error('Game Count must be a valid number (0 or greater)');
+        }
+
+        if (isNaN(revolutions) || revolutions < 0) {
+            throw new Error('Revolutions must be a valid number (0 or greater)');
+        }
+
+        if (isNaN(spinDuration) || spinDuration < 0) {
+            throw new Error('Spin Duration must be a valid number (0 or greater)');
+        }
+
+        if (isNaN(onStopTime) || onStopTime < 0) {
+            throw new Error('On Stop Time must be a valid number (0 or greater)');
+        }
+
+        if (isNaN(inactivityTime) || inactivityTime < 0) {
+            throw new Error('Inactivity Time must be a valid number (0 or greater)');
+        }
+
+        // Build carousel data
+        const carouselData = {
+            code: code,
+            name: headerCarouselName.value.trim(),
+            device: parseInt(deviceSelect.value),
+            autoplayWait: autoplayWait,
+            speed: speed,
+            gameCount: gameCount,
+            revolutions: revolutions,
+            spinDuration: spinDuration,
+            onStopTime: onStopTime,
+            inactivityTime: inactivityTime
         };
-        
+
+        console.log('Saving carousel data:', carouselData);
+
+        // Determine if we're creating new or updating existing
+        let result;
+        if (currentCarouselId === 'new') {
+            // Create new carousel
+            result = await InsertCarouselAndMinigame(carouselData);
+            
+            if (!result.success) {
+                throw new Error(result.error || 'Failed to create carousel');
+            }
+
+            // Update current ID and add to carousels array
+            currentCarouselId = result.carouselId;
+            const newCarousel = {
+                ID: result.carouselId,
+                CODE: carouselData.code,
+                NAME: carouselData.name,
+                DEVICE: carouselData.device,
+                AUTOPLAYWAIT: carouselData.autoplayWait,
+                SPEED: carouselData.speed,
+                GAMECOUNT: carouselData.gameCount,
+                REVOLUTIONS: carouselData.revolutions,
+                SPINDURATION: carouselData.spinDuration,
+                ONSTOPTIME: carouselData.onStopTime,
+                INACTIVITYTIME: carouselData.inactivityTime
+            };
+            carousels.push(newCarousel);
+
+            // Update URL
+            const params = new URLSearchParams(window.location.search);
+            params.set('id', result.carouselId);
+            window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
+            
+        } else {
+            // Update existing carousel
+            carouselData.id = currentCarouselId;
+            
+            result = await UpdateCarouselAndMinigame(carouselData);
+            
+            if (!result.success) {
+                throw new Error(result.error || 'Failed to update carousel');
+            }
+
+            // Update carousels array
+            const carouselIndex = carousels.findIndex(c => c.ID === currentCarouselId);
+            if (carouselIndex !== -1) {
+                carousels[carouselIndex] = {
+                    ...carousels[carouselIndex],
+                    CODE: carouselData.code,
+                    NAME: carouselData.name,
+                    DEVICE: carouselData.device,
+                    AUTOPLAYWAIT: carouselData.autoplayWait,
+                    SPEED: carouselData.speed,
+                    GAMECOUNT: carouselData.gameCount,
+                    REVOLUTIONS: carouselData.revolutions,
+                    SPINDURATION: carouselData.spinDuration,
+                    ONSTOPTIME: carouselData.onStopTime,
+                    INACTIVITYTIME: carouselData.inactivityTime
+                };
+            }
+        }
+
         validForInsert = true;
+        formChanged = false;
+        updateNavigationState();
+        
+        console.log('Carousel saved successfully');
+        
     } catch (error) {
         console.error('Error saving carousel:', error);
-        showWarningModal(`Failed to save changes: ${error.message}`);
+        showWarningModal(error.message);
         validForInsert = false;
+        throw error; // Re-throw to prevent success actions
     }
 }
 
