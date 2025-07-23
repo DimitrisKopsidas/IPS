@@ -582,8 +582,26 @@ async function loadCarouselData(data) {
     headerCarouselCode.value = data.CODE || '';
     headerCarouselName.value = data.NAME || '';
 
-    // Populate carousel and minigame settings
-    deviceSelect.value = data.DEVICE || '';
+    // Populate device dropdown and set current device
+    await populateDeviceDropdown();
+    
+    // Set device selection - check if device data exists in current carousel data
+    if (data.DEVICE) {
+        // If carousel has a device assigned, add it to dropdown if not already there
+        const existingOption = deviceSelect.querySelector(`option[value="${data.DEVICE}"]`);
+        if (!existingOption && data.DEVICENAME) {
+            // Add the current device to dropdown (it's assigned but not in available devices)
+            const currentDeviceOption = document.createElement('option');
+            currentDeviceOption.value = data.DEVICE;
+            currentDeviceOption.textContent = `${data.DEVICENAME} (${data.DEVICECONNECTKEY})`;
+            deviceSelect.appendChild(currentDeviceOption);
+        }
+        deviceSelect.value = data.DEVICE;
+    } else {
+        deviceSelect.value = '';
+    }
+
+    // Populate other carousel and minigame settings
     autoplayWaitInput.value = data.AUTOPLAYWAIT || 0;
     speedInput.value = data.SPEED || 0;
     gameCountInput.value = data.GAMECOUNT || 0;
@@ -755,12 +773,13 @@ async function loadCarouselData(data) {
         if (headerCarouselCode) headerCarouselCode.focus();
     }
 
+    // Update the populateDeviceDropdown function
     async function populateDeviceDropdown() {
         try {
             const response = await fetch('http://localhost:3000/api/getAllDevices');
             if (!response.ok) throw new Error('Failed to fetch devices');
             const devices = await response.json();
-            deviceSelect.innerHTML = '<option value="">-- No device selected --</option>';
+            deviceSelect.innerHTML = '<option value=null>-- No device selected --</option>';
             devices.forEach(device => {
                 const option = document.createElement('option');
                 option.value = device.DEVICE;
