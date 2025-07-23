@@ -810,7 +810,7 @@ async function UpdateCarouselAndMinigame(carouselData) {
                 autoplayWait: carouselData.autoplayWait,
                 speed: carouselData.speed,
                 gameCount: carouselData.gameCount,
-                state: carouselData.state || 1,
+                state: carouselData.state,
                 revolutions: carouselData.revolutions,
                 spinDuration: carouselData.spinDuration,
                 onStopTime: carouselData.onStopTime,

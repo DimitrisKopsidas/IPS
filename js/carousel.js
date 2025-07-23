@@ -1059,7 +1059,7 @@ function updatePromoChanceTotalDisplay(total) {
     }
 }
 
-// Update saveCarouselData function to include validation
+// Update the saveCarouselData function to increment state by 1
 async function saveCarouselData() {
     // Validate promo chances
     const items = associatedPromos.querySelectorAll('.info-item');
@@ -1128,6 +1128,13 @@ async function saveCarouselData() {
             throw new Error('Inactivity Time must be a valid number (0 or greater)');
         }
 
+        // Get current state and increment by 1
+        let currentState = 1; // Default for new carousels
+        if (currentCarouselId !== 'new') {
+            const currentCarousel = carousels.find(c => c.ID === currentCarouselId);
+            currentState = (currentCarousel && currentCarousel.STATE) ? currentCarousel.STATE + 1 : 1;
+        }
+
         // Build carousel data
         const carouselData = {
             code: code,
@@ -1136,13 +1143,14 @@ async function saveCarouselData() {
             autoplayWait: autoplayWait,
             speed: speed,
             gameCount: gameCount,
+            state: currentState, // Include incremented state
             revolutions: revolutions,
             spinDuration: spinDuration,
             onStopTime: onStopTime,
             inactivityTime: inactivityTime
         };
 
-        console.log('Saving carousel data:', carouselData);
+        console.log('Saving carousel data with incremented state:', carouselData);
 
         // Determine if we're creating new or updating existing
         let result;
@@ -1164,6 +1172,7 @@ async function saveCarouselData() {
                 AUTOPLAYWAIT: carouselData.autoplayWait,
                 SPEED: carouselData.speed,
                 GAMECOUNT: carouselData.gameCount,
+                STATE: carouselData.state, // Include state in local data
                 REVOLUTIONS: carouselData.revolutions,
                 SPINDURATION: carouselData.spinDuration,
                 ONSTOPTIME: carouselData.onStopTime,
@@ -1197,6 +1206,7 @@ async function saveCarouselData() {
                     AUTOPLAYWAIT: carouselData.autoplayWait,
                     SPEED: carouselData.speed,
                     GAMECOUNT: carouselData.gameCount,
+                    STATE: carouselData.state, // Update state in local data
                     REVOLUTIONS: carouselData.revolutions,
                     SPINDURATION: carouselData.spinDuration,
                     ONSTOPTIME: carouselData.onStopTime,
@@ -1209,7 +1219,7 @@ async function saveCarouselData() {
         formChanged = false;
         updateNavigationState();
         
-        console.log('Carousel saved successfully');
+        console.log('Carousel saved successfully with state:', currentState);
         
     } catch (error) {
         console.error('Error saving carousel:', error);
