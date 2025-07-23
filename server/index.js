@@ -972,3 +972,102 @@ app.get('/api/getIndexDeviceInfo/:device', async (req, res) => {
     }
 });
 // #endregion ADMIN
+
+// #region CAROUSELS
+// Delete carousel and minigame
+app.delete('/api/carousel/:id', async (req, res) => {
+    try {
+        const carouselId = req.params.id;
+        await pool.query('CALL DeleteCarouselAndMinigame(?)', [carouselId]);
+        
+        console.log(`Deleted carousel and minigame with ID: ${carouselId}`);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error deleting carousel and minigame:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
+    }
+});
+
+// Update carousel and minigame
+app.put('/api/carousel/:id', async (req, res) => {
+    try {
+        const carouselId = req.params.id;
+        const { 
+            code, name, device, autoplayWait, speed, gameCount, state = 1,
+            revolutions, spinDuration, onStopTime, inactivityTime 
+        } = req.body;
+
+        await pool.query('CALL UpdateCarouselAndMinigame(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+            carouselId,
+            code,
+            name,
+            device,
+            autoplayWait,
+            speed,
+            gameCount,
+            state,
+            revolutions,
+            spinDuration,
+            onStopTime,
+            inactivityTime
+        ]);
+
+        console.log(`Updated carousel and minigame with ID: ${carouselId}`);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error updating carousel and minigame:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
+    }
+});
+
+// Insert new carousel and minigame
+app.post('/api/carousel', async (req, res) => {
+    try {
+        const { 
+            code, name, device, autoplayWait, speed, gameCount, state = 1,
+            revolutions, spinDuration, onStopTime, inactivityTime 
+        } = req.body;
+
+        const [result] = await pool.query('CALL InsertCarouselAndMinigame(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+            code,
+            name,
+            device,
+            autoplayWait,
+            speed,
+            gameCount,
+            state,
+            revolutions,
+            spinDuration,
+            onStopTime,
+            inactivityTime
+        ]);
+
+        // Get the inserted carousel ID from the result
+        const carouselId = result.insertId;
+        
+        console.log('Inserted new carousel and minigame:', { carouselId, code, name });
+        res.json({ success: true, carouselId: carouselId });
+    } catch (error) {
+        console.error('Error inserting carousel and minigame:', error);
+        // Check for duplicate entry error (MySQL error code 1062)
+        if (error.code === 'ER_DUP_ENTRY') {
+            res.status(409).json({ 
+                success: false, 
+                error: `Carousel code ${req.body.code} already exists. Please use a different code.`,
+                isDuplicateCode: true
+            });
+        } else {
+            res.status(500).json({ 
+                success: false, 
+                error: error.message 
+            });
+        }
+    }
+});
+// #endregion CAROUSELS

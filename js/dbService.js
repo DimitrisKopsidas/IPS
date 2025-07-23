@@ -774,6 +774,99 @@ async function getPromoLinesByCarousel(carouselId) {
         return [];
     }
 }
+
+async function DeleteCarouselAndMinigame(carouselId) {
+    try {
+        console.log('Deleting carousel and minigame:', carouselId);
+        const response = await fetch(`http://localhost:3000/api/carousel/${carouselId}`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('Carousel and minigame deletion result:', result);
+        return { success: true };
+    } catch (error) {
+        console.error('Error deleting carousel and minigame:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+async function UpdateCarouselAndMinigame(carouselData) {
+    try {
+        console.log('Updating carousel and minigame:', carouselData);
+        const response = await fetch(`http://localhost:3000/api/carousel/${carouselData.id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                code: carouselData.code,
+                name: carouselData.name,
+                device: carouselData.device,
+                autoplayWait: carouselData.autoplayWait,
+                speed: carouselData.speed,
+                gameCount: carouselData.gameCount,
+                state: carouselData.state || 1,
+                revolutions: carouselData.revolutions,
+                spinDuration: carouselData.spinDuration,
+                onStopTime: carouselData.onStopTime,
+                inactivityTime: carouselData.inactivityTime
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Carousel and minigame update result:', result);
+        return result;
+    } catch (error) {
+        console.error('Error updating carousel and minigame:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+async function InsertCarouselAndMinigame(carouselData) {
+    try {
+        console.log('Inserting carousel and minigame:', carouselData);
+        const response = await fetch('http://localhost:3000/api/carousel', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                code: carouselData.code,
+                name: carouselData.name,
+                device: carouselData.device,
+                autoplayWait: carouselData.autoplayWait,
+                speed: carouselData.speed,
+                gameCount: carouselData.gameCount,
+                state: carouselData.state || 1,
+                revolutions: carouselData.revolutions,
+                spinDuration: carouselData.spinDuration,
+                onStopTime: carouselData.onStopTime,
+                inactivityTime: carouselData.inactivityTime
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Carousel and minigame insert result:', result);
+        return result;
+    } catch (error) {
+        console.error('Error inserting carousel and minigame:', error);
+        return { success: false, error: error.message };
+    }
+}
 // #endregion CAROUSEL
 
 // #region PROMOS
@@ -1071,5 +1164,8 @@ export {
     deleteProductLines,
     insertProductLines,
     getProductLinesByCarousel,
-    getPromoLinesByCarousel
+    getPromoLinesByCarousel,
+    DeleteCarouselAndMinigame,
+    UpdateCarouselAndMinigame,
+    InsertCarouselAndMinigame
 };
