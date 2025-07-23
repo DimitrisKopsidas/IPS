@@ -116,7 +116,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     headerCarouselName.addEventListener('input', function() {
         formChanged = true;
-        filterProductDropdown(this.value);
     });
 
     sidePrevBtn.addEventListener('click', function() {
@@ -339,67 +338,18 @@ if (associatedPromoSearch && associatedPromoDropdown) {
 });
 
 // #region FUNCTIONS
-    // #region DROPDOWN FUNCTIONS
-    function setupProductDropdown() {
-        populateProductDropdown(products);
-    }
+// #region DROPDOWN FUNCTIONS
+function setupProductDropdown() {
+    populateProductDropdown(products);
+}
 
-    function populateProductDropdown(products) {
-        productDropdown.innerHTML = '';
-        
-        products.forEach(product => {
-            const option = document.createElement('div');
-            option.className = 'product-option';
-            option.dataset.carouselId = product.ID;
-            
-            const makerName = product.MAKERNAME || 'Unknown';
-            const typeName = product.TYPENAME || 'Unknown';
-            
-            option.innerHTML = `
-                <span class="product-code">${product.CODE}</span>
-                <span class="product-name">${product.NAME}</span>
-                <span class="product-details">(${makerName}, ${typeName})</span>
-            `;
-            
-            option.addEventListener('click', function() {
-                selectProduct(product);
-            });
-            
-            productDropdown.appendChild(option);
-        });
-    }
-
-    function filterProductDropdown(searchText) {
-        if (!searchText.trim()) {
-            populateProductDropdown(products);
-            return;
-        }
-
-        const filtered = products.filter(product => {
-            const makerName = product.MAKERNAME || 'Unknown';
-            const typeName = product.TYPENAME || 'Unknown';
-            const searchString = `${product.CODE} ${product.NAME} ${makerName} ${typeName}`.toLowerCase();
-            return searchString.includes(searchText.toLowerCase());
-        });
-
-        populateProductDropdown(filtered);
-        
-        if (!productDropdown.classList.contains('active')) {
-            productDropdown.classList.add('active');
-        }
-    }
-
-    async function selectProduct(product) {
-        
-    }
-
-    function populateAssociatedProductDropdown(products) {
-    associatedProductDropdown.innerHTML = '';
+function populateProductDropdown(products) {
+    productDropdown.innerHTML = '';
     
     products.forEach(product => {
         const option = document.createElement('div');
         option.className = 'product-option';
-        option.dataset.productId = product.ID;
+        option.dataset.carouselId = product.ID;
         
         const makerName = product.MAKERNAME || 'Unknown';
         const typeName = product.TYPENAME || 'Unknown';
@@ -411,17 +361,16 @@ if (associatedPromoSearch && associatedPromoDropdown) {
         `;
         
         option.addEventListener('click', function() {
-            selectAssociatedProduct(product);
+            selectProduct(product);
         });
         
-        associatedProductDropdown.appendChild(option);
+        productDropdown.appendChild(option);
     });
 }
 
-function filterAssociatedProductDropdown(searchText) {
+function filterProductDropdown(searchText) {
     if (!searchText.trim()) {
-        associatedProductDropdown.innerHTML = '';
-        associatedProductDropdown.classList.remove('active');
+        populateProductDropdown(products);
         return;
     }
 
@@ -432,82 +381,132 @@ function filterAssociatedProductDropdown(searchText) {
         return searchString.includes(searchText.toLowerCase());
     });
 
-    if (filtered.length === 0) {
-        associatedProductDropdown.innerHTML = '<div class="product-option">No products found</div>';
-        associatedProductDropdown.classList.add('active');
-        return;
-    }
-
-    populateAssociatedProductDropdown(filtered);
+    populateProductDropdown(filtered);
     
-    if (!associatedProductDropdown.classList.contains('active')) {
-        associatedProductDropdown.classList.add('active');
+    if (!productDropdown.classList.contains('active')) {
+        productDropdown.classList.add('active');
     }
 }
 
-function selectAssociatedProduct(product) {
-    // Check if product is already in the list
-    const existingItems = associatedProducts.querySelectorAll('.info-item');
-    for (let item of existingItems) {
-        const productInfo = item.querySelector('.product-info').textContent;
-        if (productInfo.includes(product.CODE)) {
-            showWarningModal('Product is already in the carousel');
-            associatedProductSearch.value = '';
-            associatedProductDropdown.classList.remove('active');
-            return;
-        }
-    }
-
-    // Clear "no data" message if it exists
-    if (associatedProducts.querySelector('.no-data')) {
-        associatedProducts.innerHTML = '';
-    }
-
-    // Create new product item
-    const div = document.createElement('div');
-    div.className = 'info-item';
-    div.setAttribute('draggable', 'true');
+async function selectProduct(product) {
     
-    // Get the next queue number
-    const currentItems = associatedProducts.querySelectorAll('.info-item');
-    const nextQueueNum = (currentItems.length + 1).toString().padStart(2, '0');
+}
+
+function populateAssociatedProductDropdown(products) {
+associatedProductDropdown.innerHTML = '';
+
+products.forEach(product => {
+    const option = document.createElement('div');
+    option.className = 'product-option';
+    option.dataset.productId = product.ID;
     
-    div.innerHTML = `
-        <span class="product-info" style="cursor:pointer; text-decoration:underline; color:#007bff;">${product.CODE} - ${product.NAME}</span>
-        <div style="display: flex; align-items: center; margin-left: auto;">
-            <input type="number" class="queue-input" value="${nextQueueNum}" min="0" max="99" style="width:2.5em; margin-right:10px;" title="Queue">
-            <button class="delete-product-btn" title="Remove Product" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:#dc3545;">✕</button>
-        </div>
+    const makerName = product.MAKERNAME || 'Unknown';
+    const typeName = product.TYPENAME || 'Unknown';
+    
+    option.innerHTML = `
+        <span class="product-code">${product.CODE}</span>
+        <span class="product-name">${product.NAME}</span>
+        <span class="product-details">(${makerName}, ${typeName})</span>
     `;
     
-    // Add click handler for navigation only on the text
-    const productInfo = div.querySelector('.product-info');
-    productInfo.addEventListener('click', function(e) {
-        e.stopPropagation();
-        window.location.href = `product.html?id=${product.ID}&type=All&maker=All`;
+    option.addEventListener('click', function() {
+        selectAssociatedProduct(product);
     });
     
-    // Add delete handler
-    const deleteBtn = div.querySelector('.delete-product-btn');
-    deleteBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        if (confirm('Remove this product from the carousel?')) {
-            div.remove();
-            updateQueueNumbers();
-            formChanged = true;
-        }
-    });
+    associatedProductDropdown.appendChild(option);
+});
+}
 
-    // Add drag and drop events using existing functions
-    addDnDEventsToNewItem(div);
-    
-    associatedProducts.appendChild(div);
-    updateQueueNumbers();
-    formChanged = true;
-
-    // Clear search and hide dropdown
-    associatedProductSearch.value = '';
+function filterAssociatedProductDropdown(searchText) {
+if (!searchText.trim()) {
+    associatedProductDropdown.innerHTML = '';
     associatedProductDropdown.classList.remove('active');
+    return;
+}
+
+const filtered = products.filter(product => {
+    const makerName = product.MAKERNAME || 'Unknown';
+    const typeName = product.TYPENAME || 'Unknown';
+    const searchString = `${product.CODE} ${product.NAME} ${makerName} ${typeName}`.toLowerCase();
+    return searchString.includes(searchText.toLowerCase());
+});
+
+if (filtered.length === 0) {
+    associatedProductDropdown.innerHTML = '<div class="product-option">No products found</div>';
+    associatedProductDropdown.classList.add('active');
+    return;
+}
+
+populateAssociatedProductDropdown(filtered);
+
+if (!associatedProductDropdown.classList.contains('active')) {
+    associatedProductDropdown.classList.add('active');
+}
+}
+
+function selectAssociatedProduct(product) {
+// Check if product is already in the list
+const existingItems = associatedProducts.querySelectorAll('.info-item');
+for (let item of existingItems) {
+    const productInfo = item.querySelector('.product-info').textContent;
+    if (productInfo.includes(product.CODE)) {
+        showWarningModal('Product is already in the carousel');
+        associatedProductSearch.value = '';
+        associatedProductDropdown.classList.remove('active');
+        return;
+    }
+}
+
+// Clear "no data" message if it exists
+if (associatedProducts.querySelector('.no-data')) {
+    associatedProducts.innerHTML = '';
+}
+
+// Create new product item
+const div = document.createElement('div');
+div.className = 'info-item';
+div.setAttribute('draggable', 'true');
+
+// Get the next queue number
+const currentItems = associatedProducts.querySelectorAll('.info-item');
+const nextQueueNum = (currentItems.length + 1).toString().padStart(2, '0');
+
+div.innerHTML = `
+    <span class="product-info" style="cursor:pointer; text-decoration:underline; color:#007bff;">${product.CODE} - ${product.NAME}</span>
+    <div style="display: flex; align-items: center; margin-left: auto;">
+        <input type="number" class="queue-input" value="${nextQueueNum}" min="0" max="99" style="width:2.5em; margin-right:10px;" title="Queue">
+        <button class="delete-product-btn" title="Remove Product" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:#dc3545;">✕</button>
+    </div>
+`;
+
+// Add click handler for navigation only on the text
+const productInfo = div.querySelector('.product-info');
+productInfo.addEventListener('click', function(e) {
+    e.stopPropagation();
+    window.location.href = `product.html?id=${product.ID}&type=All&maker=All`;
+});
+
+// Add delete handler
+const deleteBtn = div.querySelector('.delete-product-btn');
+deleteBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    if (confirm('Remove this product from the carousel?')) {
+        div.remove();
+        updateQueueNumbers();
+        formChanged = true;
+    }
+});
+
+// Add drag and drop events using existing functions
+addDnDEventsToNewItem(div);
+
+associatedProducts.appendChild(div);
+updateQueueNumbers();
+formChanged = true;
+
+// Clear search and hide dropdown
+associatedProductSearch.value = '';
+associatedProductDropdown.classList.remove('active');
 }
 
 // Add these variables to your VARIABLE DECLARATION section (after associatedProductDropdown)
@@ -515,379 +514,379 @@ let dragSrcEl = null;
 
 // Move all drag and drop functions to global scope, outside of loadCarouselData
 function handleDragStart(e) {
-    dragSrcEl = this;
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/html', this.outerHTML);
-    this.classList.add('dragElem');
+dragSrcEl = this;
+e.dataTransfer.effectAllowed = 'move';
+e.dataTransfer.setData('text/html', this.outerHTML);
+this.classList.add('dragElem');
 }
 
 function handleDragOver(e) {
-    if (e.preventDefault) e.preventDefault();
-    this.classList.add('over');
-    e.dataTransfer.dropEffect = 'move';
-    return false;
+if (e.preventDefault) e.preventDefault();
+this.classList.add('over');
+e.dataTransfer.dropEffect = 'move';
+return false;
 }
 
 function handleDragLeave(e) {
-    this.classList.remove('over');
+this.classList.remove('over');
 }
 
 function handleDrop(e) {
-    if (e.stopPropagation) e.stopPropagation();
-    if (dragSrcEl !== this) {
-        this.parentNode.removeChild(dragSrcEl);
-        const dropHTML = e.dataTransfer.getData('text/html');
-        this.insertAdjacentHTML('beforebegin', dropHTML);
-        const droppedElem = this.previousSibling;
-        addDnDEvents(droppedElem);
-        updateQueueNumbers();
-        formChanged = true; // Mark form as changed when items are reordered
-    }
-    this.classList.remove('over');
-    return false;
+if (e.stopPropagation) e.stopPropagation();
+if (dragSrcEl !== this) {
+    this.parentNode.removeChild(dragSrcEl);
+    const dropHTML = e.dataTransfer.getData('text/html');
+    this.insertAdjacentHTML('beforebegin', dropHTML);
+    const droppedElem = this.previousSibling;
+    addDnDEvents(droppedElem);
+    updateQueueNumbers();
+    formChanged = true; // Mark form as changed when items are reordered
+}
+this.classList.remove('over');
+return false;
 }
 
 function handleDragEnd(e) {
-    this.classList.remove('dragElem');
-    const items = associatedProducts.querySelectorAll('.info-item');
-    items.forEach(item => item.classList.remove('over'));
+this.classList.remove('dragElem');
+const items = associatedProducts.querySelectorAll('.info-item');
+items.forEach(item => item.classList.remove('over'));
 }
 
 // Global function to add drag and drop events
 function addDnDEvents(elem) {
-    elem.setAttribute('draggable', 'true');
-    elem.addEventListener('dragstart', handleDragStart, false);
-    elem.addEventListener('dragover', handleDragOver, false);
-    elem.addEventListener('dragleave', handleDragLeave, false);
-    elem.addEventListener('drop', handleDrop, false);
-    elem.addEventListener('dragend', handleDragEnd, false);
+elem.setAttribute('draggable', 'true');
+elem.addEventListener('dragstart', handleDragStart, false);
+elem.addEventListener('dragover', handleDragOver, false);
+elem.addEventListener('dragleave', handleDragLeave, false);
+elem.addEventListener('drop', handleDrop, false);
+elem.addEventListener('dragend', handleDragEnd, false);
 
-    // Restrict queue-input to 2 digits
-    const queueInput = elem.querySelector('.queue-input');
-    if (queueInput) {
-        queueInput.addEventListener('input', function() {
-            if (this.value.length > 2) {
-                this.value = this.value.slice(0, 2);
-            }
-            formChanged = true;
-        });
-        queueInput.addEventListener('keypress', function(e) {
-            if (this.value.length >= 2 && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-                e.preventDefault();
-            }
-        });
-    }
+// Restrict queue-input to 2 digits
+const queueInput = elem.querySelector('.queue-input');
+if (queueInput) {
+    queueInput.addEventListener('input', function() {
+        if (this.value.length > 2) {
+            this.value = this.value.slice(0, 2);
+        }
+        formChanged = true;
+    });
+    queueInput.addEventListener('keypress', function(e) {
+        if (this.value.length >= 2 && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+            e.preventDefault();
+        }
+    });
+}
 }
 
 // Update your addDnDEventsToNewItem function to use the global function
 function addDnDEventsToNewItem(elem) {
-    addDnDEvents(elem);
+addDnDEvents(elem);
 }
 
 // Update your loadCarouselData function to remove the local drag and drop functions
 async function loadCarouselData(data) {
-    headerCarouselCode.value = data.CODE || '';
-    headerCarouselName.value = data.NAME || '';
+headerCarouselCode.value = data.CODE || '';
+headerCarouselName.value = data.NAME || '';
 
-    // Populate device dropdown and set current device
-    await populateDeviceDropdown();
-    
-    // Set device selection - check if device data exists in current carousel data
-    if (data.DEVICE) {
-        // If carousel has a device assigned, add it to dropdown if not already there
-        const existingOption = deviceSelect.querySelector(`option[value="${data.DEVICE}"]`);
-        if (!existingOption && data.DEVICENAME) {
-            // Add the current device to dropdown (it's assigned but not in available devices)
-            const currentDeviceOption = document.createElement('option');
-            currentDeviceOption.value = data.DEVICE;
-            currentDeviceOption.textContent = `${data.DEVICENAME} (${data.DEVICECONNECTKEY})`;
-            deviceSelect.appendChild(currentDeviceOption);
-        }
-        deviceSelect.value = data.DEVICE;
-    } else {
-        deviceSelect.value = '';
+// Populate device dropdown and set current device
+await populateDeviceDropdown();
+
+// Set device selection - check if device data exists in current carousel data
+if (data.DEVICE) {
+    // If carousel has a device assigned, add it to dropdown if not already there
+    const existingOption = deviceSelect.querySelector(`option[value="${data.DEVICE}"]`);
+    if (!existingOption && data.DEVICENAME) {
+        // Add the current device to dropdown (it's assigned but not in available devices)
+        const currentDeviceOption = document.createElement('option');
+        currentDeviceOption.value = data.DEVICE;
+        currentDeviceOption.textContent = `${data.DEVICENAME} (${data.DEVICECONNECTKEY})`;
+        deviceSelect.appendChild(currentDeviceOption);
     }
-
-    // Populate other carousel and minigame settings
-    autoplayWaitInput.value = data.AUTOPLAYWAIT || 0;
-    speedInput.value = data.SPEED || 0;
-    gameCountInput.value = data.GAMECOUNT || 0;
-    revolutionsInput.value = data.REVOLUTIONS || 0;
-    spinDurationInput.value = data.SPINDURATION || 0;
-    onStopTimeInput.value = data.ONSTOPTIME || 0;
-    inactivityTimeInput.value = data.INACTIVITYTIME || 0;
-
-    // Highlight selected product in dropdown
-    updateDropdownSelection(data.ID);
-
-    // --- Associated Products ---
-    if (associatedProducts) {
-        associatedProducts.innerHTML = '<div class="no-data">Loading associated products...</div>';
-        try {
-            const productLines = await getProductLinesByCarousel(data.ID);
-            if (productLines && productLines.length > 0) {
-                associatedProducts.innerHTML = '';
-
-                productLines.forEach((product, idx) => {
-                    const div = document.createElement('div');
-                    div.className = 'info-item';
-                    div.setAttribute('draggable', 'true');
-                    div.innerHTML = `
-                        <span class="product-info" style="cursor:pointer; text-decoration:underline; color:#007bff;">${product.PRODUCTCODE} - ${product.PRODUCTNAME}</span>
-                        <div style="display: flex; align-items: center; margin-left: auto;">
-                            <input type="number" class="queue-input" value="${(idx + 1).toString().padStart(2, '0')}" min="0" max="99" style="width:2.5em; margin-right:10px;" title="Queue">
-                            <button class="delete-product-btn" title="Remove Product" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:#dc3545;">✕</button>
-                        </div>
-                    `;
-                    
-                    // Add click handler for navigation only on the text
-                    const productInfo = div.querySelector('.product-info');
-                    productInfo.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        window.location.href = `product.html?id=${product.PRODUCTID}&type=All&maker=All`;
-                    });
-                    
-                    // Add delete handler
-                    const deleteBtn = div.querySelector('.delete-product-btn');
-                    deleteBtn.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        if (confirm('Remove this product from the carousel?')) {
-                            div.remove();
-                            updateQueueNumbers();
-                            formChanged = true;
-                        }
-                    });
-                    
-                    addDnDEvents(div);
-                    associatedProducts.appendChild(div);
-                });
-
-                updateQueueNumbers();
-            } else {
-                associatedProducts.innerHTML = '<div class="no-data">No associated products found</div>';
-            }
-        } catch (err) {
-            associatedProducts.innerHTML = '<div class="no-data">Failed to load associated products</div>';
-        }
-    }
-
-    // --- Associated Promos ---
-    if (associatedPromos) {
-        associatedPromos.innerHTML = '<div class="no-data">Loading associated promos...</div>';
-        try {
-            const promoLines = await getPromoLinesByCarousel(data.ID);
-            if (promoLines && promoLines.length > 0) {
-                associatedPromos.innerHTML = '';
-
-                promoLines.forEach((promo, idx) => {
-                    const div = document.createElement('div');
-                    div.className = 'info-item';
-                    div.innerHTML = `
-                        <span class="product-info" style="cursor:pointer; text-decoration:underline; color:#007bff;">${promo.PROMOCODE} - ${promo.PRODUCTNAME || 'Unknown Product'} (-${promo.DISCOUNT * 100}%)</span>
-                        <div style="display: flex; align-items: center; margin-left: auto;">
-                            <input type="number" class="chance-input" value="${promo.CHANCE *100 || 0}" min="0" max="100" style="width:3em; margin-right:5px;" title="Chance %">
-                            <span style="margin-right:10px;">%</span>
-                            <button class="delete-promo-btn" title="Remove Promo" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:#dc3545;">✕</button>
-                        </div>
-                    `;
-                    
-                    // Add click handler for navigation only on the text
-                    const productInfo = div.querySelector('.product-info');
-                    productInfo.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        window.location.href = `promo.html?id=${promo.PROMOID}&type=All&maker=All`;
-                    });
-                    
-                    // Add delete handler
-                    const deleteBtn = div.querySelector('.delete-promo-btn');
-                    deleteBtn.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        if (confirm('Remove this promo from the carousel?')) {
-                            div.remove();
-                            redistributePromoChances();
-                            formChanged = true;
-                        }
-                    });
-
-                    // Add chance input event listeners
-                    const chanceInput = div.querySelector('.chance-input');
-                    if (chanceInput) {
-                        addChanceInputEvents(chanceInput);
-                    }
-                    
-                    associatedPromos.appendChild(div);
-                });
-
-                updatePromoChanceTotal();
-            } else {
-                associatedPromos.innerHTML = '<div class="no-data">No associated promos found</div>';
-            }
-        } catch (err) {
-            associatedPromos.innerHTML = '<div class="no-data">Failed to load associated promos</div>';
-        }
-    }
-
-    currentCarouselId = data.ID;
-    formChanged = false;
-    updateNavigationState();
+    deviceSelect.value = data.DEVICE;
+} else {
+    deviceSelect.value = '';
 }
-    // #endregion
-    // #region CAROUSEL FUNCTIONS
-    
 
-    function updateDropdownSelection(carouselID) {
-        // Remove previous selection
-        const previouslySelected = productDropdown.querySelector('.product-option.selected');
-        if (previouslySelected) {
-            previouslySelected.classList.remove('selected');
-        }
-        
-        // Add selection to current product
-        const currentOption = productDropdown.querySelector(`[data-product-id="${carouselID}"]`);
-        if (currentOption) {
-            currentOption.classList.add('selected');
-        }
-    }
+// Populate other carousel and minigame settings
+autoplayWaitInput.value = data.AUTOPLAYWAIT || 0;
+speedInput.value = data.SPEED || 0;
+gameCountInput.value = data.GAMECOUNT || 0;
+revolutionsInput.value = data.REVOLUTIONS || 0;
+spinDurationInput.value = data.SPINDURATION || 0;
+onStopTimeInput.value = data.ONSTOPTIME || 0;
+inactivityTimeInput.value = data.INACTIVITYTIME || 0;
 
+// Highlight selected product in dropdown
+updateDropdownSelection(data.ID);
 
+// --- Associated Products ---
+if (associatedProducts) {
+    associatedProducts.innerHTML = '<div class="no-data">Loading associated products...</div>';
+    try {
+        const productLines = await getProductLinesByCarousel(data.ID);
+        if (productLines && productLines.length > 0) {
+            associatedProducts.innerHTML = '';
 
-    function createNewCarousel() {
-        // Header fields
-        if (headerCarouselCode) headerCarouselCode.value = "";
-        if (headerCarouselName) headerCarouselName.value = "";
-
-        // Carousel settings - set device to "null" to match the default option value
-        if (deviceSelect) deviceSelect.value = "null"; // Changed from "" to "null"
-        if (autoplayWaitInput) autoplayWaitInput.value = "0";
-        if (speedInput) speedInput.value = "0";
-        if (gameCountInput) gameCountInput.value = "0";
-
-        // Minigame settings
-        if (revolutionsInput) revolutionsInput.value = "0";
-        if (spinDurationInput) spinDurationInput.value = "0";
-        if (onStopTimeInput) onStopTimeInput.value = "0";
-        if (inactivityTimeInput) inactivityTimeInput.value = "0";
-
-        // Associated lists
-        if (associatedProducts) associatedProducts.innerHTML = '<div class="no-data">No associated products found</div>';
-        if (associatedPromos) associatedPromos.innerHTML = '<div class="no-data">No associated promos found</div>';
-
-        // Clear any promo chance total display
-        const totalDisplay = document.getElementById('promoChanceTotal');
-        if (totalDisplay) {
-            totalDisplay.remove();
-        }
-
-        // Reset navigation and state
-        currentCarouselId = 'new';
-        updateNavigationState();
-        formChanged = false; // Reset form changed state
-        
-        // Focus first field
-        if (headerCarouselCode) headerCarouselCode.focus();
-    }
-
-    // Update the populateDeviceDropdown function
-    async function populateDeviceDropdown() {
-        try {
-            const response = await fetch('http://localhost:3000/api/getAllDevices');
-            if (!response.ok) throw new Error('Failed to fetch devices');
-            const devices = await response.json();
-            deviceSelect.innerHTML = '<option value=null>-- No device selected --</option>';
-            devices.forEach(device => {
-                const option = document.createElement('option');
-                option.value = device.DEVICE;
-                option.textContent = `${device.NAME} (${device.CONNECTKEY})`;
-                deviceSelect.appendChild(option);
+            productLines.forEach((product, idx) => {
+                const div = document.createElement('div');
+                div.className = 'info-item';
+                div.setAttribute('draggable', 'true');
+                div.innerHTML = `
+                    <span class="product-info" style="cursor:pointer; text-decoration:underline; color:#007bff;">${product.PRODUCTCODE} - ${product.PRODUCTNAME}</span>
+                    <div style="display: flex; align-items: center; margin-left: auto;">
+                        <input type="number" class="queue-input" value="${(idx + 1).toString().padStart(2, '0')}" min="0" max="99" style="width:2.5em; margin-right:10px;" title="Queue">
+                        <button class="delete-product-btn" title="Remove Product" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:#dc3545;">✕</button>
+                    </div>
+                `;
+                
+                // Add click handler for navigation only on the text
+                const productInfo = div.querySelector('.product-info');
+                productInfo.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    window.location.href = `product.html?id=${product.PRODUCTID}&type=All&maker=All`;
+                });
+                
+                // Add delete handler
+                const deleteBtn = div.querySelector('.delete-product-btn');
+                deleteBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    if (confirm('Remove this product from the carousel?')) {
+                        div.remove();
+                        updateQueueNumbers();
+                        formChanged = true;
+                    }
+                });
+                
+                addDnDEvents(div);
+                associatedProducts.appendChild(div);
             });
-        } catch (error) {
-            console.error('Error populating devices:', error);
-            deviceSelect.innerHTML = '<option value="">Error loading devices</option>';
-        }
-    }
 
-    // #endregion
-    // #region NAVIGATION FUNCTIONS
-    function handleNavigation(direction) {// Handle navigation with unsaved changes check
-        if (formChanged) {
-            pendingNavigationDirection = direction;
-            showUnsavedChangesModal();
+            updateQueueNumbers();
         } else {
-            navigateProduct(direction);
+            associatedProducts.innerHTML = '<div class="no-data">No associated products found</div>';
         }
+    } catch (err) {
+        associatedProducts.innerHTML = '<div class="no-data">Failed to load associated products</div>';
     }
+}
 
-    async function navigateProduct(direction) {
-        try {
-            const currentIndex = carousels.findIndex(p => p.ID === currentCarouselId);
-            if (currentIndex === -1) {
-                console.error('Current promo not found in dataset');
-                return;
-            }
+// --- Associated Promos ---
+if (associatedPromos) {
+    associatedPromos.innerHTML = '<div class="no-data">Loading associated promos...</div>';
+    try {
+        const promoLines = await getPromoLinesByCarousel(data.ID);
+        if (promoLines && promoLines.length > 0) {
+            associatedPromos.innerHTML = '';
 
-            let targetProduct = null;
-            
-            if (direction === 'next') {
-                targetProduct = carousels[currentIndex + 1];
-            } else if (direction === 'prev') {
-                targetProduct = carousels[currentIndex - 1];
-            }
+            promoLines.forEach((promo, idx) => {
+                const div = document.createElement('div');
+                div.className = 'info-item';
+                div.innerHTML = `
+                    <span class="product-info" style="cursor:pointer; text-decoration:underline; color:#007bff;">${promo.PROMOCODE} - ${promo.PRODUCTNAME || 'Unknown Product'} (-${promo.DISCOUNT * 100}%)</span>
+                    <div style="display: flex; align-items: center; margin-left: auto;">
+                        <input type="number" class="chance-input" value="${promo.CHANCE *100 || 0}" min="0" max="100" style="width:3em; margin-right:5px;" title="Chance %">
+                        <span style="margin-right:10px;">%</span>
+                        <button class="delete-promo-btn" title="Remove Promo" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:#dc3545;">✕</button>
+                    </div>
+                `;
+                
+                // Add click handler for navigation only on the text
+                const productInfo = div.querySelector('.product-info');
+                productInfo.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    window.location.href = `promo.html?id=${promo.PROMOID}&type=All&maker=All`;
+                });
+                
+                // Add delete handler
+                const deleteBtn = div.querySelector('.delete-promo-btn');
+                deleteBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    if (confirm('Remove this promo from the carousel?')) {
+                        div.remove();
+                        redistributePromoChances();
+                        formChanged = true;
+                    }
+                });
 
-            if (targetProduct) {
-                loadCarouselData(targetProduct);
-                const params = new URLSearchParams(window.location.search);
-                params.set('id', targetProduct.ID);
-                const newUrl = `${window.location.pathname}?${params.toString()}`;
-                window.history.pushState({}, '', newUrl);
-            }
-        } catch (error) {
-            console.error('Navigation error:', error);
-            showWarningModal('Failed to navigate between carousels');
+                // Add chance input event listeners
+                const chanceInput = div.querySelector('.chance-input');
+                if (chanceInput) {
+                    addChanceInputEvents(chanceInput);
+                }
+                
+                associatedPromos.appendChild(div);
+            });
+
+            updatePromoChanceTotal();
+        } else {
+            associatedPromos.innerHTML = '<div class="no-data">No associated promos found</div>';
         }
+    } catch (err) {
+        associatedPromos.innerHTML = '<div class="no-data">Failed to load associated promos</div>';
     }
+}
 
-    function updateNavigationState() {
-        if (carouselId === 'new') {
-            sidePrevBtn.style.display = 'none';
-            sideNextBtn.style.display = 'none';
-            return; // Exit early
-        }
+currentCarouselId = data.ID;
+formChanged = false;
+updateNavigationState();
+}
+// #endregion
+// #region CAROUSEL FUNCTIONS
+
+
+function updateDropdownSelection(carouselID) {
+    // Remove previous selection
+    // const previouslySelected = productDropdown.querySelector('.product-option.selected');
+    // if (previouslySelected) {
+    //     previouslySelected.classList.remove('selected');
+    // }
     
-        sidePrevBtn.style.display = 'flex';
-        sideNextBtn.style.display = 'flex';
+    // Add selection to current product
+    // const currentOption = productDropdown.querySelector(`[data-product-id="${carouselID}"]`);
+    // if (currentOption) {
+    //     currentOption.classList.add('selected');
+    // }
+}
 
+
+
+function createNewCarousel() {
+    // Header fields
+    if (headerCarouselCode) headerCarouselCode.value = "";
+    if (headerCarouselName) headerCarouselName.value = "";
+
+    // Carousel settings - set device to "null" to match the default option value
+    if (deviceSelect) deviceSelect.value = "null"; // Changed from "" to "null"
+    if (autoplayWaitInput) autoplayWaitInput.value = "0";
+    if (speedInput) speedInput.value = "0";
+    if (gameCountInput) gameCountInput.value = "0";
+
+    // Minigame settings
+    if (revolutionsInput) revolutionsInput.value = "0";
+    if (spinDurationInput) spinDurationInput.value = "0";
+    if (onStopTimeInput) onStopTimeInput.value = "0";
+    if (inactivityTimeInput) inactivityTimeInput.value = "0";
+
+    // Associated lists
+    if (associatedProducts) associatedProducts.innerHTML = '<div class="no-data">No associated products found</div>';
+    if (associatedPromos) associatedPromos.innerHTML = '<div class="no-data">No associated promos found</div>';
+
+    // Clear any promo chance total display
+    const totalDisplay = document.getElementById('promoChanceTotal');
+    if (totalDisplay) {
+        totalDisplay.remove();
+    }
+
+    // Reset navigation and state
+    currentCarouselId = 'new';
+    updateNavigationState();
+    formChanged = false; // Reset form changed state
+    
+    // Focus first field
+    if (headerCarouselCode) headerCarouselCode.focus();
+}
+
+// Update the populateDeviceDropdown function
+async function populateDeviceDropdown() {
+    try {
+        const response = await fetch('http://localhost:3000/api/getAllDevices');
+        if (!response.ok) throw new Error('Failed to fetch devices');
+        const devices = await response.json();
+        deviceSelect.innerHTML = '<option value=null>-- No device selected --</option>';
+        devices.forEach(device => {
+            const option = document.createElement('option');
+            option.value = device.DEVICE;
+            option.textContent = `${device.NAME} (${device.CONNECTKEY})`;
+            deviceSelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error populating devices:', error);
+        deviceSelect.innerHTML = '<option value="">Error loading devices</option>';
+    }
+}
+
+// #endregion
+// #region NAVIGATION FUNCTIONS
+function handleNavigation(direction) {// Handle navigation with unsaved changes check
+    if (formChanged) {
+        pendingNavigationDirection = direction;
+        showUnsavedChangesModal();
+    } else {
+        navigateProduct(direction);
+    }
+}
+
+async function navigateProduct(direction) {
+    try {
         const currentIndex = carousels.findIndex(p => p.ID === currentCarouselId);
+        if (currentIndex === -1) {
+            console.error('Current promo not found in dataset');
+            return;
+        }
 
-        sidePrevBtn.disabled = currentIndex <= 0;
-        sideNextBtn.disabled = currentIndex >= carousels.length - 1;
+        let targetProduct = null;
         
-        sidePrevBtn.style.opacity = sidePrevBtn.disabled ? '0.5' : '1';
-        sideNextBtn.style.opacity = sideNextBtn.disabled ? '0.5' : '1';
+        if (direction === 'next') {
+            targetProduct = carousels[currentIndex + 1];
+        } else if (direction === 'prev') {
+            targetProduct = carousels[currentIndex - 1];
+        }
+
+        if (targetProduct) {
+            loadCarouselData(targetProduct);
+            const params = new URLSearchParams(window.location.search);
+            params.set('id', targetProduct.ID);
+            const newUrl = `${window.location.pathname}?${params.toString()}`;
+            window.history.pushState({}, '', newUrl);
+        }
+    } catch (error) {
+        console.error('Navigation error:', error);
+        showWarningModal('Failed to navigate between carousels');
+    }
+}
+
+function updateNavigationState() {
+    if (carouselId === 'new') {
+        sidePrevBtn.style.display = 'none';
+        sideNextBtn.style.display = 'none';
+        return; // Exit early
     }
 
-    // #endregion
-    // #region MODAL FUNCTIONS
-    function showWarningModal(message) {
-        const warningModal = document.getElementById('warningModal');
-        const warningMessage = document.getElementById('warningMessage');
-        warningMessage.textContent = message;
-        warningModal.style.display = 'flex';
-    }
+    sidePrevBtn.style.display = 'flex';
+    sideNextBtn.style.display = 'flex';
 
-    function showConfirmation() {// Update showConfirmation function to ensure modal is visible
-        const saveConfirmation = document.getElementById('saveConfirmation');
-        saveConfirmation.style.display = 'flex';
+    const currentIndex = carousels.findIndex(p => p.ID === currentCarouselId);
 
-        setTimeout(() => {// Auto-hide after 2 seconds
-            saveConfirmation.style.display = 'none';
-        }, 2000);
-    }
+    sidePrevBtn.disabled = currentIndex <= 0;
+    sideNextBtn.disabled = currentIndex >= carousels.length - 1;
     
-    function showUnsavedChangesModal() {
-        unsavedChangesModal.style.display = 'flex';
-    }
-    // #endregion
-    // #endregion
+    sidePrevBtn.style.opacity = sidePrevBtn.disabled ? '0.5' : '1';
+    sideNextBtn.style.opacity = sideNextBtn.disabled ? '0.5' : '1';
+}
+
+// #endregion
+// #region MODAL FUNCTIONS
+function showWarningModal(message) {
+    const warningModal = document.getElementById('warningModal');
+    const warningMessage = document.getElementById('warningMessage');
+    warningMessage.textContent = message;
+    warningModal.style.display = 'flex';
+}
+
+function showConfirmation() {// Update showConfirmation function to ensure modal is visible
+    const saveConfirmation = document.getElementById('saveConfirmation');
+    saveConfirmation.style.display = 'flex';
+
+    setTimeout(() => {// Auto-hide after 2 seconds
+        saveConfirmation.style.display = 'none';
+    }, 2000);
+}
+
+function showUnsavedChangesModal() {
+    unsavedChangesModal.style.display = 'flex';
+}
+// #endregion
+// #endregion
 
 // Add this function after your other helper functions
 function updateQueueNumbers() {

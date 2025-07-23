@@ -72,7 +72,7 @@ import { fetchFilteredProducts, fetchFilteredPromos, getAssociatedCarouselForPro
     // #endregion
 
 document.addEventListener('DOMContentLoaded', async () => {
-    allProducts = await fetchFilteredProducts('All', 'All');
+
     promos = await fetchFilteredPromos(selectedType, selectedMaker);
     
     if (promoID && promoID !== 'new') {
@@ -89,6 +89,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         loadPromoData(promoData);
     } else if (promoID === 'new') {
         createNewPromo();
+        allProducts = await fetchFilteredProducts('All', 'All');
     } else {
         showWarningModal('Promo not found');
     }
