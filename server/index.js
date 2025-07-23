@@ -656,15 +656,12 @@ app.put('/api/updateProductLines/:id', async (req, res) => {
     }
 });
 
-app.delete('/api/deleteProductLines/:carousel/:product/:queue', async (req, res) => {
+app.delete('/api/deleteProductLines/:productLinesId', async (req, res) => {
     try {
-        const carousel = req.params.carousel;
-        const product = req.params.product;
-        const queue = req.params.queue;
+        const productLinesId = req.params.productLinesId;
+        await pool.query('CALL DeleteProductlines(?)', [productLinesId]);
         
-        await pool.query('CALL DeleteProductlines(?, ?, ?)', [carousel, product, queue]);
-        
-        console.log(`Deleted product lines: carousel=${carousel}, product=${product}, queue=${queue}`);
+        console.log(`Deleted product lines with ID: ${productLinesId}`);
         res.json({ success: true });
     } catch (error) {
         console.error('Error deleting product lines:', error);

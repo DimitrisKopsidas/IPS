@@ -1,8 +1,8 @@
 import {fillDropdown, getItemCardHtml} from "./common.js";
 import { fetchFilteredProducts, fetchFilteredPromos, fetchFilteredCarousels,
-    updatePromoLines, insertPromoLines, deletePromoLines, getAllDevices, 
+    insertPromoLines, deletePromoLines, getAllDevices, 
     getProductLinesByCarousel, getPromoLinesByCarousel,
-    updateProductLines, insertProductLines, deleteProductLines,
+    insertProductLines, deleteProductLines, fetchNextCarouselId, 
     DeleteCarouselAndMinigame, UpdateCarouselAndMinigame, InsertCarouselAndMinigame } from './dbService.js';
 
 // #region VARIABLE DECLARATION
@@ -73,8 +73,8 @@ import { fetchFilteredProducts, fetchFilteredPromos, fetchFilteredCarousels,
     let carousels = [];
     let productlines = [];
     let promolines = [];
-    let carouselPreviewURL;
-    let minigamePreviewURL;
+    let nextCarouselId;
+    
     // #endregion
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -82,6 +82,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     promos = await fetchFilteredPromos('All', 'All');
     carousels = await fetchFilteredCarousels(true);
     await populateDeviceDropdown();
+    nextCarouselId = await fetchNextCarouselId();
 
     const data = carousels.find(p => p.ID.toString() === carouselId);
     
@@ -682,7 +683,7 @@ async function loadCarouselData(data) {
                     const div = document.createElement('div');
                     div.className = 'info-item';
                     div.innerHTML = `
-                        <span class="product-info" style="cursor:pointer; text-decoration:underline; color:#007bff;">${promo.PROMOCODE} - ${promo.PRODUCTNAME || 'Unknown Product'}</span>
+                        <span class="product-info" style="cursor:pointer; text-decoration:underline; color:#007bff;">${promo.PROMOCODE} - ${promo.PRODUCTNAME || 'Unknown Product'} (-${promo.DISCOUNT * 100}%)</span>
                         <div style="display: flex; align-items: center; margin-left: auto;">
                             <input type="number" class="chance-input" value="${promo.CHANCE *100 || 0}" min="0" max="100" style="width:3em; margin-right:5px;" title="Chance %">
                             <span style="margin-right:10px;">%</span>
@@ -755,8 +756,8 @@ async function loadCarouselData(data) {
         if (headerCarouselCode) headerCarouselCode.value = "";
         if (headerCarouselName) headerCarouselName.value = "";
 
-        // Carousel settings
-        if (deviceSelect) deviceSelect.value = "";
+        // Carousel settings - set device to "null" to match the default option value
+        if (deviceSelect) deviceSelect.value = "null"; // Changed from "" to "null"
         if (autoplayWaitInput) autoplayWaitInput.value = "0";
         if (speedInput) speedInput.value = "0";
         if (gameCountInput) gameCountInput.value = "0";
@@ -1094,10 +1095,6 @@ async function saveCarouselData() {
             throw new Error('Carousel Name is required');
         }
 
-        if (!deviceSelect.value || deviceSelect.value === 'null' || deviceSelect.value === '') {
-            throw new Error('Device selection is required');
-        }
-
         // Validate numeric settings
         const code = parseInt(headerCarouselCode.value);
         const autoplayWait = parseInt(autoplayWaitInput.value);
@@ -1166,6 +1163,8 @@ async function saveCarouselData() {
 
         // Determine if we're creating new or updating existing
         let result;
+        let savedCarouselId;
+        
         if (currentCarouselId === 'new') {
             // Create new carousel
             result = await InsertCarouselAndMinigame(carouselData);
@@ -1174,8 +1173,10 @@ async function saveCarouselData() {
                 throw new Error(result.error || 'Failed to create carousel');
             }
 
-            // Update current ID and add to carousels array
+            savedCarouselId = result.carouselId;
             currentCarouselId = result.carouselId;
+            
+            // Update current ID and add to carousels array
             const newCarousel = {
                 ID: result.carouselId,
                 CODE: carouselData.code,
@@ -1200,6 +1201,7 @@ async function saveCarouselData() {
         } else {
             // Update existing carousel
             carouselData.id = currentCarouselId;
+            savedCarouselId = currentCarouselId;
             
             result = await UpdateCarouselAndMinigame(carouselData);
             
@@ -1227,11 +1229,101 @@ async function saveCarouselData() {
             }
         }
 
+        console.log('Carousel saved successfully, now saving associated items for carousel ID:', savedCarouselId);
+
+        // ASSOCIATED -------------------------------------------------------------------------------------------
+        try {
+            // 1. Delete all existing product lines for this carousel
+            const existingProductLines = await getProductLinesByCarousel(savedCarouselId);
+
+            for (const productLine of existingProductLines) {
+                await deleteProductLines(productLine.ID); // Use ID instead of PRODUCTLINES
+                console.log(`PRODUCTLINE ID IS ->  ${productLine.ID}`);
+            }
+
+            // 2. Insert current product lines
+            const currentProductItems = associatedProducts.querySelectorAll('.info-item');
+            for (const item of currentProductItems) {
+                const productInfo = item.querySelector('.product-info').textContent;
+                const queueInput = item.querySelector('.queue-input');
+                
+                // Extract product code from the text (format: "CODE - NAME")
+                const productCode = productInfo.split(' - ')[0];
+                
+                // Find the product in our products array to get the ID
+                const product = products.find(p => p.CODE.toString() === productCode);
+                if (product && carouselId !== 'new') {
+                    await insertProductLines({
+                        product: product.ID,
+                        carousel: savedCarouselId,
+                        queue: parseInt(queueInput.value)
+                    });
+                }else if (product && carouselId === 'new') {
+                    await insertProductLines({
+                        product: product.ID,
+                        carousel: nextCarouselId,
+                        queue: parseInt(queueInput.value)
+                    });
+                    console.log(`Inserted product line: Product ${product.ID}, Carousel ${nextCarouselId}, Queue ${queueInput.value}`);
+                }
+            }
+            } catch (associatedError) {
+            console.warn('Error saving associated products:', associatedError);
+            // Don't throw here - carousel was saved successfully
+            showWarningModal('Carousel saved but there was an issue saving associated products. Please refresh and try again.');
+            }   
+
+
+
+        try{
+            // 3. Delete all existing promo lines for this carousel
+            const existingPromoLines = await getPromoLinesByCarousel(savedCarouselId);
+            for (const promoLine of existingPromoLines) {
+                await deletePromoLines(promoLine.ID); // Use ID instead of PROMOLINES
+                console.log(`PROMOLINE ID IS ->  ${promoLine.ID}`);
+            }
+
+            // 4. Insert current promo lines
+            const currentPromoItems = associatedPromos.querySelectorAll('.info-item');
+            for (const item of currentPromoItems) {
+                const promoInfo = item.querySelector('.product-info').textContent;
+                const chanceInput = item.querySelector('.chance-input');
+                
+                // Extract promo code from the text (format: "CODE - NAME")
+                const promoCode = promoInfo.split(' - ')[0];
+                
+                // Find the promo in our promos array to get the ID
+                const promo = promos.find(p => p.CODE.toString() === promoCode);
+                if (promo && carouselId !== 'new') {
+                    await insertPromoLines({
+                        promo: promo.ID,
+                        minigame: savedCarouselId,
+                        chance: parseFloat(chanceInput.value) / 100 // Convert percentage to decimal
+                    });
+                    console.log(`Inserted promo line: Promo ${promo.ID}, Minigame ${savedCarouselId}, Chance ${chanceInput.value}%`);
+                }else if (promo && carouselId === 'new') {
+                    await insertPromoLines({
+                        promo: promo.ID,
+                        minigame: nextCarouselId,
+                        chance: parseFloat(chanceInput.value) / 100 // Convert percentage to decimal
+                    });
+                    console.log(`Inserted promo line: Promo ${promo.ID}, Minigame ${nextCarouselId}, Chance ${chanceInput.value}%`);
+                }
+            }
+
+            console.log('Successfully saved all associated products and promos');
+
+        } catch (associatedError) {
+            console.warn('Error saving associated promos:', associatedError);
+            // Don't throw here - carousel was saved successfully
+            showWarningModal('Carousel saved but there was an issue saving associated promos. Please refresh and try again.');
+        }
+
         validForInsert = true;
         formChanged = false;
         updateNavigationState();
         
-        console.log('Carousel saved successfully with state:', currentState);
+        console.log('Carousel and associated items saved successfully with state:', currentState);
         
     } catch (error) {
         console.error('Error saving carousel:', error);

@@ -70,6 +70,9 @@ export function getItemCardHtml(choice, item, date) {
                                     ${item.DEVICE ? '🖥️' : '❌'} Device: ${item.DEVICE || 'Not Assigned'}
                                 </span>
                             </div>
+                            <!--<div class="carousel-stats">
+                                <p class="product-note">${item.NOTES}</p>
+                            </div>-->
                         </div>
                     </div>
                 </div>`;

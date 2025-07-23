@@ -688,10 +688,10 @@ async function updateProductLines(productLinesData) {
     }
 }
 
-async function deleteProductLines(productLinesData) {
+async function deleteProductLines(productLinesId) {
     try {
-        console.log('Deleting product lines:', productLinesData);
-        const response = await fetch(`http://localhost:3000/api/deleteProductLines/${productLinesData.carousel}/${productLinesData.product}/${productLinesData.queue}`, {
+        console.log('Deleting product lines:', productLinesId);
+        const response = await fetch(`http://localhost:3000/api/deleteProductLines/${productLinesId}`, {
             method: 'DELETE'
         });
         

@@ -1,6 +1,6 @@
 import {fillDropdown, getItemCardHtml} from "./common.js";
 import { fetchFilteredProducts, fetchFilteredPromos, getAssociatedCarouselForPromo, 
-    getIssuedCount, updatePromo, insertPromo, deletePromo } from './dbService.js';
+    getIssuedCount, updatePromo, insertPromo, deletePromo, } from './dbService.js';
 
 // #region VARIABLE DECLARATION
     // Form references
@@ -705,9 +705,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         totalIssued = 0;
         associatedCarousels = [];
     }
-
-    
-
     // #endregion
     // #region NAVIGATION FUNCTIONS
     function handleNavigation(direction) {// Handle navigation with unsaved changes check
