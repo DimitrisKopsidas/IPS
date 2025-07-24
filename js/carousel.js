@@ -1069,8 +1069,16 @@ function updatePromoChanceTotalDisplay(total) {
     }
 }
 
-// Update the saveCarouselData function to convert seconds to milliseconds for database
+// Update the saveCarouselData function to validate associated products
 async function saveCarouselData() {
+    // Validate that at least one product is associated
+    const productItems = associatedProducts.querySelectorAll('.info-item');
+    if (productItems.length === 0 || associatedProducts.querySelector('.no-data')) {
+        showWarningModal('At least one associated product must be selected before saving.');
+        validForInsert = false;
+        return;
+    }
+
     // Validate promo chances
     const items = associatedPromos.querySelectorAll('.info-item');
     if (items.length > 0) {
