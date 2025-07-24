@@ -11,8 +11,10 @@ const applyCodeBtn = document.getElementById('applyCodeBtn');
 const verificationModal = document.getElementById('verificationModal');
 let issueDate;
 let expiryDate;
-let formattedDate;
+let formatedIssueDate;
+let formatedExpiryDate;
 let promoCode;
+let promoData;
 // #endregion VARIABLE DECLARATION
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -34,16 +36,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function verifyPromoCode(promoCode) {// PROMO CHECK
     try {
         const status = await getPromoStatus(promoCode);
+        if (status !== 0) {
+            promoData = await getPromoData(promoCode);
+            issueDate = new Date(promoData.ISSUEDATE);
+            expiryDate = new Date(issueDate.getTime() + (promoData.DAYSTOLIVE * 24 * 60 * 60 * 1000));
+            formatedExpiryDate = formatDate(expiryDate);
+            formatedIssueDate = formatDate(issueDate);
+        }
         
         switch (status) {
             case 0:
                 showError('This promo code does not exist');
                 break;
             case 1:
-                const promoData = await getPromoData(promoCode);
-                issueDate = new Date(promoData.ISSUEDATE);
-                expiryDate = new Date(issueDate.getTime() + (promoData.DAYSTOLIVE * 24 * 60 * 60 * 1000));
-                formattedDate = formatDate(expiryDate);
                 if (promoData) {
                     showSuccess(promoData, promoCode);
                 } else {
@@ -51,10 +56,10 @@ async function verifyPromoCode(promoCode) {// PROMO CHECK
                 }
                 break;
             case 2:
-                showError('This promo code has expired');
+                showError('This promo code expired on ' + formatedExpiryDate);
                 break;
             case 3:
-                showError('This promo code has already been redeemed');
+                showError('This promo code has already been redeemed on ' + formatedExpiryDate);
                 break;
             default:
                 showError('Error checking promo code');
@@ -66,19 +71,24 @@ async function verifyPromoCode(promoCode) {// PROMO CHECK
 }
 
 function showSuccess(promoData) {// DISPLAY INFO ON SUCCESS
+    // Reset button state for new promo code
+    applyCodeBtn.style.display = 'block';
+    applyCodeBtn.disabled = false;
+    applyCodeBtn.textContent = 'Apply to Cart';
+
     applyCodeBtn.style.display = 'block';
     statusIcon.className = 'status-icon success';
     statusIcon.innerHTML = '✓';
     resultMessage.textContent = 'Valid Promo Code!';
     
     if (promoData.PRODUCT) {
-        discountDetails.innerHTML = getItemCardHtml("promoProduct", promoData, formattedDate);
+        discountDetails.innerHTML = getItemCardHtml("promoProduct", promoData, formatedExpiryDate, formatedIssueDate);
     } else if (promoData.TYPE && promoData.MAKER) {
-        discountDetails.innerHTML = getItemCardHtml("promoTypeMaker", promoData, formattedDate);
+        discountDetails.innerHTML = getItemCardHtml("promoTypeMaker", promoData, formatedExpiryDate, formatedIssueDate);
     } else if (promoData.TYPE) {
-        discountDetails.innerHTML = getItemCardHtml("promoType", promoData, formattedDate);
+        discountDetails.innerHTML = getItemCardHtml("promoType", promoData, formatedExpiryDate, formatedIssueDate);
     } else if (promoData.MAKER) {
-        discountDetails.innerHTML = getItemCardHtml("promoMaker", promoData, formattedDate);
+        discountDetails.innerHTML = getItemCardHtml("promoMaker", promoData, formatedExpiryDate, formatedIssueDate);
     }
 
     applyPromoCode();
@@ -122,7 +132,14 @@ function showError(message) {
 }
 
 function formatDate(date) {
-    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    const options = { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric', 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        hour12: false 
+    };
     return date.toLocaleDateString('en-GB', options);
 }
 

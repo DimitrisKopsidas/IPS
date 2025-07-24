@@ -32,7 +32,7 @@ export function initiateHotkeys(onDirection){
     });
 }
 
-export function getItemCardHtml(choice, item, date) {
+export function getItemCardHtml(choice, item, date, date2) {
     if (choice === "product") {
         return `<div class="product-layout">
                     <div class="product-image">
@@ -87,8 +87,8 @@ export function getItemCardHtml(choice, item, date) {
                        data-original-name="${item.NAME}">
                 <button class="groups-btn-delete-item" title="Delete group">🗑️</button>`;
     } else if (choice === "promoProduct") {
-        return `<p><strong>${item.DISCOUNT * 100}% Discount</strong></p>
-        <p>${item.PRODUCT}</p>
+        return `<p><strong>${item.DISCOUNT * 100}%</strong> discount for <strong>${item.PRODUCT}</strong></p>
+        <p>Created on ${date2}</p>
         <p>Valid until ${date}</p>`;
     } else if (choice === "promoTypeMaker") {
         return `<p><strong>${promoData.DISCOUNT * 100}% Discount</strong></p>
