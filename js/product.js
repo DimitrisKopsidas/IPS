@@ -430,6 +430,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
+        // Store current selected values before adding new group
+        const currentTypeValue = productType.value;
+        const currentMakerValue = productMaker.value;
+
         const newGroup = {
             ID: null, 
             CODE: parseInt(code),
@@ -456,10 +460,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('newGroupCode').value = '';
         document.getElementById('newGroupName').value = '';
 
-        if (currentModalType === 'types') {
-            fillDropdown(types, productType);
-        } else {
-            fillDropdown(makers, productMaker);
+        // Repopulate dropdowns and restore previous values
+        populateGroupFilters(makers, types);
+        
+        // Restore previous values for both dropdowns
+        if (currentTypeValue) {
+            productType.value = currentTypeValue;
+            const selectedType = types.find(t => t.NAME === currentTypeValue);
+            if (selectedType) {
+                groupCodeInput.value = selectedType.CODE;
+            }
+        }
+        if (currentMakerValue) {
+            productMaker.value = currentMakerValue;
+            const selectedMaker = makers.find(m => m.NAME === currentMakerValue);
+            if (selectedMaker) {
+                makerCodeInput.value = selectedMaker.CODE;
+            }
         }
 
         attachDeleteHandlers();
@@ -778,8 +795,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function attachDeleteHandlers() {
+        // Remove existing event listeners first to prevent duplicates
+        document.querySelectorAll('.groups-btn-delete-item').forEach(btn => {
+            // Clone the node to remove all event listeners
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+        });
+        
+        // Now attach fresh event listeners
         document.querySelectorAll('.groups-btn-delete-item').forEach((btn, index) => {
-            btn.addEventListener('click', async function() {
+            btn.addEventListener('click', async function(e) {
+                e.stopPropagation(); // Prevent event bubbling
+                
                 if (confirm(`Are you sure you want to delete this ${currentModalType === 'types' ? 'type' : 'maker'}?`)) {
                     try {
                         const groupItem = this.closest('.group-item');
@@ -793,6 +820,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                             throw new Error('Item not found');
                         }
                         
+                        // Store current selected values before deletion
+                        const currentTypeValue = productType.value;
+                        const currentMakerValue = productMaker.value;
+                        
                         if (groupItem.classList.contains('new-group')) {
                             const groupIndex = groups.findIndex(g => g.CODE.toString() === code);
                             if (groupIndex !== -1) {
@@ -800,11 +831,32 @@ document.addEventListener('DOMContentLoaded', async () => {
                             }
                             groupItem.remove();
                             
-                            if (currentModalType === 'types') {
-                                fillDropdown(types, productType);
-                            } else {
-                                fillDropdown(makers, productMaker);
+                            // Repopulate dropdowns
+                            populateGroupFilters(makers, types);
+                            
+                            // Restore or clear values based on what was deleted
+                            if (currentTypeValue && currentTypeValue !== name) {
+                                productType.value = currentTypeValue;
+                                const selectedType = types.find(t => t.NAME === currentTypeValue);
+                                if (selectedType) {
+                                    groupCodeInput.value = selectedType.CODE;
+                                }
+                            } else if (currentTypeValue === name) {
+                                productType.selectedIndex = -1;
+                                groupCodeInput.value = '';
                             }
+                            
+                            if (currentMakerValue && currentMakerValue !== name) {
+                                productMaker.value = currentMakerValue;
+                                const selectedMaker = makers.find(m => m.NAME === currentMakerValue);
+                                if (selectedMaker) {
+                                    makerCodeInput.value = selectedMaker.CODE;
+                                }
+                            } else if (currentMakerValue === name) {
+                                productMaker.selectedIndex = -1;
+                                makerCodeInput.value = '';
+                            }
+                            
                             return;
                         }
                         
@@ -821,10 +873,30 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 groups.splice(groupIndex, 1);
                             }
                             
-                            if (currentModalType === 'types') {
-                                fillDropdown(types, productType);
-                            } else {
-                                fillDropdown(makers, productMaker);
+                            // Repopulate dropdowns
+                            populateGroupFilters(makers, types);
+                            
+                            // Restore or clear values based on what was deleted
+                            if (currentTypeValue && currentTypeValue !== name) {
+                                productType.value = currentTypeValue;
+                                const selectedType = types.find(t => t.NAME === currentTypeValue);
+                                if (selectedType) {
+                                    groupCodeInput.value = selectedType.CODE;
+                                }
+                            } else if (currentTypeValue === name) {
+                                productType.selectedIndex = -1;
+                                groupCodeInput.value = '';
+                            }
+                            
+                            if (currentMakerValue && currentMakerValue !== name) {
+                                productMaker.value = currentMakerValue;
+                                const selectedMaker = makers.find(m => m.NAME === currentMakerValue);
+                                if (selectedMaker) {
+                                    makerCodeInput.value = selectedMaker.CODE;
+                                }
+                            } else if (currentMakerValue === name) {
+                                productMaker.selectedIndex = -1;
+                                makerCodeInput.value = '';
                             }
                             
                             filterGroups();
@@ -884,6 +956,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function populateGroupFilters(makers, types) {
+        // Clear existing options first
+        productMaker.innerHTML = '';
+        productType.innerHTML = '';
+        
         makers.forEach(maker => {
             const option = document.createElement('option');
             option.value = maker.NAME;
@@ -925,6 +1001,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         const promises = [];
         const itemsToUpdate = [];
+        
+        // Store current selected values before saving
+        const currentTypeValue = productType.value;
+        const currentMakerValue = productMaker.value;
         
         for (const item of groupItems) {
             const codeInput = item.querySelector('.groups-input.code');
@@ -997,23 +1077,26 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             if (currentModalType === 'types') {
                 types = await fetchTypes();
-                productType.innerHTML = '<option value="">Select Type</option>';
-                types.forEach(type => {
-                    const option = document.createElement('option');
-                    option.value = type.NAME;
-                    option.textContent = type.NAME;
-                    productType.appendChild(option);
-                });
+                // Repopulate without "Select..." option and restore value
+                populateGroupFilters(makers, types);
+                if (currentTypeValue) {
+                    productType.value = currentTypeValue;
+                    const selectedType = types.find(t => t.NAME === currentTypeValue);
+                    if (selectedType) {
+                        groupCodeInput.value = selectedType.CODE;
+                    }
+                }
             } else {
                 makers = await fetchMakers();
-                // Update the productMaker dropdown
-                productMaker.innerHTML = '<option value="">Select Maker</option>';
-                makers.forEach(maker => {
-                    const option = document.createElement('option');
-                    option.value = maker.NAME;
-                    option.textContent = maker.NAME;
-                    productMaker.appendChild(option);
-                });
+                // Repopulate without "Select..." option and restore value
+                populateGroupFilters(makers, types);
+                if (currentMakerValue) {
+                    productMaker.value = currentMakerValue;
+                    const selectedMaker = makers.find(m => m.NAME === currentMakerValue);
+                    if (selectedMaker) {
+                        makerCodeInput.value = selectedMaker.CODE;
+                    }
+                }
             }
             
             displayGroups();
