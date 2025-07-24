@@ -789,9 +789,7 @@ function createNewCarousel() {
 // Update the populateDeviceDropdown function
 async function populateDeviceDropdown() {
     try {
-        const response = await fetch('http://localhost:3000/api/getAllDevices');
-        if (!response.ok) throw new Error('Failed to fetch devices');
-        const devices = await response.json();
+        const devices = await getAllDevices();
         deviceSelect.innerHTML = '<option value=null>-- No device selected --</option>';
         devices.forEach(device => {
             const option = document.createElement('option');

@@ -15,10 +15,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         promoInfo = await fetchIndexPromoInfo();
         deviceInfo = await fetchIndexDeviceInfo();
         
-        // Calculate statistics
         calculatePromoStatistics();
-        
-        // Display the dashboard
         displayAdminDashboard();
     } catch (error) {
         console.error('Error loading initial data:', error);
@@ -140,10 +137,10 @@ function displayAdminDashboard() {
                                 <span class="data-label">Product:</span>
                                 <span class="data-value">${promo.productname}</span>
                                 <span class="data-label">Issue Date:</span>
-                                <span class="data-value">${new Date(promo.issuedate).toLocaleDateString()}</span>
+                                <span class="data-value">${new Date(promo.issuedate).toLocaleString('en-GB', { hour12: false })}</span>
                                 <span class="data-label">Redeemed:</span>
-                                <span class="data-value ${promo.redeemdate ? 'status-redeemed' : 'status-pending'}">
-                                    ${promo.redeemdate ? 'Yes' : 'No'}
+                                <span class="data-value ${promo.redeemed ? 'status-redeemed' : 'status-pending'}">
+                                    ${promo.redeemed ? 'Yes' : 'No'}
                                 </span>
                             </div>
                         `).join('') : '<div class="no-data">No issued promos found</div>'}
@@ -165,13 +162,13 @@ function displayAdminDashboard() {
                                     const lastPing = new Date(device.LASTPING);
                                     const now = new Date();
                                     const timeDiff = now - lastPing;
-                                    return timeDiff < 24 * 60 * 60 * 1000 ? 'status-online' : 'status-offline';
+                                    return timeDiff < 30 * 1000 ? 'status-online' : 'status-offline';
                                 })()}">
                                     ${(() => {
                                         const lastPing = new Date(device.LASTPING);
                                         const now = new Date();
                                         const timeDiff = now - lastPing;
-                                        return timeDiff < 24 * 60 * 60 * 1000 ? 'Online' : 'Offline';
+                                        return timeDiff < 30 * 1000 ? 'Online' : 'Offline';
                                     })()}
                                 </span>
                             </div>

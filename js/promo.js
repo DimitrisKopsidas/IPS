@@ -248,15 +248,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     deleteBtn.addEventListener('click', function() {
         deleteConfirmationModal.style.display = 'flex';
+        // Check if promo has associated carousels
+        if (associatedCarousels && associatedCarousels.length > 0) {
+            deleteConfirmationModal.style.display = 'none';
+            showWarningModal('This promo cannot be deleted because it is used in carousel(s). Remove it from the carousel(s) and then delete it');
+            return;
+        }
     });
 
-    confirmDeleteBtn.addEventListener('click', async function() {//IMAGE AND DB DELETION
+    confirmDeleteBtn.addEventListener('click', async function() {
         try {
-            const imageResult = await deleteImage(currentPromoId);
-            if (!imageResult.success) {
-                throw new Error(`Failed to delete image: ${imageResult.error}`);
-            }
-
             const result = await deletePromo(currentPromoId);
             
             if (result.success) {

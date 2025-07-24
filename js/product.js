@@ -569,7 +569,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             div.className = 'info-item';
             div.textContent = `${productData.PROMOCODE} - ${(productData.PROMODISCOUNT * 100).toFixed(0)}% OFF`;
             div.addEventListener('click', function() {
-                window.location.href = `promo.html?id=${productData.PROMOID}`;
+                window.location.href = `promo.html?id=${productData.PROMOID}&type=All&maker=All`;
             });
             promoList.appendChild(div);
         } else {
