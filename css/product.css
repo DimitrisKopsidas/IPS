@@ -1373,3 +1373,7 @@ select:focus {
     -webkit-appearance: none;
     margin: 0;
 }
+
+#warningModal {
+    z-index: 10001 !important;
+}
