@@ -63,14 +63,15 @@ export function getItemCardHtml(choice, item, date, date2) {
                         <div class="product-header">
                             <span class="product-code">${item.CODE}</span>
                             <h2 class="product-name">${item.NAME}</h2>
+                            <span class="product-device">
+                                ${item.DEVICE ? '🖥️' : '❌'} Device: <strong>${item.DEVICENAME || 'Not Assigned'}</strong>
+                            </span>
                         </div>
-                        <div class="product-info">
+                        <!--<div class="product-info">
                             <div class="info-row">
-                                <span class="product-device">
-                                    ${item.DEVICE ? '🖥️' : '❌'} Device: ${item.DEVICE || 'Not Assigned'}
-                                </span>
+                                
                             </div>
-                            <!--<div class="carousel-stats">
+                            <div class="carousel-stats">
                                 <p class="product-note">${item.NOTES}</p>
                             </div>-->
                         </div>
