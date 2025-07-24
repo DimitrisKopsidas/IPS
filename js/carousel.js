@@ -583,152 +583,152 @@ function addDnDEventsToNewItem(elem) {
 addDnDEvents(elem);
 }
 
-// Update your loadCarouselData function to remove the local drag and drop functions
+// Update the loadCarouselData function to convert milliseconds to seconds for display
 async function loadCarouselData(data) {
-headerCarouselCode.value = data.CODE || '';
-headerCarouselName.value = data.NAME || '';
+    headerCarouselCode.value = data.CODE || '';
+    headerCarouselName.value = data.NAME || '';
 
-// Populate device dropdown and set current device
-await populateDeviceDropdown();
+    // Populate device dropdown and set current device
+    await populateDeviceDropdown();
 
-// Set device selection - check if device data exists in current carousel data
-if (data.DEVICE) {
-    // If carousel has a device assigned, add it to dropdown if not already there
-    const existingOption = deviceSelect.querySelector(`option[value="${data.DEVICE}"]`);
-    if (!existingOption && data.DEVICENAME) {
-        // Add the current device to dropdown (it's assigned but not in available devices)
-        const currentDeviceOption = document.createElement('option');
-        currentDeviceOption.value = data.DEVICE;
-        currentDeviceOption.textContent = `${data.DEVICENAME} (${data.DEVICECONNECTKEY})`;
-        deviceSelect.appendChild(currentDeviceOption);
-    }
-    deviceSelect.value = data.DEVICE;
-} else {
-    deviceSelect.value = '';
-}
-
-// Populate other carousel and minigame settings
-autoplayWaitInput.value = data.AUTOPLAYWAIT || 0;
-speedInput.value = data.SPEED || 0;
-gameCountInput.value = data.GAMECOUNT || 0;
-revolutionsInput.value = data.REVOLUTIONS || 0;
-spinDurationInput.value = data.SPINDURATION || 0;
-onStopTimeInput.value = data.ONSTOPTIME || 0;
-inactivityTimeInput.value = data.INACTIVITYTIME || 0;
-
-// Highlight selected product in dropdown
-updateDropdownSelection(data.ID);
-
-// --- Associated Products ---
-if (associatedProducts) {
-    associatedProducts.innerHTML = '<div class="no-data">Loading associated products...</div>';
-    try {
-        const productLines = await getProductLinesByCarousel(data.ID);
-        if (productLines && productLines.length > 0) {
-            associatedProducts.innerHTML = '';
-
-            productLines.forEach((product, idx) => {
-                const div = document.createElement('div');
-                div.className = 'info-item';
-                div.setAttribute('draggable', 'true');
-                div.innerHTML = `
-                    <span class="product-info" style="cursor:pointer; text-decoration:underline; color:#007bff;">${product.PRODUCTCODE} - ${product.PRODUCTNAME}</span>
-                    <div style="display: flex; align-items: center; margin-left: auto;">
-                        <input type="number" class="queue-input" value="${(idx + 1).toString().padStart(2, '0')}" min="0" max="99" style="width:2.5em; margin-right:10px;" title="Queue">
-                        <button class="delete-product-btn" title="Remove Product" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:#dc3545;">✕</button>
-                    </div>
-                `;
-                
-                // Add click handler for navigation only on the text
-                const productInfo = div.querySelector('.product-info');
-                productInfo.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    window.location.href = `product.html?id=${product.PRODUCTID}&type=All&maker=All`;
-                });
-                
-                // Add delete handler
-                const deleteBtn = div.querySelector('.delete-product-btn');
-                deleteBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    if (confirm('Remove this product from the carousel?')) {
-                        div.remove();
-                        updateQueueNumbers();
-                        formChanged = true;
-                    }
-                });
-                
-                addDnDEvents(div);
-                associatedProducts.appendChild(div);
-            });
-
-            updateQueueNumbers();
-        } else {
-            associatedProducts.innerHTML = '<div class="no-data">No associated products found</div>';
+    // Set device selection - check if device data exists in current carousel data
+    if (data.DEVICE) {
+        // If carousel has a device assigned, add it to dropdown if not already there
+        const existingOption = deviceSelect.querySelector(`option[value="${data.DEVICE}"]`);
+        if (!existingOption && data.DEVICENAME) {
+            // Add the current device to dropdown (it's assigned but not in available devices)
+            const currentDeviceOption = document.createElement('option');
+            currentDeviceOption.value = data.DEVICE;
+            currentDeviceOption.textContent = `${data.DEVICENAME} (${data.DEVICECONNECTKEY})`;
+            deviceSelect.appendChild(currentDeviceOption);
         }
-    } catch (err) {
-        associatedProducts.innerHTML = '<div class="no-data">Failed to load associated products</div>';
+        deviceSelect.value = data.DEVICE;
+    } else {
+        deviceSelect.value = '';
     }
-}
 
-// --- Associated Promos ---
-if (associatedPromos) {
-    associatedPromos.innerHTML = '<div class="no-data">Loading associated promos...</div>';
-    try {
-        const promoLines = await getPromoLinesByCarousel(data.ID);
-        if (promoLines && promoLines.length > 0) {
-            associatedPromos.innerHTML = '';
+    // Populate carousel and minigame settings - convert milliseconds to seconds for display
+    autoplayWaitInput.value = (data.AUTOPLAYWAIT || 0) / 1000;
+    speedInput.value = (data.SPEED || 0) / 1000;
+    gameCountInput.value = data.GAMECOUNT || 0;
+    revolutionsInput.value = data.REVOLUTIONS || 0;
+    spinDurationInput.value = (data.SPINDURATION || 0) / 1000;
+    onStopTimeInput.value = (data.ONSTOPTIME || 0) / 1000;
+    inactivityTimeInput.value = (data.INACTIVITYTIME || 0) / 1000;
 
-            promoLines.forEach((promo, idx) => {
-                const div = document.createElement('div');
-                div.className = 'info-item';
-                div.innerHTML = `
-                    <span class="product-info" style="cursor:pointer; text-decoration:underline; color:#007bff;">${promo.PROMOCODE} - ${promo.PRODUCTNAME || 'Unknown Product'} (-${promo.DISCOUNT * 100}%)</span>
-                    <div style="display: flex; align-items: center; margin-left: auto;">
-                        <input type="number" class="chance-input" value="${promo.CHANCE *100 || 0}" min="0" max="100" style="width:3em; margin-right:5px;" title="Chance %">
-                        <span style="margin-right:10px;">%</span>
-                        <button class="delete-promo-btn" title="Remove Promo" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:#dc3545;">✕</button>
-                    </div>
-                `;
-                
-                // Add click handler for navigation only on the text
-                const productInfo = div.querySelector('.product-info');
-                productInfo.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    window.location.href = `promo.html?id=${promo.PROMOID}&type=All&maker=All`;
+    // Highlight selected product in dropdown
+    updateDropdownSelection(data.ID);
+
+    // --- Associated Products ---
+    if (associatedProducts) {
+        associatedProducts.innerHTML = '<div class="no-data">Loading associated products...</div>';
+        try {
+            const productLines = await getProductLinesByCarousel(data.ID);
+            if (productLines && productLines.length > 0) {
+                associatedProducts.innerHTML = '';
+
+                productLines.forEach((product, idx) => {
+                    const div = document.createElement('div');
+                    div.className = 'info-item';
+                    div.setAttribute('draggable', 'true');
+                    div.innerHTML = `
+                        <span class="product-info" style="cursor:pointer; text-decoration:underline; color:#007bff;">${product.PRODUCTCODE} - ${product.PRODUCTNAME}</span>
+                        <div style="display: flex; align-items: center; margin-left: auto;">
+                            <input type="number" class="queue-input" value="${(idx + 1).toString().padStart(2, '0')}" min="0" max="99" style="width:2.5em; margin-right:10px;" title="Queue">
+                            <button class="delete-product-btn" title="Remove Product" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:#dc3545;">✕</button>
+                        </div>
+                    `;
+                    
+                    // Add click handler for navigation only on the text
+                    const productInfo = div.querySelector('.product-info');
+                    productInfo.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        window.location.href = `product.html?id=${product.PRODUCTID}&type=All&maker=All`;
+                    });
+                    
+                    // Add delete handler
+                    const deleteBtn = div.querySelector('.delete-product-btn');
+                    deleteBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        if (confirm('Remove this product from the carousel?')) {
+                            div.remove();
+                            updateQueueNumbers();
+                            formChanged = true;
+                        }
+                    });
+                    
+                    addDnDEvents(div);
+                    associatedProducts.appendChild(div);
                 });
-                
-                // Add delete handler
-                const deleteBtn = div.querySelector('.delete-promo-btn');
-                deleteBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    if (confirm('Remove this promo from the carousel?')) {
-                        div.remove();
-                        redistributePromoChances();
-                        formChanged = true;
-                    }
-                });
 
-                // Add chance input event listeners
-                const chanceInput = div.querySelector('.chance-input');
-                if (chanceInput) {
-                    addChanceInputEvents(chanceInput);
-                }
-                
-                associatedPromos.appendChild(div);
-            });
-
-            updatePromoChanceTotal();
-        } else {
-            associatedPromos.innerHTML = '<div class="no-data">No associated promos found</div>';
+                updateQueueNumbers();
+            } else {
+                associatedProducts.innerHTML = '<div class="no-data">No associated products found</div>';
+            }
+        } catch (err) {
+            associatedProducts.innerHTML = '<div class="no-data">Failed to load associated products</div>';
         }
-    } catch (err) {
-        associatedPromos.innerHTML = '<div class="no-data">Failed to load associated promos</div>';
     }
-}
 
-currentCarouselId = data.ID;
-formChanged = false;
-updateNavigationState();
+    // --- Associated Promos ---
+    if (associatedPromos) {
+        associatedPromos.innerHTML = '<div class="no-data">Loading associated promos...</div>';
+        try {
+            const promoLines = await getPromoLinesByCarousel(data.ID);
+            if (promoLines && promoLines.length > 0) {
+                associatedPromos.innerHTML = '';
+
+                promoLines.forEach((promo, idx) => {
+                    const div = document.createElement('div');
+                    div.className = 'info-item';
+                    div.innerHTML = `
+                        <span class="product-info" style="cursor:pointer; text-decoration:underline; color:#007bff;">${promo.PROMOCODE} - ${promo.PRODUCTNAME || 'Unknown Product'} (-${promo.DISCOUNT * 100}%)</span>
+                        <div style="display: flex; align-items: center; margin-left: auto;">
+                            <input type="number" class="chance-input" value="${promo.CHANCE *100 || 0}" min="0" max="100" style="width:3em; margin-right:5px;" title="Chance %">
+                            <span style="margin-right:10px;">%</span>
+                            <button class="delete-promo-btn" title="Remove Promo" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:#dc3545;">✕</button>
+                        </div>
+                    `;
+                    
+                    // Add click handler for navigation only on the text
+                    const productInfo = div.querySelector('.product-info');
+                    productInfo.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        window.location.href = `promo.html?id=${promo.PROMOID}&type=All&maker=All`;
+                    });
+                    
+                    // Add delete handler
+                    const deleteBtn = div.querySelector('.delete-promo-btn');
+                    deleteBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        if (confirm('Remove this promo from the carousel?')) {
+                            div.remove();
+                            redistributePromoChances();
+                            formChanged = true;
+                        }
+                    });
+
+                    // Add chance input event listeners
+                    const chanceInput = div.querySelector('.chance-input');
+                    if (chanceInput) {
+                        addChanceInputEvents(chanceInput);
+                    }
+                    
+                    associatedPromos.appendChild(div);
+                });
+
+                updatePromoChanceTotal();
+            } else {
+                associatedPromos.innerHTML = '<div class="no-data">No associated promos found</div>';
+            }
+        } catch (err) {
+            associatedPromos.innerHTML = '<div class="no-data">Failed to load associated promos</div>';
+        }
+    }
+
+    currentCarouselId = data.ID;
+    formChanged = false;
+    updateNavigationState();
 }
 // #endregion
 // #region CAROUSEL FUNCTIONS
@@ -756,12 +756,12 @@ function createNewCarousel() {
     if (headerCarouselName) headerCarouselName.value = "";
 
     // Carousel settings - set device to "null" to match the default option value
-    if (deviceSelect) deviceSelect.value = "null"; // Changed from "" to "null"
+    if (deviceSelect) deviceSelect.value = "null";
     if (autoplayWaitInput) autoplayWaitInput.value = "0";
     if (speedInput) speedInput.value = "0";
     if (gameCountInput) gameCountInput.value = "0";
 
-    // Minigame settings
+    // Minigame settings - values shown in seconds to user
     if (revolutionsInput) revolutionsInput.value = "0";
     if (spinDurationInput) spinDurationInput.value = "0";
     if (onStopTimeInput) onStopTimeInput.value = "0";
@@ -1069,7 +1069,7 @@ function updatePromoChanceTotalDisplay(total) {
     }
 }
 
-// Update the saveCarouselData function to increment state by 1
+// Update the saveCarouselData function to convert seconds to milliseconds for database
 async function saveCarouselData() {
     // Validate promo chances
     const items = associatedPromos.querySelectorAll('.info-item');
@@ -1092,15 +1092,15 @@ async function saveCarouselData() {
             throw new Error('Carousel Name is required');
         }
 
-        // Validate numeric settings
+        // Validate numeric settings and convert seconds to milliseconds
         const code = parseInt(headerCarouselCode.value);
-        const autoplayWait = parseInt(autoplayWaitInput.value);
-        const speed = parseInt(speedInput.value);
+        const autoplayWait = parseFloat(autoplayWaitInput.value) * 1000; // Convert to milliseconds
+        const speed = parseFloat(speedInput.value) * 1000; // Convert to milliseconds
         const gameCount = parseInt(gameCountInput.value);
         const revolutions = parseInt(revolutionsInput.value);
-        const spinDuration = parseInt(spinDurationInput.value);
-        const onStopTime = parseInt(onStopTimeInput.value);
-        const inactivityTime = parseInt(inactivityTimeInput.value);
+        const spinDuration = parseFloat(spinDurationInput.value) * 1000; // Convert to milliseconds
+        const onStopTime = parseFloat(onStopTimeInput.value) * 1000; // Convert to milliseconds
+        const inactivityTime = parseFloat(inactivityTimeInput.value) * 1000; // Convert to milliseconds
 
         if (isNaN(code) || code <= 0) {
             throw new Error('Carousel Code must be a valid number greater than 0');
@@ -1141,22 +1141,22 @@ async function saveCarouselData() {
             currentState = (currentCarousel && currentCarousel.STATE) ? currentCarousel.STATE + 1 : 1;
         }
 
-        // Build carousel data
+        // Build carousel data with values in milliseconds for database
         const carouselData = {
             code: code,
             name: headerCarouselName.value.trim(),
             device: parseInt(deviceSelect.value),
-            autoplayWait: autoplayWait,
-            speed: speed,
+            autoplayWait: autoplayWait, // Now in milliseconds
+            speed: speed, // Now in milliseconds
             gameCount: gameCount,
-            state: currentState, // Include incremented state
+            state: currentState,
             revolutions: revolutions,
-            spinDuration: spinDuration,
-            onStopTime: onStopTime,
-            inactivityTime: inactivityTime
+            spinDuration: spinDuration, // Now in milliseconds
+            onStopTime: onStopTime, // Now in milliseconds
+            inactivityTime: inactivityTime // Now in milliseconds
         };
 
-        console.log('Saving carousel data with incremented state:', carouselData);
+        console.log('Saving carousel data with time values in milliseconds:', carouselData);
 
         // Determine if we're creating new or updating existing
         let result;
