@@ -25,6 +25,7 @@ var media = [];
 let products = [];
 let settings = [];
 let state;
+let carouselId;
 let connectkey;
 // #endregion VARIABLE DECLARATION
 
@@ -42,6 +43,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         countforminigame = settings[0].GAMECOUNT;
         actionWindow = autoplayWait + 2000;
         state = settings[0].STATE;
+        carouselId = settings[0].ID;
         
         car = document.querySelector('.carousel');
         flkty = new Flickity(car, { 
@@ -55,16 +57,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         products.forEach((product) => {
             flkty.insert(createCell(product));
         });
-        media = products.map(p => p.PRODUCT);
-
-        flkty.on('change', async (index) => {
-            try {
-                await updateDeviceLastPing(connectkey);
-                console.log('Updated device ping on cell change:', index);
-            } catch (error) {
-                console.error('Failed to update device ping:', error);
-            }
-        });        
+        media = products.map(p => p.PRODUCT); 
+        updateData();
     } catch (error) {
         console.error('Error loading carousel data:', error);
     }
@@ -94,10 +88,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     backSwipeListener(currSlide,prevSlide);
     minigameListener(currSlide,prevSlide);
     prevSlide=index;
-    settings = await fetchCarouselSettings(connectkey);
-    if (settings[0].STATE !== state) {
-            location.reload();
-    };
+    
   });
 });
 
@@ -160,4 +151,23 @@ function minigameListener(current,prev){
     window.location.href = minigameURL;
   }
 }
+
+async function updateData() {
+    setInterval(async () => {
+        try {
+          await updateDeviceLastPing(connectkey);
+        } catch (error) {
+          console.error('Failed to update device ping:', error);
+        }
+        try {
+          settings = await fetchCarouselSettings(connectkey);
+          if (settings[0].STATE !== state) {
+            location.reload();
+          };
+        } catch (error) {
+            console.error('Failed to fetching state:', error);
+        }
+    }, 1000);
+}
+
 // #endregion FUNCTIONS
