@@ -43,7 +43,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       products = await fetchCarouselProducts(connectkey);
       settings = await fetchCarouselSettings(connectkey);
       nextPageUrl = `minigame.html?connectkey=${connectkey}`;
-      updateData();
     } else {
       products = await fetchCarouselProductsCarouselId(carouselSource);
       settings = await fetchCarouselSettingsCarouselId(carouselSource);
@@ -56,6 +55,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     actionWindow = autoplayWait + 2000;
     state = settings[0].STATE;
     carouselId = settings[0].ID;
+    updateData();
     
     car = document.querySelector('.carousel');
     flkty = new Flickity(car, { 
@@ -166,21 +166,30 @@ function minigameListener(current,prev){
 }
 
 async function updateData() {
-    setInterval(async () => {
-        try {
-          await updateDeviceLastPing(connectkey);
-        } catch (error) {
-          console.error('Failed to update device ping:', error);
-        }
-        try {
-          settings = await fetchCarouselSettings(connectkey);
-          if (settings[0].STATE !== state) {
-            location.reload();
-          };
-        } catch (error) {
-            console.error('Failed to fetching state:', error);
-        }
-    }, 1000);
+  setInterval(async () => {
+    if (isPreview != 1) {
+      try {
+        await updateDeviceLastPing(connectkey);
+      } catch (error) {
+        console.error('Failed to update device ping:', error);
+      }
+    }
+    try {
+      if (isPreview != 1) {
+        settings = await fetchCarouselSettings(connectkey);
+        console.log('Settings fetched for connectkey:', connectkey);
+      } else {
+        settings = await fetchCarouselSettingsCarouselId(carouselSource);
+        console.log('Settings fetched for carousel source:', carouselSource);
+      }
+      
+      if (settings[0].STATE !== state) {
+        location.reload();
+      };
+    } catch (error) {
+        console.error('Failed to fetching state:', error);
+    }
+  }, 1000);
 }
 
 // #endregion FUNCTIONS

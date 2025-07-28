@@ -163,6 +163,41 @@ app.get('/api/getMinigamePromosConnect/:connectkey', async (req, res) => {
     }
 });
 
+app.get('/api/getMinigamePromosCarousel/:carousel', async (req, res) => {
+    try {
+        const carousel = req.params.carousel;
+        const [rows] = await pool.query('CALL GetMinigamePromosCarousel(?)', [carousel]);
+        
+        console.log(`Retrieved minigame promos for carousel ${carousel}:`, {
+            count: rows[0].length,
+            promos: rows[0]
+        });
+        res.json(rows[0]);
+    } catch (error) {
+        console.error('Error fetching minigame promos by carousel:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to fetch minigame promos by carousel',
+            details: error.message 
+        });
+    }
+});
+
+app.get('/api/getMinigameSettingsCarousel/:carousel', async (req, res) => {
+    try {
+        const carousel = req.params.carousel;
+        const [rows] = await pool.query('CALL GetMinigameSettingsCarousel(?)', [carousel]);
+        
+        console.log(`Retrieved minigame settings for carousel ${carousel}:`, rows[0]);
+        res.json(rows[0]);
+    } catch (error) {
+        console.error('Error fetching minigame settings by carousel:', error.message);
+        res.status(500).json({ 
+            error: 'Failed to fetch minigame settings by carousel',
+            details: error.message 
+        });
+    }
+});
+
 app.get('/api/insertIssuedPromo/:connectKey/:redeemCode/:promoId', async (req, res) => {
     try {
         const connectKey = req.params.connectKey;

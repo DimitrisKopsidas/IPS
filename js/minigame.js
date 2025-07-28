@@ -5,7 +5,9 @@
 //4)DISPLAY DEATHDATE
 
 import {Wheel} from 'https://cdn.jsdelivr.net/npm/spin-wheel@5.0.2/dist/spin-wheel-esm.js';
-import { fetchMinigameSettings, fetchMinigamePromos, insertIssuedPromo } from './dbService.js';
+import { fetchMinigameSettings, fetchMinigamePromos, insertIssuedPromo,
+    fetchMinigamePromosCarousel, fetchMinigameSettingsCarousel
+ } from './dbService.js';
 
 // #region VARIABLE DECLARATION
 //DEFAULT SETTINGS
@@ -23,22 +25,33 @@ var redeemCode = redeemCodeGenerator();
 var leftSep=document.getElementById('leftSep');
 var rightSep=document.getElementById('rightSep');
 var wheelStartBySeparator=0;
-var carouselURL;
+var nextPageUrl;
 var overlay=new Image();
 overlay.src='media/overlay.svg';// Initialize overlay as image
+let isPreview = false;
+let carouselSource;
 // #endregion VARIABLE DECLARATION
 
 document.addEventListener('DOMContentLoaded', async () => {
     const params = new URLSearchParams(window.location.search);
     connectkey = params.get('connectkey');
+    isPreview = params.get('preview');
+    carouselSource = params.get('carousel');
 
-    settings = await fetchMinigameSettings(connectkey);
-    promos = await fetchMinigamePromos(connectkey);
+    if (isPreview != 1) {
+        settings = await fetchMinigameSettings(connectkey);
+        promos = await fetchMinigamePromos(connectkey);
+        nextPageUrl = `activeCarousel.html?connectkey=${connectkey}`;
+    } else {
+        settings = await fetchMinigameSettingsCarousel(carouselSource);
+        promos = await fetchMinigamePromosCarousel(carouselSource);
+        nextPageUrl = `carousel.html?id=${carouselSource}`;
+    }
+
     revolutions = settings[0].revolutions;
     spinDuration = settings[0].spinduration;
     onStopChangeDelay = settings[0].onstoptime;
     inactivityChangeDelay = settings[0].inactivitytime;
-    carouselURL = `activeCarousel.html?connectkey=${connectkey}`;
 
     // Load overlay first
     const overlay = new Image();
@@ -97,15 +110,16 @@ async function onStop(){
     changePageOnStop();
     displayPrize();
     }
-    await insertIssuedPromo(connectkey,redeemCode,promos[winningItemIndex].PROMO);
-    console.log(`Inserted issued promo for connectKey ${connectkey} 
-        with code ${redeemCode} and promo ID ${promos[winningItemIndex].PROMO}, changing page in ${onStopChangeDelay/1000}s`);
+
+    if (isPreview != 1) {
+        await insertIssuedPromo(connectkey,redeemCode,promos[winningItemIndex].PROMO);
+    }
 }
 
 function changePageOnStop() {
     setTimeout(function() {
         if (onStopChangeDelay!=0) {
-            window.location.href = carouselURL;
+            window.location.href = nextPageUrl;
         }
     }, onStopChangeDelay);
 }
@@ -113,7 +127,7 @@ function changePageOnStop() {
 function changePageOnInactivity() {
     setTimeout(function() {
         if ((wheelStartBySeparator==0)&&(inactivityChangeDelay!=0)) {
-            window.location.href = carouselURL;
+            window.location.href = nextPageUrl;
         }
     }, inactivityChangeDelay);
 }

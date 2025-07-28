@@ -155,6 +155,29 @@ END$$
 DELIMITER ;
 
 DELIMITER $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `GetCarouselProductsCarouselId`(IN p_carousel VARCHAR(255))
+BEGIN
+	SELECT 
+        PL.PRODUCT, 
+        PL.QUEUE,
+        PR.NAME,
+        PR.PRICE,
+        PR.DISCOUNT,
+        PR.FINALPRICE
+    FROM 
+        PRODUCTLINES PL
+	INNER JOIN 
+		PRODUCT PR ON PL.PRODUCT = PR.PRODUCT
+	INNER JOIN 
+		CAROUSEL C ON C.CAROUSEL = PL.CAROUSEL
+    WHERE 
+        C.CAROUSEL = p_carousel
+    ORDER BY 
+        PL.QUEUE;
+END$$
+DELIMITER ;
+
+DELIMITER $$
 CREATE DEFINER=`root`@`localhost` PROCEDURE `GetCarouselProductsConnect`(IN p_connectkey VARCHAR(255))
 BEGIN
     SELECT 
@@ -166,9 +189,12 @@ BEGIN
         PR.FINALPRICE
     FROM 
         PRODUCTLINES PL
-        INNER JOIN PRODUCT PR ON PL.PRODUCT = PR.PRODUCT
-        INNER JOIN CAROUSEL C ON C.CAROUSEL = PL.CAROUSEL
-        INNER JOIN DEVICE D ON D.DEVICE = C.DEVICE
+	INNER JOIN 
+		PRODUCT PR ON PL.PRODUCT = PR.PRODUCT
+	INNER JOIN 
+		CAROUSEL C ON C.CAROUSEL = PL.CAROUSEL
+	INNER JOIN 
+		DEVICE D ON D.DEVICE = C.DEVICE
     WHERE 
         D.CONNECTKEY = p_connectkey
     ORDER BY 
@@ -177,12 +203,36 @@ END$$
 DELIMITER ;
 
 DELIMITER $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `GetCarouselSettingsCarouselId`(IN p_carousel VARCHAR(255))
+BEGIN
+	SELECT 
+		CAROUSEL AS ID,
+		AUTOPLAYWAIT,
+		SPEED,
+		GAMECOUNT,
+		STATE
+    FROM 
+		CAROUSEL C
+    WHERE 
+		C.CAROUSEL = p_carousel;
+END$$
+DELIMITER ;
+
+DELIMITER $$
 CREATE DEFINER=`root`@`localhost` PROCEDURE `GetCarouselSettingsConnect`(IN p_connectkey VARCHAR(255))
 BEGIN
-    SELECT CAROUSEL AS ID,AUTOPLAYWAIT,SPEED,GAMECOUNT,STATE
-    FROM CAROUSEL C
-    INNER JOIN DEVICE D ON D.DEVICE = C.DEVICE
-    WHERE D.CONNECTKEY = p_connectkey;
+    SELECT 
+		CAROUSEL AS ID,
+		AUTOPLAYWAIT,
+		SPEED,
+		GAMECOUNT,
+		STATE
+    FROM 
+		CAROUSEL C
+    INNER JOIN 
+		DEVICE D ON D.DEVICE = C.DEVICE
+    WHERE 
+		D.CONNECTKEY = p_connectkey;
 END$$
 DELIMITER ;
 
@@ -382,6 +432,35 @@ END$$
 DELIMITER ;
 
 DELIMITER $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `GetMinigamePromosCarousel`(IN p_carousel INT)
+BEGIN
+	SELECT 
+		PROMO.PROMO,
+		PRODUCT.NAME as PRODUCTNAME,
+		PRODUCT.PRODUCT as PRODUCT,
+		TYPE.NAME as TYPENAME,
+		MAKER.NAME as MAKERNAME,
+		PROMO.DISCOUNT,
+		PROMO.DAYSTOLIVE,
+		PROMOLINES.CHANCE
+	FROM 
+		PROMO
+	LEFT JOIN 
+		PRODUCT ON PRODUCT.PRODUCT = PROMO.PRODUCT
+	LEFT JOIN 
+		PROMOLINES ON PROMOLINES.PROMO = PROMO.PROMO
+	LEFT JOIN 
+		MINIGAME M ON M.MINIGAME = PROMOLINES.MINIGAME
+	LEFT JOIN 
+		MAKER ON MAKER.MAKER = PROMO.MAKER
+	LEFT JOIN 
+		TYPE ON TYPE.TYPE = PROMO.TYPE
+	WHERE 
+		M.MINIGAME = p_carousel;
+END$$
+DELIMITER ;
+
+DELIMITER $$
 CREATE DEFINER=`root`@`localhost` PROCEDURE `GetMinigamePromosConnect`(IN p_connectkey INT)
 BEGIN
 SELECT 
@@ -415,6 +494,21 @@ END$$
 DELIMITER ;
 
 DELIMITER $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `GetMinigameSettingsCarousel`(IN p_carousel INT)
+BEGIN
+	SELECT 
+        m.revolutions,
+        m.spinduration,
+        m.onstoptime,
+        m.inactivitytime
+    FROM 
+		minigame m
+    WHERE 
+		m.minigame = p_carousel;
+END$$
+DELIMITER ;
+
+DELIMITER $$
 CREATE DEFINER=`root`@`localhost` PROCEDURE `GetMinigameSettingsConnect`(IN p_connectkey INT)
 BEGIN
     SELECT 
@@ -422,10 +516,14 @@ BEGIN
         m.spinduration,
         m.onstoptime,
         m.inactivitytime
-    FROM minigame m
-    INNER JOIN carousel c ON c.carousel = m.carousel
-    INNER JOIN device d ON d.device = c.device
-    WHERE d.connectkey = p_connectkey;
+    FROM 
+		minigame m
+    INNER JOIN 
+		carousel c ON c.carousel = m.carousel
+    INNER JOIN 
+		device d ON d.device = c.device
+    WHERE 
+		d.connectkey = p_connectkey;
 END$$
 DELIMITER ;
 
@@ -783,7 +881,6 @@ ALTER TABLE TYPE AUTO_INCREMENT = 1;
 ALTER TABLE USER AUTO_INCREMENT = 1;
 
 
-
 INSERT INTO USER(username,password) VALUES ("Admin","admin");
 INSERT INTO DEVICE(code,name,lastping,connectkey) VALUES (100,"Rasp1",NOW(),"1234"),(200,"Rasp2",NOW(),"5678");
 INSERT INTO MAKER(code,name) VALUES (100,"Dell"),(200,"Sony"),(300,"Intel"),(400,"Nvidia"),(500,"Razer");
@@ -812,7 +909,7 @@ INSERT INTO PRODUCT (CODE, NAME, TYPE, MAKER, PRICE, DISCOUNT, FINALPRICE, NOTES
 (1021, 'Intel Optane SSD 900P'		, 5, 3, 499.99, 0.1, 449.99, 'High-end NVMe SSD for enthusiasts'),
 (1022, 'Razer Core X Chroma SSD Dock', 5, 5, 299.99, 0.15, 254.99, 'External SSD dock with RGB and Thunderbolt 3');
 INSERT INTO PRODUCTLINES(CAROUSEL,PRODUCT,QUEUE) VALUES (1,3,1),(1,8,2),(1,13,3),(1,4,4),(1,9,5),(1,14,6),(1,20,7);
-INSERT INTO CAROUSEL (CODE,NAME,DEVICE,AUTOPLAYWAIT,SPEED,GAMECOUNT) VALUES (1,"PC PARTS",1,1000,3000,4),(2,"Consoles",null,500,1000,2);
+INSERT INTO CAROUSEL (CODE,NAME,DEVICE,AUTOPLAYWAIT,SPEED,GAMECOUNT,STATE) VALUES (1,"PC PARTS",1,1000,3000,4,1),(2,"Consoles",null,500,1000,2,1);
 INSERT INTO MINIGAME (CAROUSEL,REVOLUTIONS,SPINDURATION,ONSTOPTIME,INACTIVITYTIME) VALUES (1,2,1000,30000,30000),(2,3,500,30000,30000);
 INSERT INTO BACKSWIPES (PRODUCTLINES,SWIPEDATE) VALUES (4,NOW()),(2,NOW()),(4,NOW()),(4,NOW()),(5,NOW()),(5,NOW()),(4,NOW()),(4,NOW()),(6,NOW()),(6,NOW()),(6,NOW()),(4,NOW()),(7,NOW());
 INSERT INTO PROMO (CODE,DISCOUNT,PRODUCT,TYPE,MAKER,DAYSTOLIVE,NOTES) VALUES (50,0.5,20,0,0,7,"Special promo"),(51,0.2,10,0,0,7,"Use until 11/7/2025"),(52,0.2,7,0,0,7,"Limited 5");

@@ -150,6 +150,43 @@ async function insertIssuedPromo(connectKey, redeemCode, promoId) {
         return { success: false, error: error.message };
     }
 }
+
+async function fetchMinigamePromosCarousel(carousel) {
+    try {
+        const response = await fetch(`http://localhost:3000/api/getMinigamePromosCarousel/${carousel}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Minigame promos by carousel:', {
+            carousel: carousel,
+            promosCount: data.length,
+            promos: data
+        });
+        return data;
+    } catch (error) {
+        console.error('Error fetching minigame promos by carousel:', error);
+        return [];
+    }
+}
+
+async function fetchMinigameSettingsCarousel(carousel) {
+    try {
+        const response = await fetch(`http://localhost:3000/api/getMinigameSettingsCarousel/${carousel}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Minigame settings by carousel:', {
+            carousel: carousel,
+            settings: data
+        });
+        return data;
+    } catch (error) {
+        console.error('Error fetching minigame settings by carousel:', error);
+        return [];
+    }
+}
 // #endregion MINIGAME
 
 // #region CHECK
@@ -1178,6 +1215,8 @@ export {
     updateDeviceLastPing,
     fetchMinigameSettings,
     fetchMinigamePromos,
+    fetchMinigamePromosCarousel,      // Add this line
+    fetchMinigameSettingsCarousel,    // Add this line
     insertIssuedPromo,
     updateRedeemed,
     getPromoStatus,
