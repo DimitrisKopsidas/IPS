@@ -165,7 +165,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     confirmCancelBtn.addEventListener('click', function() {
-        loadCarouselData(selectedProductData);
+        if (currentCarouselId === 'new') {
+            // For new carousels, just recreate the form
+            createNewCarousel();
+        } else {
+            // For existing carousels, reload the original data
+            const originalData = carousels.find(c => c.ID === currentCarouselId);
+            if (originalData) {
+                loadCarouselData(originalData);
+            } else {
+                console.error('Original carousel data not found');
+                showWarningModal('Error reverting changes');
+            }
+        }
+        
+        formChanged = false; // Reset form changed state
         cancelConfirmationModal.style.display = 'none';
     });
 
@@ -802,6 +816,9 @@ function createNewCarousel() {
     if (totalDisplay) {
         totalDisplay.remove();
     }
+
+    // Hide delete button for new carousels
+    if (deleteBtn) deleteBtn.style.display = 'none';
 
     // Reset navigation and state
     currentCarouselId = 'new';
