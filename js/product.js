@@ -7,7 +7,7 @@ import { fetchFilteredProducts, fetchMakers, fetchTypes, deleteProduct,
 // #region VARIABLE DECLARATION
     // Form references
     const productForm = document.getElementById('productForm');
-    const groupSelect = document.getElementById('productType');
+    const typeSelect = document.getElementById('productType');
     const makerSelect = document.getElementById('productMaker');
     const priceInput = document.getElementById('productPrice');
     const discountInput = document.getElementById('productDiscount');
@@ -625,6 +625,43 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
+        if (priceInput.value == 0) {
+            showWarningModal('Product Price is required');
+            priceInput.focus();
+            validForInsert = false;
+            return;
+        }
+
+        // Check if image is present
+        if (currentProductId === 'new' && !pendingImageFile) {
+            showWarningModal('You need to insert an image in order to save the product');
+            changeImageBtn.focus();
+            validForInsert = false;
+            return;
+        }
+
+        // For existing products, check if default image is still being used
+        if (currentProductId !== 'new' && mainProductImage.src.includes('media/9997.png')) {
+            showWarningModal('You need to insert an image in order to save the product');
+            changeImageBtn.focus();
+            validForInsert = false;
+            return;
+        }
+
+        if (makerSelect.value == 0) {
+            showWarningModal('Product Maker is required');
+            makerSelect.focus();
+            validForInsert = false;
+            return;
+        }
+
+        if (typeSelect.value == 0) {
+            showWarningModal('Product Type is required');
+            typeSelect.focus();
+            validForInsert = false;
+            return;
+        }
+
         try {
             const selectedType = types.find(t => t.NAME === productType.value);
             const selectedMaker = makers.find(m => m.NAME === productMaker.value);
@@ -706,7 +743,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         priceInput.value = "0";
         discountInput.value = "0";
         finalPriceInput.value = "0";
-        groupSelect.value = '';
+        typeSelect.value = '';
         makerSelect.value = '';
         productNotes.value = "";
         mainProductImage.src = "media/9997.png";
