@@ -757,15 +757,15 @@ function createNewCarousel() {
 
     // Carousel settings - set device to "null" to match the default option value
     if (deviceSelect) deviceSelect.value = "null";
-    if (autoplayWaitInput) autoplayWaitInput.value = "0";
-    if (speedInput) speedInput.value = "0";
-    if (gameCountInput) gameCountInput.value = "0";
+    if (autoplayWaitInput) autoplayWaitInput.value = "";
+    if (speedInput) speedInput.value = "";
+    if (gameCountInput) gameCountInput.value = "";
 
     // Minigame settings - values shown in seconds to user
-    if (revolutionsInput) revolutionsInput.value = "0";
-    if (spinDurationInput) spinDurationInput.value = "0";
-    if (onStopTimeInput) onStopTimeInput.value = "0";
-    if (inactivityTimeInput) inactivityTimeInput.value = "0";
+    if (revolutionsInput) revolutionsInput.value = "";
+    if (spinDurationInput) spinDurationInput.value = "";
+    if (onStopTimeInput) onStopTimeInput.value = "";
+    if (inactivityTimeInput) inactivityTimeInput.value = "";
 
     // Associated lists
     if (associatedProducts) associatedProducts.innerHTML = '<div class="no-data">No associated products found</div>';
@@ -1071,25 +1071,6 @@ function updatePromoChanceTotalDisplay(total) {
 
 // Update the saveCarouselData function to validate associated products
 async function saveCarouselData() {
-    // Validate that at least one product is associated
-    const productItems = associatedProducts.querySelectorAll('.info-item');
-    if (productItems.length === 0 || associatedProducts.querySelector('.no-data')) {
-        showWarningModal('At least one associated product must be selected before saving.');
-        validForInsert = false;
-        return;
-    }
-
-    // Validate promo chances
-    const items = associatedPromos.querySelectorAll('.info-item');
-    if (items.length > 0) {
-        const total = updatePromoChanceTotal();
-        if (total !== 100) {
-            showWarningModal('Promo chances must total exactly 100% before saving.');
-            validForInsert = false;
-            return;
-        }
-    }
-
     try {
         // Validate required fields
         if (!headerCarouselCode.value || !headerCarouselCode.value.trim()) {
@@ -1114,32 +1095,51 @@ async function saveCarouselData() {
             throw new Error('Carousel Code must be a valid number greater than 0');
         }
 
-        if (isNaN(autoplayWait) || autoplayWait < 0) {
-            throw new Error('Autoplay Wait must be a valid number (0 or greater)');
+        if (isNaN(autoplayWait) || autoplayWait <= 0) {
+            throw new Error('Autoplay Wait must be a valid number greater than 0');
         }
 
-        if (isNaN(speed) || speed < 0) {
-            throw new Error('Speed must be a valid number (0 or greater)');
+        if (isNaN(speed) || speed <= 0) {
+            throw new Error('Speed must be a valid number greater than 0');
         }
 
-        if (isNaN(gameCount) || gameCount < 0) {
-            throw new Error('Game Count must be a valid number (0 or greater)');
+        if (isNaN(gameCount) || gameCount <= 0) {
+            throw new Error('Game Count must be a valid number greater than 0');
         }
 
-        if (isNaN(revolutions) || revolutions < 0) {
-            throw new Error('Revolutions must be a valid number (0 or greater)');
+        if (isNaN(revolutions) || revolutions <= 0) {
+            throw new Error('Revolutions must be a valid number greater than 0');
         }
 
-        if (isNaN(spinDuration) || spinDuration < 0) {
-            throw new Error('Spin Duration must be a valid number (0 or greater)');
+        if (isNaN(spinDuration) || spinDuration <= 0) {
+            throw new Error('Spin Duration must be a valid number greater than 0');
         }
 
-        if (isNaN(onStopTime) || onStopTime < 0) {
-            throw new Error('On Stop Time must be a valid number (0 or greater)');
+        if (isNaN(onStopTime) || onStopTime <= 0) {
+            throw new Error('On Stop Time must be a valid number greater than 0');
         }
 
-        if (isNaN(inactivityTime) || inactivityTime < 0) {
-            throw new Error('Inactivity Time must be a valid number (0 or greater)');
+        if (isNaN(inactivityTime) || inactivityTime <= 0) {
+            throw new Error('Inactivity Time must be a valid number greater than 0');
+        }
+
+        // Validate that at least one product is associated
+        const productItems = associatedProducts.querySelectorAll('.info-item');
+        if (productItems.length === 0 || associatedProducts.querySelector('.no-data')) {
+            showWarningModal('At least one associated product must be selected before saving.');
+            validForInsert = false;
+            return;
+        }
+
+        // Validate promo chances
+        const items = associatedPromos.querySelectorAll('.info-item');
+        if (items.length > 0) {
+            const total = updatePromoChanceTotal();
+            if (total !== 100) {
+                showWarningModal('Promo chances must total exactly 100% before saving.');
+                validForInsert = false;
+                return;
+            }
         }
 
         // Get current state and increment by 1

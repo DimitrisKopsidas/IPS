@@ -692,7 +692,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     if (productId === 'new') {
                         const params = new URLSearchParams(window.location.search);
                         params.set('id', savedProduct.ID);
-                        window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
+                        window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}&type=All&maker=All`);
                         currentProductId = savedProduct.ID;
                         
                         if (pendingImageFile) {
