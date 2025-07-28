@@ -1389,4 +1389,28 @@ function addChanceInputEvents(chanceInput) {
         }
     });
 }
-// #endregion
+
+// Add these event listeners in the EVENT LISTENERS section
+document.getElementById('previewCarouselBtn').addEventListener('click', function() {
+    // Check if carousel is saved first
+    if (currentCarouselId === 'new') {
+        showWarningModal('Please save the carousel before previewing.');
+        return;
+    }
+    
+    // Open carousel preview in new tab
+    const previewUrl = `activeCarousel.html?preview=1&carousel=${currentCarouselId}`;
+    window.open(previewUrl, '_blank');
+});
+
+document.getElementById('previewMinigameBtn').addEventListener('click', function() {
+    // Check if carousel is saved first
+    if (currentCarouselId === 'new') {
+        showWarningModal('Please save the carousel before previewing.');
+        return;
+    }
+    
+    // Open minigame preview in new tab
+    const previewUrl = `minigame.html?preview=1&carousel=${currentCarouselId}`;
+    window.open(previewUrl, '_blank');
+});

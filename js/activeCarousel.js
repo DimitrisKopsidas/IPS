@@ -36,13 +36,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     const params = new URLSearchParams(window.location.search);
     connectkey = params.get('connectkey');
-    isPreview = params.get('preview') === 'true';
+    isPreview = params.get('preview');
     carouselSource = params.get('carousel');
 
-    if (!isPreview) {
+    if (isPreview != 1) {
       products = await fetchCarouselProducts(connectkey);
       settings = await fetchCarouselSettings(connectkey);
       nextPageUrl = `minigame.html?connectkey=${connectkey}`;
+      updateData();
     } else {
       products = await fetchCarouselProductsCarouselId(carouselSource);
       settings = await fetchCarouselSettingsCarouselId(carouselSource);
@@ -70,7 +71,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     media = products.map(p => p.PRODUCT); 
-    updateData();
+    
   } catch (error) {
       console.error('Error loading carousel data:', error);
   }
