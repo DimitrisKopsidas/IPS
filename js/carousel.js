@@ -314,6 +314,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         filterAssociatedProductDropdown(this.value);
     });
 
+    // Add click event listener for immediate dropdown opening
+    associatedProductSearch.addEventListener('click', function() {
+        associatedProductDropdown.classList.add('active');
+        filterAssociatedProductDropdown(this.value);
+    });
+
+    // Add focus event listener for immediate dropdown opening
+    associatedProductSearch.addEventListener('focus', function() {
+        associatedProductDropdown.classList.add('active');
+        filterAssociatedProductDropdown(this.value);
+    });
+
     // Hide dropdown when clicking outside
     document.addEventListener('click', function(e) {
         if (!associatedProductSearch.contains(e.target) && !associatedProductDropdown.contains(e.target)) {
@@ -324,6 +336,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 if (associatedPromoSearch && associatedPromoDropdown) {
     associatedPromoSearch.addEventListener('input', function() {
+        filterAssociatedPromoDropdown(this.value);
+    });
+
+    // Add click event listener for immediate dropdown opening
+    associatedPromoSearch.addEventListener('click', function() {
+        associatedPromoDropdown.classList.add('active');
+        filterAssociatedPromoDropdown(this.value);
+    });
+
+    // Add focus event listener for immediate dropdown opening
+    associatedPromoSearch.addEventListener('focus', function() {
+        associatedPromoDropdown.classList.add('active');
         filterAssociatedPromoDropdown(this.value);
     });
 
@@ -418,30 +442,33 @@ products.forEach(product => {
 }
 
 function filterAssociatedProductDropdown(searchText) {
-if (!searchText.trim()) {
-    associatedProductDropdown.innerHTML = '';
-    associatedProductDropdown.classList.remove('active');
-    return;
-}
+    if (!searchText.trim()) {
+        // Show all products instead of clearing dropdown
+        populateAssociatedProductDropdown(products);
+        if (!associatedProductDropdown.classList.contains('active')) {
+            associatedProductDropdown.classList.add('active');
+        }
+        return;
+    }
 
-const filtered = products.filter(product => {
-    const makerName = product.MAKERNAME || 'Unknown';
-    const typeName = product.TYPENAME || 'Unknown';
-    const searchString = `${product.CODE} ${product.NAME} ${makerName} ${typeName}`.toLowerCase();
-    return searchString.includes(searchText.toLowerCase());
-});
+    const filtered = products.filter(product => {
+        const makerName = product.MAKERNAME || 'Unknown';
+        const typeName = product.TYPENAME || 'Unknown';
+        const searchString = `${product.CODE} ${product.NAME} ${makerName} ${typeName}`.toLowerCase();
+        return searchString.includes(searchText.toLowerCase());
+    });
 
-if (filtered.length === 0) {
-    associatedProductDropdown.innerHTML = '<div class="product-option">No products found</div>';
-    associatedProductDropdown.classList.add('active');
-    return;
-}
+    if (filtered.length === 0) {
+        associatedProductDropdown.innerHTML = '<div class="product-option">No products found</div>';
+        associatedProductDropdown.classList.add('active');
+        return;
+    }
 
-populateAssociatedProductDropdown(filtered);
+    populateAssociatedProductDropdown(filtered);
 
-if (!associatedProductDropdown.classList.contains('active')) {
-    associatedProductDropdown.classList.add('active');
-}
+    if (!associatedProductDropdown.classList.contains('active')) {
+        associatedProductDropdown.classList.add('active');
+    }
 }
 
 function selectAssociatedProduct(product) {
@@ -490,11 +517,11 @@ productInfo.addEventListener('click', function(e) {
 const deleteBtn = div.querySelector('.delete-product-btn');
 deleteBtn.addEventListener('click', function(e) {
     e.stopPropagation();
-    if (confirm('Remove this product from the carousel?')) {
+    // if (confirm('Remove this product from the carousel?')) {
         div.remove();
         updateQueueNumbers();
         formChanged = true;
-    }
+    // }
 });
 
 // Add drag and drop events using existing functions
@@ -547,11 +574,10 @@ return false;
 }
 
 function handleDragEnd(e) {
-this.classList.remove('dragElem');
-const items = associatedProducts.querySelectorAll('.info-item');
-items.forEach(item => item.classList.remove('over'));
+    this.classList.remove('dragElem');
+    const items = associatedProducts.querySelectorAll('.info-item');
+    items.forEach(item => item.classList.remove('over'));
 }
-
 // Global function to add drag and drop events
 function addDnDEvents(elem) {
 elem.setAttribute('draggable', 'true');
@@ -650,11 +676,11 @@ async function loadCarouselData(data) {
                     const deleteBtn = div.querySelector('.delete-product-btn');
                     deleteBtn.addEventListener('click', function(e) {
                         e.stopPropagation();
-                        if (confirm('Remove this product from the carousel?')) {
+                        // if (confirm('Remove this product from the carousel?')) {
                             div.remove();
                             updateQueueNumbers();
                             formChanged = true;
-                        }
+                        // }
                     });
                     
                     addDnDEvents(div);
@@ -701,11 +727,11 @@ async function loadCarouselData(data) {
                     const deleteBtn = div.querySelector('.delete-promo-btn');
                     deleteBtn.addEventListener('click', function(e) {
                         e.stopPropagation();
-                        if (confirm('Remove this promo from the carousel?')) {
+                        // if (confirm('Remove this promo from the carousel?')) {
                             div.remove();
                             redistributePromoChances();
                             formChanged = true;
-                        }
+                        // }
                     });
 
                     // Add chance input event listeners
@@ -921,8 +947,11 @@ function populateAssociatedPromoDropdown(promos) {
 
 function filterAssociatedPromoDropdown(searchText) {
     if (!searchText.trim()) {
-        associatedPromoDropdown.innerHTML = '';
-        associatedPromoDropdown.classList.remove('active');
+        // Show all promos instead of clearing dropdown
+        populateAssociatedPromoDropdown(promos);
+        if (!associatedPromoDropdown.classList.contains('active')) {
+            associatedPromoDropdown.classList.add('active');
+        }
         return;
     }
 
@@ -991,11 +1020,11 @@ function selectAssociatedPromo(promo) {
     const deleteBtn = div.querySelector('.delete-promo-btn');
     deleteBtn.addEventListener('click', function(e) {
         e.stopPropagation();
-        if (confirm('Remove this promo from the carousel?')) {
+        // if (confirm('Remove this promo from the carousel?')) {
             div.remove();
             redistributePromoChances();
             formChanged = true;
-        }
+        // }
     });
 
     // Add chance input event listeners
