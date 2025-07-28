@@ -50,6 +50,43 @@ async function updateDeviceLastPing(connectKey) {
         return { success: false, error: error.message };
     }
 }
+
+async function fetchCarouselProductsCarouselId(carousel) {
+    try {
+        const response = await fetch(`http://localhost:3000/api/getCarouselProductsCarouselId/${carousel}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Carousel products by carousel ID:', {
+            carousel: carousel,
+            productsCount: data.length,
+            products: data
+        });
+        return data;
+    } catch (error) {
+        console.error('Error fetching carousel products by carousel ID:', error);
+        return [];
+    }
+}
+
+async function fetchCarouselSettingsCarouselId(carousel) {
+    try {
+        const response = await fetch(`http://localhost:3000/api/getCarouselSettingsCarouselId/${carousel}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Carousel settings by carousel ID:', {
+            carousel: carousel,
+            settings: data
+        });
+        return data;
+    } catch (error) {
+        console.error('Error fetching carousel settings by carousel ID:', error);
+        return [];
+    }
+}
 // #endregion ACTIVECAROUSEL
 
 // #region MINIGAME
@@ -1136,6 +1173,8 @@ async function fetchIndexDeviceInfo(device = null) {
 export { 
     fetchCarouselProducts,
     fetchCarouselSettings,
+    fetchCarouselProductsCarouselId,
+    fetchCarouselSettingsCarouselId,
     updateDeviceLastPing,
     fetchMinigameSettings,
     fetchMinigamePromos,

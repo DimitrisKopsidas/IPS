@@ -6,7 +6,8 @@
 //LOW PRIO
 //1)IMPLEMENT BACK SWIPE
 
-import { fetchCarouselProducts, fetchCarouselSettings, updateDeviceLastPing } from './dbService.js';
+import { fetchCarouselProducts, fetchCarouselSettings, updateDeviceLastPing,
+  fetchCarouselSettingsCarouselId, fetchCarouselProductsCarouselId } from './dbService.js';
 
 // #region VARIABLE DECLARATION
 var car;
@@ -19,7 +20,7 @@ var currSlide;
 var actionFlag=0;
 var actionCount=1;
 var timeoutID;
-var minigameURL;
+var nextPageUrl;
 var actionWindow;
 var media = [];
 let products = [];
@@ -27,41 +28,52 @@ let settings = [];
 let state;
 let carouselId;
 let connectkey;
+let isPreview = false; 
+let carouselSource;
 // #endregion VARIABLE DECLARATION
 
 document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        const params = new URLSearchParams(window.location.search);
-        connectkey = params.get('connectkey');
+  try {
+    const params = new URLSearchParams(window.location.search);
+    connectkey = params.get('connectkey');
+    isPreview = params.get('preview') === 'true';
+    carouselSource = params.get('carousel');
 
-        products = await fetchCarouselProducts(connectkey);
-        settings = await fetchCarouselSettings(connectkey);
-
-        minigameURL = `minigame.html?connectkey=${connectkey}`;
-        autoplayWait = settings[0].AUTOPLAYWAIT;
-        autoplaySpeed = settings[0].SPEED;
-        countforminigame = settings[0].GAMECOUNT;
-        actionWindow = autoplayWait + 2000;
-        state = settings[0].STATE;
-        carouselId = settings[0].ID;
-        
-        car = document.querySelector('.carousel');
-        flkty = new Flickity(car, { 
-            wrapAround: true,
-            prevNextButtons: false,
-            pageDots: false,
-            autoPlay: autoplaySpeed,
-            pauseAutoPlayOnHover: true
-        });
-
-        products.forEach((product) => {
-            flkty.insert(createCell(product));
-        });
-        media = products.map(p => p.PRODUCT); 
-        updateData();
-    } catch (error) {
-        console.error('Error loading carousel data:', error);
+    if (!isPreview) {
+      products = await fetchCarouselProducts(connectkey);
+      settings = await fetchCarouselSettings(connectkey);
+      nextPageUrl = `minigame.html?connectkey=${connectkey}`;
+    } else {
+      products = await fetchCarouselProductsCarouselId(carouselSource);
+      settings = await fetchCarouselSettingsCarouselId(carouselSource);
+      nextPageUrl = `carousel.html?id=${carouselSource}`;
     }
+
+    autoplayWait = settings[0].AUTOPLAYWAIT;
+    autoplaySpeed = settings[0].SPEED;
+    countforminigame = settings[0].GAMECOUNT;
+    actionWindow = autoplayWait + 2000;
+    state = settings[0].STATE;
+    carouselId = settings[0].ID;
+    
+    car = document.querySelector('.carousel');
+    flkty = new Flickity(car, { 
+        wrapAround: true,
+        prevNextButtons: false,
+        pageDots: false,
+        autoPlay: autoplaySpeed,
+        pauseAutoPlayOnHover: true
+    });
+
+    products.forEach((product) => {
+        flkty.insert(createCell(product));
+    });
+
+    media = products.map(p => p.PRODUCT); 
+    updateData();
+  } catch (error) {
+      console.error('Error loading carousel data:', error);
+  }
 
   car.addEventListener('click', function() {  //RESTART AUTOPLAY AFTER INTERACTION
     flkty.stopPlayer();
@@ -148,7 +160,7 @@ function minigameListener(current,prev){
   
   console.log("Flag:"+actionFlag+" Count:"+actionCount);
   if (actionCount == (countforminigame)) {
-    window.location.href = minigameURL;
+    window.location.href = nextPageUrl;
   }
 }
 
