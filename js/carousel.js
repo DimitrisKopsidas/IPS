@@ -1438,11 +1438,24 @@ function addChanceInputEvents(chanceInput) {
     });
 }
 
-// Add these event listeners in the EVENT LISTENERS section
+// Update these event listeners in the EVENT LISTENERS section
 document.getElementById('previewCarouselBtn').addEventListener('click', function() {
     // Check if carousel is saved first
     if (currentCarouselId === 'new') {
         showWarningModal('Please save the carousel before previewing.');
+        return;
+    }
+    
+    // Check if there are unsaved changes
+    if (formChanged) {
+        showWarningModal('You need to save before previewing.');
+        return;
+    }
+    
+    // Check if there are associated products
+    const productItems = associatedProducts.querySelectorAll('.info-item');
+    if (productItems.length === 0 || associatedProducts.querySelector('.no-data')) {
+        showWarningModal('Cannot preview carousel: No associated products found. Please add at least one product to preview the carousel.');
         return;
     }
     
@@ -1455,6 +1468,25 @@ document.getElementById('previewMinigameBtn').addEventListener('click', function
     // Check if carousel is saved first
     if (currentCarouselId === 'new') {
         showWarningModal('Please save the carousel before previewing.');
+        return;
+    }
+    
+    // Check if there are unsaved changes
+    if (formChanged) {
+        showWarningModal('You need to save before previewing.');
+        return;
+    }
+    
+    // Check if there are associated promos
+    const promoItems = associatedPromos.querySelectorAll('.info-item');
+    if (promoItems.length === 0 || associatedPromos.querySelector('.no-data')) {
+        showWarningModal('Cannot preview minigame: No associated promos found. Please add at least one promo to preview the minigame.');
+        return;
+    }
+    
+    // Check if there are at least 2 promos for minigame
+    if (promoItems.length < 2) {
+        showWarningModal('Cannot preview minigame: At least 2 promos are required for the minigame to function properly. Please add more promos.');
         return;
     }
     
