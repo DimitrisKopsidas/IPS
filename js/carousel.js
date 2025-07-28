@@ -795,8 +795,10 @@ function createNewCarousel() {
     if (headerCarouselCode) headerCarouselCode.value = "";
     if (headerCarouselName) headerCarouselName.value = "";
 
-    // Carousel settings - set device to "null" to match the default option value
-    if (deviceSelect) deviceSelect.value = "null";
+    // Carousel settings - set to first device instead of "null"
+    if (deviceSelect && deviceSelect.options.length > 0) {
+        deviceSelect.selectedIndex = 0; // Select first device
+    }
     if (autoplayWaitInput) autoplayWaitInput.value = "";
     if (speedInput) speedInput.value = "";
     if (gameCountInput) gameCountInput.value = "";
@@ -833,7 +835,7 @@ function createNewCarousel() {
 async function populateDeviceDropdown() {
     try {
         const devices = await getAllDevices();
-        deviceSelect.innerHTML = '<option value=null>-- No device selected --</option>';
+        deviceSelect.innerHTML = ''; // Remove the default "No device selected" option
         devices.forEach(device => {
             const option = document.createElement('option');
             option.value = device.DEVICE;
