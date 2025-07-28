@@ -1,7 +1,8 @@
 import {fillDropdown, getItemCardHtml} from "./common.js";
 import { fetchFilteredProducts, fetchMakers, fetchTypes, deleteProduct, 
     deleteMaker, deleteType, deleteImage, updateProduct, insertProduct, 
-    fetchNextProductId, updateMaker, updateType, insertMaker, insertType } from './dbService.js';
+    fetchNextProductId, updateMaker, updateType, insertMaker, insertType,
+    fetchNextProductCode } from './dbService.js';
 
 // #region VARIABLE DECLARATION
     // Form references
@@ -699,8 +700,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    function createNewProduct() {
-        headerProductCode.value = "";
+    async function createNewProduct() {
+        headerProductCode.value = await fetchNextProductCode();
         headerProductName.value = "";
         priceInput.value = "0";
         discountInput.value = "0";

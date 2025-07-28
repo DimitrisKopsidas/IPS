@@ -299,6 +299,27 @@ app.get('/api/getNextPromoId', async (req, res) => {
     }
 });
 
+app.get('/api/getNextProductCode', async (req, res) => {
+    try {
+        console.log('Fetching next product code...');
+        
+        const [rows] = await pool.execute('CALL GetNextProductCode()');
+        
+        if (rows && rows[0] && rows[0].length > 0) {
+            const nextCode = rows[0][0].NEXTPRODUCTCODE;
+            console.log('Next product code:', nextCode);
+            res.json({ NEXTPRODUCTCODE: nextCode });
+        } else {
+            // If no products exist, return 1 as the first code
+            console.log('No products found, returning default code 1');
+            res.json({ NEXTPRODUCTCODE: 1 });
+        }
+    } catch (error) {
+        console.error('Error fetching next product code:', error);
+        res.status(500).json({ error: 'Failed to fetch next product code' });
+    }
+});
+
 app.delete('/api/deleteProduct/:id', async (req, res) => {
     try {
         const productId = req.params.id;

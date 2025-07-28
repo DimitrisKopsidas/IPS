@@ -309,6 +309,21 @@ async function fetchNextPromoId() {
     }
 }
 
+async function fetchNextProductCode() {
+    try {
+        const response = await fetch('http://localhost:3000/api/getNextProductCode');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Next product code:', data);
+        return data.NEXTPRODUCTCODE;
+    } catch (error) {
+        console.error('Error fetching next product code:', error);
+        return 1; // Default to 1 if error occurs
+    }
+}
+
 async function deleteProduct(productId) {
     try {
         console.log('Deleting product:', productId);
@@ -1134,6 +1149,7 @@ export {
     fetchNextProductId,
     fetchNextCarouselId,
     fetchNextPromoId,
+    fetchNextProductCode,
     deleteProduct,
     deleteMaker,
     deleteType,
