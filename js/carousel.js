@@ -571,10 +571,10 @@ const currentItems = associatedProducts.querySelectorAll('.info-item');
 const nextQueueNum = (currentItems.length + 1).toString().padStart(2, '0');
 
 div.innerHTML = `
-    <span class="product-info" style="cursor:pointer; text-decoration:underline; color:#007bff;">${product.CODE} - ${product.NAME}</span>
-    <div style="display: flex; align-items: center; margin-left: auto;">
-        <input type="number" class="queue-input" value="${nextQueueNum}" min="0" max="99" style="width:2.5em; margin-right:10px;" title="Queue">
-        <button class="delete-product-btn" title="Remove Product" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:#dc3545;">✕</button>
+    <span class="product-info">${product.CODE} - ${product.NAME}</span>
+    <div class="item-controls">
+        <input type="number" class="queue-input" value="${nextQueueNum}" min="0" max="99" title="Queue">
+        <button class="delete-product-btn" title="Remove Product">✕</button>
     </div>
 `;
 
@@ -730,10 +730,10 @@ async function loadCarouselData(data) {
                     div.className = 'info-item';
                     div.setAttribute('draggable', 'true');
                     div.innerHTML = `
-                        <span class="product-info" style="cursor:pointer; text-decoration:underline; color:#007bff;">${product.PRODUCTCODE} - ${product.PRODUCTNAME}</span>
-                        <div style="display: flex; align-items: center; margin-left: auto;">
-                            <input type="number" class="queue-input" value="${(idx + 1).toString().padStart(2, '0')}" min="0" max="99" style="width:2.5em; margin-right:10px;" title="Queue">
-                            <button class="delete-product-btn" title="Remove Product" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:#dc3545;">✕</button>
+                        <span class="product-info">${product.PRODUCTCODE} - ${product.PRODUCTNAME}</span>
+                        <div class="item-controls">
+                            <input type="number" class="queue-input" value="${(idx + 1).toString().padStart(2, '0')}" min="0" max="99" title="Queue">
+                            <button class="delete-product-btn" title="Remove Product">✕</button>
                         </div>
                     `;
                     
@@ -780,11 +780,11 @@ async function loadCarouselData(data) {
                     const div = document.createElement('div');
                     div.className = 'info-item';
                     div.innerHTML = `
-                        <span class="product-info" style="cursor:pointer; text-decoration:underline; color:#007bff;">${promo.PROMOCODE} - ${promo.PRODUCTNAME || 'Unknown Product'} (-${promo.DISCOUNT * 100}%)</span>
-                        <div style="display: flex; align-items: center; margin-left: auto;">
-                            <input type="number" class="chance-input" value="${promo.CHANCE *100 || 0}" min="0" max="100" style="width:3em; margin-right:5px;" title="Chance %">
-                            <span style="margin-right:10px;">%</span>
-                            <button class="delete-promo-btn" title="Remove Promo" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:#dc3545;">✕</button>
+                        <span class="product-info">${promo.PROMOCODE} - ${promo.PRODUCTNAME || 'Unknown Product'} (-${promo.DISCOUNT * 100}%)</span>
+                        <div class="item-controls">
+                            <input type="number" class="chance-input" value="${promo.CHANCE *100 || 0}" min="0" max="100" title="Chance %">
+                            <span class="chance-percentage">%</span>
+                            <button class="delete-promo-btn" title="Remove Promo">✕</button>
                         </div>
                     `;
                     
@@ -1133,11 +1133,11 @@ function selectAssociatedPromo(promo) {
     const defaultChance = currentItems.length === 0 ? 100 : Math.floor(100 / (currentItems.length + 1));
     
     div.innerHTML = `
-        <span class="product-info" style="cursor:pointer; text-decoration:underline; color:#007bff;">${promo.CODE} - ${promo.PRODUCTNAME || 'Unknown Product'}</span>
-        <div style="display: flex; align-items: center; margin-left: auto;">
-            <input type="number" class="chance-input" value="${defaultChance}" min="0" max="100" style="width:3em; margin-right:5px;" title="Chance %">
-            <span style="margin-right:10px;">%</span>
-            <button class="delete-promo-btn" title="Remove Promo" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:#dc3545;">✕</button>
+        <span class="product-info">${promo.CODE} - ${promo.PRODUCTNAME || 'Unknown Product'}</span>
+        <div class="item-controls">
+            <input type="number" class="chance-input" value="${defaultChance}" min="0" max="100" title="Chance %">
+            <span class="chance-percentage">%</span>
+            <button class="delete-promo-btn" title="Remove Promo">✕</button>
         </div>
     `;
     
@@ -1213,20 +1213,28 @@ function updatePromoChanceTotalDisplay(total) {
     if (!totalDisplay) {
         totalDisplay = document.createElement('div');
         totalDisplay.id = 'promoChanceTotal';
-        totalDisplay.style.cssText = 'margin-top: 10px; padding: 8px; border-radius: 4px; font-weight: bold; text-align: center;';
+        totalDisplay.className = 'promo-chance-total';
         associatedPromos.parentNode.appendChild(totalDisplay);
     }
     
-    if (total === 100) {
+    // Remove all state classes
+    totalDisplay.classList.remove('success', 'error', 'warning');
+    
+    // Check if there are any promo items
+    const items = associatedPromos.querySelectorAll('.info-item');
+    
+    if (items.length === 0) {
+        // No promos selected - show yellow warning
+        totalDisplay.textContent = 'Minigame will not trigger';
+        totalDisplay.classList.add('warning');
+    } else if (total === 100) {
+        // Promos selected and total is correct
         totalDisplay.textContent = `Total Chance: ${total}% ✓`;
-        totalDisplay.style.backgroundColor = '#d4edda';
-        totalDisplay.style.color = '#155724';
-        totalDisplay.style.border = '1px solid #c3e6cb';
+        totalDisplay.classList.add('success');
     } else {
+        // Promos selected but total is incorrect
         totalDisplay.textContent = `Total Chance: ${total}% (Must equal 100%)`;
-        totalDisplay.style.backgroundColor = '#f8d7da';
-        totalDisplay.style.color = '#721c24';
-        totalDisplay.style.border = '1px solid #f5c6cb';
+        totalDisplay.classList.add('error');
     }
 }
 
@@ -1294,7 +1302,14 @@ async function saveCarouselData() {
 
         // Validate promo chances
         const items = associatedPromos.querySelectorAll('.info-item');
-        if (items.length > 0) {
+
+        if (items.length === 1) {
+            showWarningModal('You need to have at least 2 promos or no promos selected.');
+            validForInsert = false;
+            return;
+        }
+
+        if (items.length > 1) {
             const total = updatePromoChanceTotal();
             if (total !== 100) {
                 showWarningModal('Promo chances must total exactly 100% before saving.');
