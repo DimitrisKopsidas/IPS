@@ -1245,6 +1245,9 @@ function updatePromoChanceTotalDisplay(total) {
         // No promos selected - show yellow warning
         totalDisplay.textContent = 'Minigame will not trigger';
         totalDisplay.classList.add('warning');
+    } else if (items.length === 1) {
+        totalDisplay.textContent = `You cannot have only 1 promo selected`;
+        totalDisplay.classList.add('error');
     } else if (total === 100) {
         // Promos selected and total is correct
         totalDisplay.textContent = `Total Chance: ${total}% ✓`;
