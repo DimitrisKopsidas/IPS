@@ -431,41 +431,74 @@ async function selectProduct(product) {
 }
 
 function populateAssociatedProductDropdown(products) {
-associatedProductDropdown.innerHTML = '';
+    associatedProductDropdown.innerHTML = '';
 
-products.forEach(product => {
-    const option = document.createElement('div');
-    option.className = 'product-option';
-    option.dataset.productId = product.ID;
-    
-    const makerName = product.MAKERNAME || 'Unknown';
-    const typeName = product.TYPENAME || 'Unknown';
-    
-    option.innerHTML = `
-        <span class="product-code">${product.CODE}</span>
-        <span class="product-name">${product.NAME}</span>
-        <span class="product-details">(${makerName}, ${typeName})</span>
-    `;
-    
-    option.addEventListener('click', function() {
-        selectAssociatedProduct(product);
+    // Get already selected product codes
+    const selectedProductCodes = new Set();
+    const existingItems = associatedProducts.querySelectorAll('.info-item');
+    existingItems.forEach(item => {
+        const productInfo = item.querySelector('.product-info').textContent;
+        const productCode = productInfo.split(' - ')[0];
+        selectedProductCodes.add(productCode);
     });
-    
-    associatedProductDropdown.appendChild(option);
-});
+
+    // Filter out already selected products
+    const availableProducts = products.filter(product => 
+        !selectedProductCodes.has(product.CODE.toString())
+    );
+
+    if (availableProducts.length === 0) {
+        associatedProductDropdown.innerHTML = '<div class="product-option">All products already selected</div>';
+        return;
+    }
+
+    availableProducts.forEach(product => {
+        const option = document.createElement('div');
+        option.className = 'product-option';
+        option.dataset.productId = product.ID;
+        
+        const makerName = product.MAKERNAME || 'Unknown';
+        const typeName = product.TYPENAME || 'Unknown';
+        
+        option.innerHTML = `
+            <span class="product-code">${product.CODE}</span>
+            <span class="product-name">${product.NAME}</span>
+            <span class="product-details">(${makerName}, ${typeName})</span>
+        `;
+        
+        option.addEventListener('click', function() {
+            selectAssociatedProduct(product);
+        });
+        
+        associatedProductDropdown.appendChild(option);
+    });
 }
 
 function filterAssociatedProductDropdown(searchText) {
+    // Get already selected product codes
+    const selectedProductCodes = new Set();
+    const existingItems = associatedProducts.querySelectorAll('.info-item');
+    existingItems.forEach(item => {
+        const productInfo = item.querySelector('.product-info').textContent;
+        const productCode = productInfo.split(' - ')[0];
+        selectedProductCodes.add(productCode);
+    });
+
+    // Filter out already selected products first
+    const availableProducts = products.filter(product => 
+        !selectedProductCodes.has(product.CODE.toString())
+    );
+
     if (!searchText.trim()) {
-        // Show all products instead of clearing dropdown
-        populateAssociatedProductDropdown(products);
+        // Show all available products instead of clearing dropdown
+        populateAssociatedProductDropdown(availableProducts);
         if (!associatedProductDropdown.classList.contains('active')) {
             associatedProductDropdown.classList.add('active');
         }
         return;
     }
 
-    const filtered = products.filter(product => {
+    const filtered = availableProducts.filter(product => {
         const makerName = product.MAKERNAME || 'Unknown';
         const typeName = product.TYPENAME || 'Unknown';
         const searchString = `${product.CODE} ${product.NAME} ${makerName} ${typeName}`.toLowerCase();
@@ -473,12 +506,37 @@ function filterAssociatedProductDropdown(searchText) {
     });
 
     if (filtered.length === 0) {
-        associatedProductDropdown.innerHTML = '<div class="product-option">No products found</div>';
+        if (availableProducts.length === 0) {
+            associatedProductDropdown.innerHTML = '<div class="product-option">All products already selected</div>';
+        } else {
+            associatedProductDropdown.innerHTML = '<div class="product-option">No available products found</div>';
+        }
         associatedProductDropdown.classList.add('active');
         return;
     }
 
-    populateAssociatedProductDropdown(filtered);
+    // Use the existing populate function but pass filtered products
+    associatedProductDropdown.innerHTML = '';
+    filtered.forEach(product => {
+        const option = document.createElement('div');
+        option.className = 'product-option';
+        option.dataset.productId = product.ID;
+        
+        const makerName = product.MAKERNAME || 'Unknown';
+        const typeName = product.TYPENAME || 'Unknown';
+        
+        option.innerHTML = `
+            <span class="product-code">${product.CODE}</span>
+            <span class="product-name">${product.NAME}</span>
+            <span class="product-details">(${makerName}, ${typeName})</span>
+        `;
+        
+        option.addEventListener('click', function() {
+            selectAssociatedProduct(product);
+        });
+        
+        associatedProductDropdown.appendChild(option);
+    });
 
     if (!associatedProductDropdown.classList.contains('active')) {
         associatedProductDropdown.classList.add('active');
@@ -945,7 +1003,26 @@ function updateQueueNumbers() {
 function populateAssociatedPromoDropdown(promos) {
     associatedPromoDropdown.innerHTML = '';
     
-    promos.forEach(promo => {
+    // Get already selected promo codes
+    const selectedPromoCodes = new Set();
+    const existingItems = associatedPromos.querySelectorAll('.info-item');
+    existingItems.forEach(item => {
+        const promoInfo = item.querySelector('.product-info').textContent;
+        const promoCode = promoInfo.split(' - ')[0];
+        selectedPromoCodes.add(promoCode);
+    });
+
+    // Filter out already selected promos
+    const availablePromos = promos.filter(promo => 
+        !selectedPromoCodes.has(promo.CODE.toString())
+    );
+
+    if (availablePromos.length === 0) {
+        associatedPromoDropdown.innerHTML = '<div class="product-option">All promos already selected</div>';
+        return;
+    }
+    
+    availablePromos.forEach(promo => {
         const option = document.createElement('div');
         option.className = 'product-option';
         option.dataset.promoId = promo.ID;
@@ -965,28 +1042,64 @@ function populateAssociatedPromoDropdown(promos) {
 }
 
 function filterAssociatedPromoDropdown(searchText) {
+    // Get already selected promo codes
+    const selectedPromoCodes = new Set();
+    const existingItems = associatedPromos.querySelectorAll('.info-item');
+    existingItems.forEach(item => {
+        const promoInfo = item.querySelector('.product-info').textContent;
+        const promoCode = promoInfo.split(' - ')[0];
+        selectedPromoCodes.add(promoCode);
+    });
+
+    // Filter out already selected promos first
+    const availablePromos = promos.filter(promo => 
+        !selectedPromoCodes.has(promo.CODE.toString())
+    );
+
     if (!searchText.trim()) {
-        // Show all promos instead of clearing dropdown
-        populateAssociatedPromoDropdown(promos);
+        // Show all available promos instead of clearing dropdown
+        populateAssociatedPromoDropdown(availablePromos);
         if (!associatedPromoDropdown.classList.contains('active')) {
             associatedPromoDropdown.classList.add('active');
         }
         return;
     }
 
-    const filtered = promos.filter(promo => {
+    const filtered = availablePromos.filter(promo => {
         const productName = promo.PRODUCTNAME || 'Unknown';
         const searchString = `${promo.CODE} ${productName}`.toLowerCase();
         return searchString.includes(searchText.toLowerCase());
     });
 
     if (filtered.length === 0) {
-        associatedPromoDropdown.innerHTML = '<div class="product-option">No promos found</div>';
+        if (availablePromos.length === 0) {
+            associatedPromoDropdown.innerHTML = '<div class="product-option">All promos already selected</div>';
+        } else {
+            associatedPromoDropdown.innerHTML = '<div class="product-option">No available promos found</div>';
+        }
         associatedPromoDropdown.classList.add('active');
         return;
     }
 
-    populateAssociatedPromoDropdown(filtered);
+    // Use the existing populate function but pass filtered promos
+    associatedPromoDropdown.innerHTML = '';
+    filtered.forEach(promo => {
+        const option = document.createElement('div');
+        option.className = 'product-option';
+        option.dataset.promoId = promo.ID;
+        
+        option.innerHTML = `
+            <span class="product-code">${promo.CODE}</span>
+            <span class="product-name">${promo.PRODUCTNAME || 'Unknown Product'}</span>
+            <span class="product-details">(${promo.DISCOUNT}% off, ${promo.DAYSTOLIVE} days)</span>
+        `;
+        
+        option.addEventListener('click', function() {
+            selectAssociatedPromo(promo);
+        });
+        
+        associatedPromoDropdown.appendChild(option);
+    });
     
     if (!associatedPromoDropdown.classList.contains('active')) {
         associatedPromoDropdown.classList.add('active');
