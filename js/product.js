@@ -144,12 +144,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         saveProductData();
         formChanged = false;
 
-        if (pendingNavigationDirection) {
+        // Only navigate if save was successful and there's a pending navigation
+        if (validForInsert && pendingNavigationDirection) {
             navigateProduct(pendingNavigationDirection);
             pendingNavigationDirection = null;
-        } else {
-            showConfirmation();
         }
+        // Remove the else showConfirmation() call since it's handled in saveProductData()
     });
 
     cancelBtn.addEventListener('click', function() {
@@ -211,9 +211,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         e.preventDefault(); // Prevent default form submission
         saveProductData();
         formChanged = false;
-        if (validForInsert){
-            showConfirmation();
-        }
     });
 
     discountInput.addEventListener('input', function() {
@@ -622,12 +619,6 @@ async function saveProductData() {
         validForInsert = false;
         return;
     }
-    if (priceInput.value == 0) {
-        showWarningModal('Product Price is required');
-        priceInput.focus();
-        validForInsert = false;
-        return;
-    }   
     if (currentProductId === 'new' && !pendingImageFile) {// Check if image is present
         showWarningModal('You need to insert an image in order to save the product');
         changeImageBtn.focus();
@@ -654,7 +645,24 @@ async function saveProductData() {
     }
 
     try {
+        // Fetch all products to check for duplicates
         allProducts = await fetchFilteredProducts('All', 'All');
+        
+        // Check for duplicate code using the isDuplicateCode function
+        if (isDuplicateCode(allProducts, headerProductCode)) {
+            const enteredCode = parseInt(headerProductCode.value);
+            const duplicateProduct = allProducts.find(p => p.CODE === enteredCode);
+            
+            // If we're editing an existing product, exclude it from duplicate check
+            if (productId === 'new' || (duplicateProduct && duplicateProduct.ID !== currentProductId)) {
+                showWarningModal(`Product code ${enteredCode} already exists${duplicateProduct ? ` (used by "${duplicateProduct.NAME}")` : ''}. Please use a different code.`);
+                headerProductCode.focus();
+                headerProductCode.select();
+                validForInsert = false;
+                return; // Exit early - no success actions
+            }
+        }
+
         const selectedType = types.find(t => t.NAME === productType.value);
         const selectedMaker = makers.find(m => m.NAME === productMaker.value);
 
@@ -686,6 +694,7 @@ async function saveProductData() {
                     params.set('id', savedProduct.ID);
                     window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}&type=All&maker=All`);
                     currentProductId = savedProduct.ID;
+                    productId = savedProduct.ID.toString(); // Update global productId
                     
                     if (pendingImageFile) {
                         try {
@@ -707,34 +716,50 @@ async function saveProductData() {
                 }
                 
                 loadProductData(savedProduct);
-                showConfirmation();
+                showConfirmation(); // Only show confirmation here when actually successful
             } else {
                 throw new Error('Saved product not found in results');
             }
         } else {
-            // Check if it's a duplicate code error
-            if (result.isDuplicateCode) {
-                showWarningModal(result.error);
+            // Enhanced error handling for different types of failures
+            if (result.isDuplicateCode || (result.error && result.error.toLowerCase().includes('duplicate'))) {
+                const enteredCode = parseInt(headerProductCode.value);
+                showWarningModal(`Product code ${enteredCode} already exists. Please use a different code.`);
                 headerProductCode.focus();
                 headerProductCode.select();
+            } else if (result.error && result.error.toLowerCase().includes('constraint')) {
+                showWarningModal('A product with this information already exists. Please check your entries.');
+                headerProductCode.focus();
             } else {
-                throw new Error(result.error);
+                showWarningModal(`Failed to save product: ${result.error || 'Unknown error occurred'}`);
             }
             validForInsert = false;
+            return; // Exit early - no success actions
         }
     } catch (error) {
         console.error('Error saving product:', error);
-        showWarningModal(`Failed to save changes: ${error.message}`);
+        
+        // Handle different types of errors
+        if (error.message.toLowerCase().includes('duplicate') || 
+            error.message.toLowerCase().includes('constraint')) {
+            const enteredCode = parseInt(headerProductCode.value);
+            showWarningModal(`Product code ${enteredCode} already exists. Please use a different code.`);
+            headerProductCode.focus();
+            headerProductCode.select();
+        } else {
+            showWarningModal(`Failed to save changes: ${error.message}`);
+        }
         validForInsert = false;
+        return; // Exit early - no success actions
     }
 }
 
 async function createNewProduct() {
     headerProductCode.value = await fetchNextProductCode();
     headerProductName.value = "";
-    priceInput.value = "0";
-    discountInput.value = "0";
-    finalPriceInput.value = "0";
+    priceInput.value = "";
+    discountInput.value = "";
+    finalPriceInput.value = "";
     typeSelect.value = '';
     makerSelect.value = '';
     productNotes.value = "";
@@ -796,7 +821,8 @@ function isDuplicateCode(array, input) {
     const enteredCode = parseInt(input.value);
     
     return array.some(product => 
-        product.CODE === enteredCode);
+        product.CODE === enteredCode && 
+        (productId === 'new' || product.ID !== currentProductId));
 } 
 // #endregion
 // #region GROUPS FUNCTIONS

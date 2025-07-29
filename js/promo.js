@@ -122,6 +122,27 @@ document.addEventListener('DOMContentLoaded', async () => {
 // #region EVENT LISTENERS
     headerProductCode.addEventListener('input', function() {
         formChanged = true;
+        
+        // Real-time duplicate code checking (debounced)
+        clearTimeout(this.duplicateCheckTimeout);
+        this.duplicateCheckTimeout = setTimeout(async () => {
+            const enteredCode = parseInt(this.value);
+            if (!isNaN(enteredCode)) {
+                const allPromos = await fetchFilteredPromos('All', 'All');
+                const existingPromo = allPromos.find(p => 
+                    p.CODE === enteredCode && 
+                    (promoID === 'new' || p.ID !== currentPromoId)
+                );
+                
+                if (existingPromo) {
+                    this.style.borderColor = '#dc3545';
+                    this.title = `Code ${enteredCode} is already in use by "${existingPromo.PRODUCTNAME}"`;
+                } else {
+                    this.style.borderColor = '';
+                    this.title = '';
+                }
+            }
+        }, 500); // 500ms delay for debouncing
     });
 
     headerProductName.addEventListener('input', function() {
@@ -158,12 +179,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         saveProductData();
         formChanged = false;
 
-        if (pendingNavigationDirection) {
+        // Only navigate if save was successful and there's a pending navigation
+        if (validForInsert && pendingNavigationDirection) {
             navigateProduct(pendingNavigationDirection);
             pendingNavigationDirection = null;
-        } else {
-            showConfirmation();
         }
+        // Remove the else showConfirmation() call since it's handled in saveProductData()
     });
 
     cancelBtn.addEventListener('click', function() {
@@ -198,15 +219,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     saveAndContinueBtn.addEventListener('click', function() {
         saveProductData();
         formChanged = false;
-        if (pendingNavigationDirection === 'new') {
-            const params = new URLSearchParams(window.location.search);
-            params.set('id', 'new');
-            window.location.href = `${window.location.pathname}?${params.toString()}`;
-        } else {
-            navigateProduct(pendingNavigationDirection);
+        
+        // Only navigate if save was successful
+        if (validForInsert) {
+            if (pendingNavigationDirection === 'new') {
+                const params = new URLSearchParams(window.location.search);
+                params.set('id', 'new');
+                window.location.href = `${window.location.pathname}?${params.toString()}`;
+            } else {
+                navigateProduct(pendingNavigationDirection);
+            }
+            pendingNavigationDirection = null;
+            unsavedChangesModal.style.display = 'none';
         }
-        pendingNavigationDirection = null;
-        unsavedChangesModal.style.display = 'none';
+        // If save failed, don't navigate and keep the modal open for user to see the error
     });
 
     discardAndContinueBtn.addEventListener('click', function() {
@@ -225,9 +251,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         e.preventDefault(); // Prevent default form submission
         saveProductData();
         formChanged = false;
-        if (validForInsert){
-            showConfirmation();
-        }
+        // Remove the automatic showConfirmation() call:
+        // if (validForInsert){
+        //     showConfirmation();
+        // }
+        // The showConfirmation() should only be called from within saveProductData() upon successful save
     });
 
     discountInput.addEventListener('input', function() {
@@ -518,175 +546,218 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function saveProductData() {
-        if (!headerProductCode.value.trim()) {
-            showWarningModal('Promo Code is required');
-            headerProductCode.focus();
-            validForInsert = false;
-            return;
-        }
+    if (!headerProductCode.value.trim()) {
+        showWarningModal('Promo Code is required');
+        headerProductCode.focus();
+        validForInsert = false;
+        return;
+    }
 
-        if (!headerProductName.value.trim()) {
-            showWarningModal('Product is required');
-            headerProductName.focus();
-            validForInsert = false;
-            return;
-        }
+    if (!headerProductName.value.trim()) {
+        showWarningModal('Product is required');
+        headerProductName.focus();
+        validForInsert = false;
+        return;
+    }
 
-        if (discountInput.value == 0) {
-            showWarningModal('Promo discount is required');
-            discountInput.focus();
-            validForInsert = false;
-            return;
-        }
+    if (discountInput.value == 0) {
+        showWarningModal('Promo discount is required');
+        discountInput.focus();
+        validForInsert = false;
+        return;
+    }
 
-        if (!daysToLiveInput.value || daysToLiveInput.value <= 0) {
-            showWarningModal('Days to Live must be greater than 0');
-            daysToLiveInput.focus();
-            validForInsert = false;
-            return;
-        }
+    if (!daysToLiveInput.value || daysToLiveInput.value <= 0) {
+        showWarningModal('Days to Live must be greater than 0');
+        daysToLiveInput.focus();
+        validForInsert = false;
+        return;
+    }
 
-        try {
-            // Build promo data based on whether we're creating new or updating existing
-            const promoData = {
-                code: parseInt(headerProductCode.value),
-                product: selectedProductData ? selectedProductData.ID : null,
-                type: selectedProductData ? selectedProductData.TYPEID : null,
-                maker: selectedProductData ? selectedProductData.MAKERID : null,
-                discount: parseFloat(discountInput.value) / 100,
-                daysToLive: parseInt(daysToLiveInput.value),
-                notes: productNotes.value
-            };
-
-            // Add ID for updates
-            if (promoID !== 'new' && selectedProductData) {
-                promoData.id = selectedProductData.ID;
+    try {
+        // Fetch all promos to check for duplicates
+        const allPromos = await fetchFilteredPromos('All', 'All');
+        
+        // Check for duplicate code using the isDuplicateCode function
+        if (isDuplicateCode(allPromos, headerProductCode)) {
+            const enteredCode = parseInt(headerProductCode.value);
+            const duplicatePromo = allPromos.find(p => p.CODE === enteredCode);
+            
+            // If we're editing an existing promo, exclude it from duplicate check
+            if (promoID === 'new' || (duplicatePromo && duplicatePromo.ID !== currentPromoId)) {
+                showWarningModal(`Promo code ${enteredCode} already exists${duplicatePromo ? ` (used by "${duplicatePromo.PRODUCTNAME}")` : ''}. Please use a different code.`);
+                headerProductCode.focus();
+                headerProductCode.select();
+                validForInsert = false;
+                return;
             }
+        }
 
-            const result = promoID === 'new' 
-                ? await insertPromo(promoData)
-                : await updatePromo(promoData);
+        // Build promo data based on whether we're creating new or updating existing
+        const promoData = {
+            code: parseInt(headerProductCode.value),
+            product: selectedProductData ? selectedProductData.ID : null,
+            type: selectedProductData ? selectedProductData.TYPEID : null,
+            maker: selectedProductData ? selectedProductData.MAKERID : null,
+            discount: parseFloat(discountInput.value) / 100,
+            daysToLive: parseInt(daysToLiveInput.value),
+            notes: productNotes.value
+        };
 
-            if (result.success) {
-                validForInsert = true;
-                formChanged = false;
+        // Add ID for updates
+        if (promoID !== 'new' && selectedProductData) {
+            promoData.id = selectedProductData.ID;
+        }
+
+        const result = promoID === 'new' 
+            ? await insertPromo(promoData)
+            : await updatePromo(promoData);
+
+        if (result.success) {
+            validForInsert = true;
+            formChanged = false;
+            
+            if (promoID === 'new') {
+                // Try multiple properties for the returned ID
+                const newPromoId = result.id || result.insertId || result.promoId || result.newId;
                 
-                if (promoID === 'new') {
-                    // Try multiple properties for the returned ID
-                    const newPromoId = result.id || result.insertId || result.promoId || result.newId;
+                if (newPromoId) {
+                    // Update URL to show the saved promo
+                    const params = new URLSearchParams(window.location.search);
+                    params.set('id', newPromoId);
+                    window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
+                    currentPromoId = newPromoId;
                     
-                    if (newPromoId) {
-                        // Update URL to show the saved promo
-                        const params = new URLSearchParams(window.location.search);
-                        params.set('id', newPromoId);
-                        window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
-                        currentPromoId = newPromoId;
+                    // Update the global promoID variable
+                    promoID = newPromoId.toString();
+                    
+                    // Refresh associated data for the saved promo
+                    totalIssued = await getIssuedCount(newPromoId);
+                    associatedCarousels = await getAssociatedCarouselForPromo(newPromoId);
+                    
+                    // Reload the promos list - use 'All' for type/maker if they're null/undefined
+                    const filterType = selectedType || 'All';
+                    const filterMaker = selectedMaker || 'All';
+                    promos = await fetchFilteredPromos(filterType, filterMaker);
+                    
+                    // Find the saved promo in the refreshed list by code
+                    const savedPromo = promos.find(p => p.CODE === parseInt(headerProductCode.value));
+                    
+                    if (savedPromo) {
+                        // Update with the actual promo ID from the database
+                        currentPromoId = savedPromo.ID;
+                        promoID = savedPromo.ID.toString();
                         
-                        // Update the global promoID variable
-                        promoID = newPromoId.toString();
+                        // Update URL with correct ID
+                        const updatedParams = new URLSearchParams(window.location.search);
+                        updatedParams.set('id', savedPromo.ID);
+                        window.history.pushState({}, '', `${window.location.pathname}?${updatedParams.toString()}`);
                         
-                        // Refresh associated data for the saved promo
-                        totalIssued = await getIssuedCount(newPromoId);
-                        associatedCarousels = await getAssociatedCarouselForPromo(newPromoId);
-                        
-                        // Reload the promos list - use 'All' for type/maker if they're null/undefined
-                        const filterType = selectedType || 'All';
-                        const filterMaker = selectedMaker || 'All';
-                        promos = await fetchFilteredPromos(filterType, filterMaker);
-                        
-                        // Find the saved promo in the refreshed list by code
-                        const savedPromo = promos.find(p => p.CODE === parseInt(headerProductCode.value));
-                        
-                        if (savedPromo) {
-                            // Update with the actual promo ID from the database
-                            currentPromoId = savedPromo.ID;
-                            promoID = savedPromo.ID.toString();
-                            
-                            // Update URL with correct ID
-                            const updatedParams = new URLSearchParams(window.location.search);
-                            updatedParams.set('id', savedPromo.ID);
-                            window.history.pushState({}, '', `${window.location.pathname}?${updatedParams.toString()}`);
-                            
-                            setupProductDropdown(); // Refresh dropdown
-                            loadPromoData(savedPromo);
-                            showConfirmation();
-                        } else {
-                            // If we can't find by code, show success but warn about data
-                            showConfirmation();
-                            console.log('Promo saved but not found in filtered results. This may be due to filtering constraints.');
-                        }
+                        setupProductDropdown(); // Refresh dropdown
+                        loadPromoData(savedPromo);
+                        showConfirmation(); // Only show confirmation here when actually successful
                     } else {
-                        // If no ID returned, try to find the promo by code with broader search
-                        const filterType = selectedType || 'All';
-                        const filterMaker = selectedMaker || 'All';
-                        promos = await fetchFilteredPromos(filterType, filterMaker);
-                        const savedPromo = promos.find(p => p.CODE === parseInt(headerProductCode.value));
-                        
-                        if (savedPromo) {
-                            // Update URL to show the saved promo
-                            const params = new URLSearchParams(window.location.search);
-                            params.set('id', savedPromo.ID);
-                            window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
-                            currentPromoId = savedPromo.ID;
-                            promoID = savedPromo.ID.toString();
-                            
-                            // Refresh associated data
-                            totalIssued = await getIssuedCount(savedPromo.ID);
-                            associatedCarousels = await getAssociatedCarouselForPromo(savedPromo.ID);
-                            
-                            setupProductDropdown(); // Refresh dropdown
-                            loadPromoData(savedPromo);
-                            showConfirmation();
-                        } else {
-                            // Promo saved but can't be found - likely due to filtering
-                            showConfirmation();
-                            console.log('Promo saved successfully but may not match current filter criteria.');
-                        }
+                        // If we can't find by code, show success but warn about data
+                        showConfirmation();
+                        console.log('Promo saved but not found in filtered results. This may be due to filtering constraints.');
                     }
                 } else {
-                    // For existing promos, reload data normally
+                    // If no ID returned, try to find the promo by code with broader search
                     const filterType = selectedType || 'All';
                     const filterMaker = selectedMaker || 'All';
                     promos = await fetchFilteredPromos(filterType, filterMaker);
                     const savedPromo = promos.find(p => p.CODE === parseInt(headerProductCode.value));
                     
                     if (savedPromo) {
+                        // Update URL to show the saved promo
+                        const params = new URLSearchParams(window.location.search);
+                        params.set('id', savedPromo.ID);
+                        window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
+                        currentPromoId = savedPromo.ID;
+                        promoID = savedPromo.ID.toString();
+                        
+                        // Refresh associated data
                         totalIssued = await getIssuedCount(savedPromo.ID);
                         associatedCarousels = await getAssociatedCarouselForPromo(savedPromo.ID);
                         
                         setupProductDropdown(); // Refresh dropdown
                         loadPromoData(savedPromo);
-                        showConfirmation();
+                        showConfirmation(); // Only show confirmation here when actually successful
                     } else {
-                        throw new Error('Updated promo not found in results');
+                        // Promo saved but can't be found - likely due to filtering
+                        showConfirmation();
+                        console.log('Promo saved successfully but may not match current filter criteria.');
                     }
                 }
             } else {
-                if (result.isDuplicateCode) {
-                    showWarningModal(result.error);
-                    headerProductCode.focus();
-                    headerProductCode.select();
+                // For existing promos, reload data normally
+                const filterType = selectedType || 'All';
+                const filterMaker = selectedMaker || 'All';
+                promos = await fetchFilteredPromos(filterType, filterMaker);
+                const savedPromo = promos.find(p => p.CODE === parseInt(headerProductCode.value));
+                
+                if (savedPromo) {
+                    totalIssued = await getIssuedCount(savedPromo.ID);
+                    associatedCarousels = await getAssociatedCarouselForPromo(savedPromo.ID);
+                    
+                    setupProductDropdown(); // Refresh dropdown
+                    loadPromoData(savedPromo);
+                    showConfirmation(); // Only show confirmation here when actually successful
                 } else {
-                    throw new Error(result.error);
+                    throw new Error('Updated promo not found in results');
                 }
-                validForInsert = false;
             }
-        } catch (error) {
-            console.error('Error saving promo:', error);
-            showWarningModal(`Failed to save changes: ${error.message}`);
+        } else {
+            // Enhanced error handling for different types of failures
+            if (result.isDuplicateCode || (result.error && result.error.toLowerCase().includes('duplicate'))) {
+                const enteredCode = parseInt(headerProductCode.value);
+                showWarningModal(`Promo code ${enteredCode} already exists. Please use a different code.`);
+                headerProductCode.focus();
+                headerProductCode.select();
+            } else if (result.error && result.error.toLowerCase().includes('constraint')) {
+                showWarningModal('A promo with this information already exists. Please check your entries.');
+                headerProductCode.focus();
+            } else {
+                showWarningModal(`Failed to save promo: ${result.error || 'Unknown error occurred'}`);
+            }
             validForInsert = false;
+            return; // Exit early - no success actions
         }
+    } catch (error) {
+        console.error('Error saving promo:', error);
+        
+        // Handle different types of errors
+        if (error.message.toLowerCase().includes('duplicate') || 
+            error.message.toLowerCase().includes('constraint')) {
+            const enteredCode = parseInt(headerProductCode.value);
+            showWarningModal(`Promo code ${enteredCode} already exists. Please use a different code.`);
+            headerProductCode.focus();
+            headerProductCode.select();
+        } else {
+            showWarningModal(`Failed to save changes: ${error.message}`);
+        }
+        validForInsert = false;
+        return; // Exit early - no success actions
+    }
+}
+
+    function isDuplicateCode(array, input) {
+        const enteredCode = parseInt(input.value);
+        
+        return array.some(promo => 
+        promo.CODE === enteredCode && 
+        (promoID === 'new' || promo.ID !== currentPromoId));
     }
 
     function createNewPromo() {
         selectedProductData = null;
         headerProductCode.value = "";
         headerProductName.value = "";
-        priceInput.value = "0";
-        discountInput.value = "0";
-        finalPriceInput.value = "0";
-        totalIssuedInput.value = "0";
-        daysToLiveInput.value = "0";
+        priceInput.value = "";
+        discountInput.value = "";
+        finalPriceInput.value = "";
+        totalIssuedInput.value = "";
+        daysToLiveInput.value = "";
         productNotes.value = "";
         mainProductImage.src = "media/9997.png";
         

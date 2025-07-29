@@ -112,6 +112,27 @@ document.addEventListener('DOMContentLoaded', async () => {
 // #region EVENT LISTENERS
     headerCarouselCode.addEventListener('input', function() {
         formChanged = true;
+        
+        // Real-time duplicate code checking (debounced)
+        clearTimeout(this.duplicateCheckTimeout);
+        this.duplicateCheckTimeout = setTimeout(async () => {
+            const enteredCode = parseInt(this.value);
+            if (!isNaN(enteredCode)) {
+                const allCarousels = await fetchFilteredCarousels(true);
+                const existingCarousel = allCarousels.find(c => 
+                    c.CODE === enteredCode && 
+                    (carouselId === 'new' || c.ID !== currentCarouselId)
+                );
+                
+                if (existingCarousel) {
+                    this.style.borderColor = '#dc3545';
+                    this.title = `Code ${enteredCode} is already in use by "${existingCarousel.NAME}"`;
+                } else {
+                    this.style.borderColor = '';
+                    this.title = '';
+                }
+            }
+        }, 500); // 500ms delay for debouncing
     });
 
     headerCarouselName.addEventListener('input', function() {
@@ -139,12 +160,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         saveCarouselData();
         formChanged = false;
 
-        if (pendingNavigationDirection) {
+        // Only navigate if save was successful and there's a pending navigation
+        if (validForInsert && pendingNavigationDirection) {
             navigateProduct(pendingNavigationDirection);
             pendingNavigationDirection = null;
-        } else {
-            showConfirmation();
         }
+        // Remove the else showConfirmation() call since it's handled in saveCarouselData()
     });
 
     carouselSettingsForm.addEventListener('submit', function(e) {
@@ -152,12 +173,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         saveCarouselData();
         formChanged = false;
 
-        if (pendingNavigationDirection) {
+        // Only navigate if save was successful and there's a pending navigation
+        if (validForInsert && pendingNavigationDirection) {
             navigateProduct(pendingNavigationDirection);
             pendingNavigationDirection = null;
-        } else {
-            showConfirmation();
         }
+        // Remove the else showConfirmation() call since it's handled in saveCarouselData()
     });
 
     cancelBtn.addEventListener('click', function() {
@@ -206,15 +227,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     saveAndContinueBtn.addEventListener('click', function() {
         saveCarouselData();
         formChanged = false;
-        if (pendingNavigationDirection === 'new') {
-            const params = new URLSearchParams(window.location.search);
-            params.set('id', 'new');
-            window.location.href = `${window.location.pathname}?${params.toString()}`;
-        } else {
-            navigateProduct(pendingNavigationDirection);
+        
+        // Only navigate if save was successful
+        if (validForInsert) {
+            if (pendingNavigationDirection === 'new') {
+                const params = new URLSearchParams(window.location.search);
+                params.set('id', 'new');
+                window.location.href = `${window.location.pathname}?${params.toString()}`;
+            } else {
+                navigateProduct(pendingNavigationDirection);
+            }
+            pendingNavigationDirection = null;
+            unsavedChangesModal.style.display = 'none';
         }
-        pendingNavigationDirection = null;
-        unsavedChangesModal.style.display = 'none';
+        // If save failed, don't navigate and keep the modal open for user to see the error
     });
 
     discardAndContinueBtn.addEventListener('click', function() {
@@ -233,9 +259,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         e.preventDefault(); // Prevent default form submission
         saveCarouselData();
         formChanged = false;
-        if (validForInsert){
-            showConfirmation();
-        }
+        // Remove the automatic showConfirmation() call:
+        // if (validForInsert){
+        //     showConfirmation();
+        // }
+        // The showConfirmation() should only be called from within saveCarouselData() upon successful save
     });
 
     deleteBtn.addEventListener('click', function() {
@@ -1271,6 +1299,24 @@ async function saveCarouselData() {
             throw new Error('Carousel Name is required');
         }
 
+        // Fetch all carousels to check for duplicates
+        const allCarousels = await fetchFilteredCarousels(true);
+        
+        // Check for duplicate code using the isDuplicateCode function
+        if (isDuplicateCode(allCarousels, headerCarouselCode)) {
+            const enteredCode = parseInt(headerCarouselCode.value);
+            const duplicateCarousel = allCarousels.find(c => c.CODE === enteredCode);
+            
+            // If we're editing an existing carousel, exclude it from duplicate check
+            if (carouselId === 'new' || (duplicateCarousel && duplicateCarousel.ID !== currentCarouselId)) {
+                showWarningModal(`Carousel code ${enteredCode} already exists${duplicateCarousel ? ` (used by "${duplicateCarousel.NAME}")` : ''}. Please use a different code.`);
+                headerCarouselCode.focus();
+                headerCarouselCode.select();
+                validForInsert = false;
+                return;
+            }
+        }
+
         // Validate numeric settings and convert seconds to milliseconds
         const code = parseInt(headerCarouselCode.value);
         const autoplayWait = parseFloat(autoplayWaitInput.value) * 1000; // Convert to milliseconds
@@ -1372,7 +1418,21 @@ async function saveCarouselData() {
             result = await InsertCarouselAndMinigame(carouselData);
             
             if (!result.success) {
-                throw new Error(result.error || 'Failed to create carousel');
+                // Enhanced error handling for different types of failures
+                if (result.isDuplicateCode || (result.error && result.error.toLowerCase().includes('duplicate'))) {
+                    showWarningModal(`Carousel code ${code} already exists. Please use a different code.`);
+                    headerCarouselCode.focus();
+                    headerCarouselCode.select();
+                    validForInsert = false;
+                    return;
+                } else if (result.error && result.error.toLowerCase().includes('constraint')) {
+                    showWarningModal('A carousel with this information already exists. Please check your entries.');
+                    headerCarouselCode.focus();
+                    validForInsert = false;
+                    return;
+                } else {
+                    throw new Error(result.error || 'Failed to create carousel');
+                }
             }
 
             savedCarouselId = result.carouselId;
@@ -1408,7 +1468,21 @@ async function saveCarouselData() {
             result = await UpdateCarouselAndMinigame(carouselData);
             
             if (!result.success) {
-                throw new Error(result.error || 'Failed to update carousel');
+                // Enhanced error handling for different types of failures
+                if (result.isDuplicateCode || (result.error && result.error.toLowerCase().includes('duplicate'))) {
+                    showWarningModal(`Carousel code ${code} already exists. Please use a different code.`);
+                    headerCarouselCode.focus();
+                    headerCarouselCode.select();
+                    validForInsert = false;
+                    return;
+                } else if (result.error && result.error.toLowerCase().includes('constraint')) {
+                    showWarningModal('A carousel with this information already exists. Please check your entries.');
+                    headerCarouselCode.focus();
+                    validForInsert = false;
+                    return;
+                } else {
+                    throw new Error(result.error || 'Failed to update carousel');
+                }
             }
 
             // Update carousels array
@@ -1475,8 +1549,6 @@ async function saveCarouselData() {
             showWarningModal('Carousel saved but there was an issue saving associated products. Please refresh and try again.');
             }   
 
-
-
         try{
             // 3. Delete all existing promo lines for this carousel
             const existingPromoLines = await getPromoLinesByCarousel(savedCarouselId);
@@ -1520,19 +1592,40 @@ async function saveCarouselData() {
             // Don't throw here - carousel was saved successfully
             showWarningModal('Carousel saved but there was an issue saving associated promos. Please refresh and try again.');
         }
-
         validForInsert = true;
         formChanged = false;
         updateNavigationState();
+        
+        // Only show confirmation when save is actually successful
+        showConfirmation();
         
         console.log('Carousel and associated items saved successfully with state:', currentState);
         
     } catch (error) {
         console.error('Error saving carousel:', error);
-        showWarningModal(error.message);
+        
+        // Handle different types of errors
+        if (error.message.toLowerCase().includes('duplicate') || 
+            error.message.toLowerCase().includes('constraint')) {
+            const enteredCode = parseInt(headerCarouselCode.value);
+            showWarningModal(`Carousel code ${enteredCode} already exists. Please use a different code.`);
+            headerCarouselCode.focus();
+            headerCarouselCode.select();
+        } else {
+            showWarningModal(error.message);
+        }
         validForInsert = false;
-        throw error; // Re-throw to prevent success actions
+        // Don't call showConfirmation() here - only show error
+        return; // Exit early - no success actions
     }
+}
+
+function isDuplicateCode(array, input) {
+    const enteredCode = parseInt(input.value);
+    
+    return array.some(carousel => 
+        carousel.CODE === enteredCode && 
+        (carouselId === 'new' || carousel.ID !== currentCarouselId));
 }
 
 // Update updatePromoQueueNumbers to work with chances
