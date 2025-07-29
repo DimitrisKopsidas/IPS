@@ -7,7 +7,8 @@
 //1)IMPLEMENT BACK SWIPE
 
 import { fetchCarouselProducts, fetchCarouselSettings, updateDeviceLastPing,
-  fetchCarouselSettingsCarouselId, fetchCarouselProductsCarouselId } from './dbService.js';
+  fetchCarouselSettingsCarouselId, fetchCarouselProductsCarouselId,
+  fetchMinigamePromos } from './dbService.js';
 
 // #region VARIABLE DECLARATION
 var car;
@@ -25,6 +26,7 @@ var actionWindow;
 var media = [];
 let products = [];
 let settings = [];
+let minigamePromos = [];
 let state;
 let carouselId;
 let connectkey;
@@ -38,6 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     connectkey = params.get('connectkey');
     isPreview = params.get('preview');
     carouselSource = params.get('carousel');
+    minigamePromos = await fetchMinigamePromos(connectkey);
 
     if (isPreview != 1) {
       products = await fetchCarouselProducts(connectkey);
@@ -161,7 +164,9 @@ function minigameListener(current,prev){
   
   console.log("Flag:"+actionFlag+" Count:"+actionCount);
   if (actionCount == (countforminigame)) {
-    window.location.href = nextPageUrl;
+    if (minigamePromos.length != 0) {
+      window.location.href = nextPageUrl;
+    }
   }
 }
 
