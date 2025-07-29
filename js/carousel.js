@@ -589,11 +589,9 @@ productInfo.addEventListener('click', function(e) {
 const deleteBtn = div.querySelector('.delete-product-btn');
 deleteBtn.addEventListener('click', function(e) {
     e.stopPropagation();
-    // if (confirm('Remove this product from the carousel?')) {
-        div.remove();
-        updateQueueNumbers();
-        formChanged = true;
-    // }
+    div.remove();
+    updateQueueNumbers();
+    formChanged = true;
 });
 
 // Add drag and drop events using existing functions
@@ -748,11 +746,9 @@ async function loadCarouselData(data) {
                     const deleteBtn = div.querySelector('.delete-product-btn');
                     deleteBtn.addEventListener('click', function(e) {
                         e.stopPropagation();
-                        // if (confirm('Remove this product from the carousel?')) {
-                            div.remove();
-                            updateQueueNumbers();
-                            formChanged = true;
-                        // }
+                        div.remove();
+                        updateQueueNumbers();
+                        formChanged = true;
                     });
                     
                     addDnDEvents(div);
@@ -799,11 +795,18 @@ async function loadCarouselData(data) {
                     const deleteBtn = div.querySelector('.delete-promo-btn');
                     deleteBtn.addEventListener('click', function(e) {
                         e.stopPropagation();
-                        // if (confirm('Remove this promo from the carousel?')) {
-                            div.remove();
+                        div.remove();
+                        // Check if this was the last promo
+                        const remainingItems = associatedPromos.querySelectorAll('.info-item');
+                        if (remainingItems.length === 0) {
+                            // Show "no data" message and update total display
+                            associatedPromos.innerHTML = '<div class="no-data">No associated promos found</div>';
+                            updatePromoChanceTotal(); // This will show "Minigame will not trigger"
+                        } else {
                             redistributePromoChances();
-                            formChanged = true;
-                        // }
+                        }
+                        
+                        formChanged = true;
                     });
 
                     // Add chance input event listeners
@@ -818,9 +821,13 @@ async function loadCarouselData(data) {
                 updatePromoChanceTotal();
             } else {
                 associatedPromos.innerHTML = '<div class="no-data">No associated promos found</div>';
+                // Call updatePromoChanceTotal to show "Minigame will not trigger"
+                updatePromoChanceTotal();
             }
         } catch (err) {
             associatedPromos.innerHTML = '<div class="no-data">Failed to load associated promos</div>';
+            // Call updatePromoChanceTotal to show "Minigame will not trigger"
+            updatePromoChanceTotal();
         }
     }
 
@@ -871,11 +878,14 @@ function createNewCarousel() {
     if (associatedProducts) associatedProducts.innerHTML = '<div class="no-data">No associated products found</div>';
     if (associatedPromos) associatedPromos.innerHTML = '<div class="no-data">No associated promos found</div>';
 
-    // Clear any promo chance total display
+    // Clear any existing promo chance total display
     const totalDisplay = document.getElementById('promoChanceTotal');
     if (totalDisplay) {
         totalDisplay.remove();
     }
+
+    // Show the "Minigame will not trigger" message for new carousels
+    updatePromoChanceTotal();
 
     // Hide delete button for new carousels
     if (deleteBtn) deleteBtn.style.display = 'none';
@@ -1152,11 +1162,19 @@ function selectAssociatedPromo(promo) {
     const deleteBtn = div.querySelector('.delete-promo-btn');
     deleteBtn.addEventListener('click', function(e) {
         e.stopPropagation();
-        // if (confirm('Remove this promo from the carousel?')) {
-            div.remove();
+        div.remove();
+        
+        // Check if this was the last promo
+        const remainingItems = associatedPromos.querySelectorAll('.info-item');
+        if (remainingItems.length === 0) {
+            // Show "no data" message and update total display
+            associatedPromos.innerHTML = '<div class="no-data">No associated promos found</div>';
+            updatePromoChanceTotal(); // This will show "Minigame will not trigger"
+        } else {
             redistributePromoChances();
-            formChanged = true;
-        // }
+        }
+        
+        formChanged = true;
     });
 
     // Add chance input event listeners
