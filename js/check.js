@@ -11,8 +11,10 @@ const applyCodeBtn = document.getElementById('applyCodeBtn');
 const verificationModal = document.getElementById('verificationModal');
 let issueDate;
 let expiryDate;
+let redeemDate;
 let formatedIssueDate;
 let formatedExpiryDate;
+let formatedRedeemDate;
 let promoCode;
 let promoData;
 // #endregion VARIABLE DECLARATION
@@ -40,8 +42,10 @@ async function verifyPromoCode(promoCode) {// PROMO CHECK
             promoData = await getPromoData(promoCode);
             issueDate = new Date(promoData.ISSUEDATE);
             expiryDate = new Date(issueDate.getTime() + (promoData.DAYSTOLIVE * 24 * 60 * 60 * 1000));
+            redeemDate = new Date(promoData.REDEEMDATE);
             formatedExpiryDate = formatDate(expiryDate);
             formatedIssueDate = formatDate(issueDate);
+            formatedRedeemDate = formatDate(redeemDate);
         }
         
         switch (status) {
@@ -59,7 +63,7 @@ async function verifyPromoCode(promoCode) {// PROMO CHECK
                 showError('This promo code expired on ' + formatedExpiryDate);
                 break;
             case 3:
-                showError('This promo code has already been redeemed on ' + formatedExpiryDate);
+                showError('This promo code has already been redeemed on ' + formatedRedeemDate);
                 break;
             default:
                 showError('Error checking promo code');
