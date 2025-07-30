@@ -15,7 +15,7 @@ var car;
 var flkty
 var autoplayWait;
 var autoplaySpeed;
-var countforminigame;
+var countForMinigame;
 var prevSlide=0;
 var currSlide;
 var actionFlag=0;
@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     autoplayWait = settings[0].AUTOPLAYWAIT;
     autoplaySpeed = settings[0].SPEED;
-    countforminigame = settings[0].GAMECOUNT;
+    countForMinigame = settings[0].GAMECOUNT;
     actionWindow = autoplayWait + 2000;
     state = settings[0].STATE;
     carouselId = settings[0].ID;
@@ -163,8 +163,8 @@ function minigameListener(current,prev){
   }
   
   console.log("Flag:"+actionFlag+" Count:"+actionCount);
-  if (actionCount == (countforminigame)) {
-    if (minigamePromos.length != 0) {
+  if (actionCount == (countForMinigame)) {
+    if (minigamePromos.length != 0 && countForMinigame !== 0) {
       window.location.href = nextPageUrl;
     }
   }

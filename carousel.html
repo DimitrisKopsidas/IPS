@@ -49,24 +49,48 @@
                         </div>
                         <div class="form-row">
                             <div class="form-group half">
-                                <label for="device">Device</label>
+                                <div class="label-container">
+                                    <label for="device">Device</label>
+                                    <span class="info-icon" data-info="device">i</span>
+                                    <div class="info-modal" id="info-device">
+                                        The available physical devices where this carousel will be displayed. Each device has a unique identifier that connects it to the system.
+                                    </div>
+                                </div>
                                 <select id="device" name="device">
                                     <!-- Options will be populated dynamically -->
                                 </select>
                             </div>
                             <div class="form-group half">
-                                <label for="autoplaywait">Autoplay Wait (s)</label>
+                                <div class="label-container">
+                                    <label for="autoplaywait">Autoplay Wait (s)</label>
+                                    <span class="info-icon" data-info="autoplaywait">i</span>
+                                    <div class="info-modal" id="info-autoplaywait">
+                                        Time in seconds to wait before automatically advancing to the next product. Higher values give users more time to view each product.
+                                    </div>
+                                </div>
                                 <input type="number" id="autoplaywait" name="autoplaywait" value="0">
                             </div>
                         </div>
                         
                         <div class="form-row">
                             <div class="form-group half">
-                                <label for="speed">Speed (s)</label>
+                                <div class="label-container">
+                                    <label for="speed">Speed (s)</label>
+                                    <span class="info-icon" data-info="speed">i</span>
+                                    <div class="info-modal" id="info-speed">
+                                        Duration in seconds for the transition animation between products. Lower values create faster transitions.
+                                    </div>
+                                </div>
                                 <input type="number" id="speed" name="speed" value="0">
                             </div>
                             <div class="form-group half">
-                                <label for="gamecount">Game Count</label>
+                                <div class="label-container">
+                                    <label for="gamecount">Game Count</label>
+                                    <span class="info-icon" data-info="gamecount">i</span>
+                                    <div class="info-modal" id="info-gamecount">
+                                        Number of times a user must interact with the carousel before the minigame appears in view. Set to 0 to never trigger the minigame.
+                                    </div>
+                                </div>
                                 <input type="number" id="gamecount" name="gamecount" value="0">
                             </div>
                         </div>
@@ -107,21 +131,45 @@
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="revolutions">Revolutions</label>
+                                <div class="label-container">
+                                    <label for="revolutions">Revolutions</label>
+                                    <span class="info-icon" data-info="revolutions">i</span>
+                                    <div class="info-modal" id="info-revolutions">
+                                        Number of rotations the minigame wheel will make before stopping.
+                                    </div>
+                                </div>
                                 <input type="number" id="revolutions" name="revolutions" value="0">
                             </div>
                             <div class="form-group">
-                                <label for="spinduration">Spin Duration (s)</label>
+                                <div class="label-container">
+                                    <label for="spinduration">Spin Duration (s)</label>
+                                    <span class="info-icon" data-info="spinduration">i</span>
+                                    <div class="info-modal" id="info-spinduration">
+                                        Total time in seconds for the wheel spinning animation. This includes acceleration, full speed, and deceleration phases.
+                                    </div>
+                                </div>
                                 <input type="number" id="spinduration" name="spinduration" value="0">
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="onstoptime">On Stop Time (s)</label>
+                                <div class="label-container">
+                                    <label for="onstoptime">On Stop Time (s)</label>
+                                    <span class="info-icon" data-info="onstoptime">i</span>
+                                    <div class="info-modal" id="info-onstoptime">
+                                        Time in seconds to display the result after the wheel stops spinning. Gives users time to photograph the promo code.
+                                    </div>
+                                </div>
                                 <input type="number" id="onstoptime" name="onstoptime" value="0">
                             </div>
                             <div class="form-group">
-                                <label for="inactivitytime">Inactivity Time (s)</label>
+                                <div class="label-container">
+                                    <label for="inactivitytime">Inactivity Time (s)</label>
+                                    <span class="info-icon" data-info="inactivitytime">i</span>
+                                    <div class="info-modal" id="info-inactivitytime">
+                                        Time in seconds to wait for user interaction before automatically returning to the carousel. Prevents the minigame from staying open indefinitely.
+                                    </div>
+                                </div>
                                 <input type="number" id="inactivitytime" name="inactivitytime" value="0">
                             </div>
                         </div>

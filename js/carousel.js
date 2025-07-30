@@ -1339,7 +1339,7 @@ async function saveCarouselData() {
             throw new Error('Speed must be a valid number greater than 0');
         }
 
-        if (isNaN(gameCount) || gameCount <= 0) {
+        if (isNaN(gameCount) || gameCount < 0) {
             throw new Error('Game Count must be a valid number greater than 0');
         }
 
@@ -1735,4 +1735,47 @@ document.getElementById('previewMinigameBtn').addEventListener('click', function
     // Open minigame preview in new tab
     const previewUrl = `minigame.html?preview=1&carousel=${currentCarouselId}`;
     window.open(previewUrl, '_blank');
+});
+
+// Info modal functionality
+const infoIcons = document.querySelectorAll('.info-icon');
+const infoModals = document.querySelectorAll('.info-modal');
+let activeModal = null;
+
+infoIcons.forEach(icon => {
+    icon.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const targetInfo = this.getAttribute('data-info');
+        const modal = document.getElementById(`info-${targetInfo}`);
+        
+        // Close any currently active modal
+        if (activeModal && activeModal !== modal) {
+            activeModal.classList.remove('active');
+        }
+        
+        // Toggle the clicked modal
+        if (modal.classList.contains('active')) {
+            modal.classList.remove('active');
+            activeModal = null;
+        } else {
+            modal.classList.add('active');
+            activeModal = modal;
+        }
+    });
+});
+
+// Close info modals when clicking outside
+document.addEventListener('click', function(e) {
+    if (activeModal && !e.target.closest('.info-icon') && !e.target.closest('.info-modal')) {
+        activeModal.classList.remove('active');
+        activeModal = null;
+    }
+});
+
+// Close info modals when scrolling
+window.addEventListener('scroll', function() {
+    if (activeModal) {
+        activeModal.classList.remove('active');
+        activeModal = null;
+    }
 });
