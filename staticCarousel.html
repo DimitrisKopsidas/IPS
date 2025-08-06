@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crystal - Static Carousel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flickity/2.2.2/flickity.min.css">
+    <link rel="stylesheet" href="css/activeCarousel.css">
+</head>
+<body>
+    <div class="carousel">
+        <!-- Default static carousel items -->
+        <div class="carousel-cell">
+            <img src="media/1.png" onerror="this.src='media/404.png'">
+            <div class="product-info-overlay">
+                <div class="product-title">Sample Product 1</div>
+                <div class="product-price">
+                    <span class="original-price">$99.99</span>
+                    to
+                    <span class="final-price">$79.99</span>
+                </div>
+                <div class="product-discount">Discount: -20%</div>
+            </div>
+        </div>
+        
+        <div class="carousel-cell">
+            <img src="media/2.png" onerror="this.src='media/404.png'">
+            <div class="product-info-overlay">
+                <div class="product-title">Sample Product 2</div>
+                <div class="product-price">$149.99</div>
+            </div>
+        </div>
+        
+        <div class="carousel-cell">
+            <img src="media/3.png" onerror="this.src='media/404.png'">
+            <div class="product-info-overlay">
+                <div class="product-title">Sample Product 3</div>
+                <div class="product-price">
+                    <span class="original-price">$199.99</span>
+                    to
+                    <span class="final-price">$159.99</span>
+                </div>
+                <div class="product-discount">Discount: -25%</div>
+            </div>
+        </div>
+        
+        <div class="carousel-cell">
+            <img src="media/4.png" onerror="this.src='media/404.png'">
+            <div class="product-info-overlay">
+                <div class="product-title">Sample Product 4</div>
+                <div class="product-price">$89.99</div>
+            </div>
+        </div>
+        
+        <div class="carousel-cell">
+            <img src="media/5.png" onerror="this.src='media/404.png'">
+            <div class="product-info-overlay">
+                <div class="product-title">Sample Product 5</div>
+                <div class="product-price">
+                    <span class="original-price">$299.99</span>
+                    to
+                    <span class="final-price">$249.99</span>
+                </div>
+                <div class="product-discount">Discount: -17%</div>
+            </div>
+        </div>
+        
+        <div class="carousel-cell">
+            <img src="media/6.png" onerror="this.src='media/404.png'">
+            <div class="product-info-overlay">
+                <div class="product-title">Sample Product 6</div>
+                <div class="product-price">$59.99</div>
+            </div>
+        </div>
+    </div> 
+
+    <!-- Instruction Modal -->
+    <div class="instruction-modal" id="instructionModal">
+        <div class="instruction-modal-content">
+            <img src="media/hand.png" id="hand" alt="Hand gesture">
+            <p class="instruction-text">Use your hand to scroll through the catalog to win a prize!</p>
+        </div>
+    </div>
+
+    <!-- Flickity JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flickity/2.2.2/flickity.pkgd.min.js"></script>
+    
+    <!-- Simple initialization script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var carousel = document.querySelector('.carousel');
+            var flkty = new Flickity(carousel, { 
+                wrapAround: true,
+                prevNextButtons: false,
+                pageDots: false,
+                autoPlay: 3000, // 3 second autoplay
+                pauseAutoPlayOnHover: true
+            });
+            
+            // Optional: Show instruction modal for 3 seconds
+            var instructionModal = document.getElementById('instructionModal');
+            if (instructionModal) {
+                instructionModal.style.display = 'flex';
+                setTimeout(function() {
+                    instructionModal.style.display = 'none';
+                }, 3000);
+            }
+            
+            // Simple click interaction
+            carousel.addEventListener('click', function() {
+                flkty.stopPlayer();
+                setTimeout(function(){
+                    flkty.playPlayer();
+                }, 2000);
+            });
+        });
+    </script>
+</body>
+</html>
