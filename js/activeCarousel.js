@@ -99,12 +99,48 @@ document.addEventListener('DOMContentLoaded', async () => {
     },actionWindow)   
   })
 
+  // Add keyboard event listener for arrow keys
+  document.addEventListener('keydown', function(event) {
+    // Check if left arrow key is pressed
+    if (event.key === 'ArrowLeft' || event.keyCode === 37) {
+      event.preventDefault(); // Prevent default scroll behavior
+      if (flkty) {
+        flkty.previous(); // Go to previous item
+        // Restart autoplay after manual navigation
+        flkty.stopPlayer();
+        setTimeout(function(){
+          flkty.playPlayer();
+        }, autoplayWait);
+        
+        // Trigger action tracking for minigame
+        triggerActionTracking();
+      }
+      console.log("Left arrow pressed - Previous item");
+    }
+    
+    // Check if right arrow key is pressed
+    if (event.key === 'ArrowRight' || event.keyCode === 39) {
+      event.preventDefault(); // Prevent default scroll behavior
+      if (flkty) {
+        flkty.next(); // Go to next item
+        // Restart autoplay after manual navigation
+        flkty.stopPlayer();
+        setTimeout(function(){
+          flkty.playPlayer();
+        }, autoplayWait);
+        
+        // Trigger action tracking for minigame
+        triggerActionTracking();
+      }
+      console.log("Right arrow pressed - Next item");
+    }
+  });
+
   flkty.on('change', async function(index) { //LISTENER FOR CELL IN FOCUS
     currSlide=index;
     backSwipeListener(currSlide,prevSlide);
     minigameListener(currSlide,prevSlide);
     prevSlide=index;
-    
   });
 });
 
@@ -163,11 +199,25 @@ function minigameListener(current,prev){
   }
   
   console.log("Flag:"+actionFlag+" Count:"+actionCount);
-  if (actionCount == (countForMinigame)) {
+  if (actionCount >= countForMinigame) {
     if (minigamePromos.length != 0 && countForMinigame !== 0) {
+      console.log("Minigame threshold reached - navigating to minigame");
       window.location.href = nextPageUrl;
     }
   }
+}
+
+function triggerActionTracking() {
+  // Trigger the same action tracking used for click events
+  actionFlag = 1;
+  clearTimeout(timeoutID);
+  console.log("Keyboard Action Start Flag:" + actionFlag + " Count:" + actionCount);
+
+  timeoutID = setTimeout(function(){ // RESET
+    actionCount = 0;
+    actionFlag = 0;
+    console.log("Keyboard Action End");
+  }, actionWindow);
 }
 
 async function updateData() {
