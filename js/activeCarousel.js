@@ -232,10 +232,10 @@ async function updateData() {
     try {
       if (isPreview != 1) {
         settings = await fetchCarouselSettings(connectkey);
-        console.log('Settings fetched for connectkey:', connectkey);
+        //console.log('Settings fetched for connectkey:', connectkey);
       } else {
         settings = await fetchCarouselSettingsCarouselId(carouselSource);
-        console.log('Settings fetched for carousel source:', carouselSource);
+        //console.log('Settings fetched for carousel source:', carouselSource);
       }
       
       if (settings[0].STATE !== state) {

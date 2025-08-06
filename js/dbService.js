@@ -38,7 +38,7 @@ async function fetchCarouselSettings(connectkey) {
 
 async function updateDeviceLastPing(connectKey) {
     try {
-        console.log('Updating last ping for device:', connectKey);
+        //console.log('Updating last ping for device:', connectKey);
         const response = await fetch(`http://localhost:3000/api/updateDeviceLastPing/${connectKey}`);
         
         if (!response.ok) {
