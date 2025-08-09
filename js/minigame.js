@@ -86,20 +86,52 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('Error initializing wheel:', error);
     }
 
-    const spinLeft=function(){//SPIN WHEEL AND DISABLE ITSELF AND OTHER SEPARATOR ACTIVATION
-        wheel.spinToItem(winningItemIndex,spinDuration,false,revolutions,1,null);
-        rightSep.removeEventListener('mouseover',spinRight);
-        leftSep.removeEventListener('mouseover',spinLeft);
-        wheelStartBySeparator=1;
+    // Consolidated spin function
+    function triggerSpin(direction) {
+        if (wheelStartBySeparator === 0 && wheel) {
+            wheel.spinToItem(winningItemIndex, spinDuration, false, revolutions, direction, null);
+            // Disable all spin triggers after any spin starts
+            rightSep.removeEventListener('mouseover', spinRight);
+            leftSep.removeEventListener('mouseover', spinLeft);
+            wheelStartBySeparator = 1;
+            return true;
+        }
+        return false;
     }
-    const spinRight=function(){//SPIN WHEEL AND DISABLE ITSELF AND OTHER SEPARATOR ACTIVATION
-        wheel.spinToItem(winningItemIndex,spinDuration,false,revolutions,-1,null);
-        leftSep.removeEventListener('mouseover',spinLeft);
-        rightSep.removeEventListener('mouseover',spinRight);
-        wheelStartBySeparator=1;
+
+    const spinLeft = function() {
+        if (triggerSpin(1)) {
+            console.log("Mouse spin left triggered");
+        }
     }
-    leftSep.addEventListener('mouseover',spinLeft);
-    rightSep.addEventListener('mouseover',spinRight);
+    
+    const spinRight = function() {
+        if (triggerSpin(-1)) {
+            console.log("Mouse spin right triggered");
+        }
+    }
+
+    //leftSep.addEventListener('mouseover', spinLeft);
+    //rightSep.addEventListener('mouseover', spinRight);
+
+    // Add keyboard event listener for arrow keys
+    document.addEventListener('keydown', function(event) {
+        // Check if left arrow key is pressed
+        if (event.key === 'ArrowLeft' || event.keyCode === 37) {
+            event.preventDefault();
+            if (triggerSpin(-1)) {
+                console.log("Left arrow pressed - Spinning left");
+            }
+        }
+        
+        // Check if right arrow key is pressed
+        if (event.key === 'ArrowRight' || event.keyCode === 39) {
+            event.preventDefault();
+            if (triggerSpin(1)) {
+                console.log("Right arrow pressed - Spinning right");
+            }
+        }
+    });
     
     winningItemCalc();
 });
