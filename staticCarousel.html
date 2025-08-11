@@ -85,7 +85,7 @@
     <!-- Flickity JavaScript -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/flickity/2.2.2/flickity.pkgd.min.js"></script>
     
-    <!-- Simple initialization script -->
+    <!-- Enhanced initialization script with keyboard controls from activeCarousel.js -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             var carousel = document.querySelector('.carousel');
@@ -97,6 +97,9 @@
                 pauseAutoPlayOnHover: true
             });
             
+            // Settings from activeCarousel.js
+            var autoplayWait = 2000; // Wait time after interaction before restarting autoplay
+            
             // Optional: Show instruction modal for 3 seconds
             var instructionModal = document.getElementById('instructionModal');
             if (instructionModal) {
@@ -106,12 +109,48 @@
                 }, 3000);
             }
             
-            // Simple click interaction
+            // Click interaction - restart autoplay after interaction (from activeCarousel.js)
             carousel.addEventListener('click', function() {
                 flkty.stopPlayer();
                 setTimeout(function(){
                     flkty.playPlayer();
-                }, 2000);
+                }, autoplayWait);
+            });
+
+            // Keyboard event listener for arrow keys (exact copy from activeCarousel.js)
+            document.addEventListener('keydown', function(event) {
+                // Check if left arrow key is pressed
+                if (event.key === 'ArrowLeft' || event.keyCode === 37) {
+                    event.preventDefault(); // Prevent default scroll behavior
+                    if (flkty) {
+                        flkty.previous(); // Go to previous item
+                        // Restart autoplay after manual navigation
+                        flkty.stopPlayer();
+                        setTimeout(function(){
+                            flkty.playPlayer();
+                        }, autoplayWait);
+                    }
+                    console.log("Left arrow pressed - Previous item");
+                }
+                
+                // Check if right arrow key is pressed
+                if (event.key === 'ArrowRight' || event.keyCode === 39) {
+                    event.preventDefault(); // Prevent default scroll behavior
+                    if (flkty) {
+                        flkty.next(); // Go to next item
+                        // Restart autoplay after manual navigation
+                        flkty.stopPlayer();
+                        setTimeout(function(){
+                            flkty.playPlayer();
+                        }, autoplayWait);
+                    }
+                    console.log("Right arrow pressed - Next item");
+                }
+            });
+
+            // Change listener (simplified version from activeCarousel.js for debugging)
+            flkty.on('change', function(index) {
+                console.log('Carousel changed to slide:', index);
             });
         });
     </script>
