@@ -210,6 +210,15 @@ function displayPrize() {
         console.log('Maker prize:', winningPromo.MAKERNAME);
     }
     
+    // Calculate expiration date
+    const expirationDate = new Date();
+    expirationDate.setDate(expirationDate.getDate() + winningPromo.DAYSTOLIVE);
+    const formattedExpirationDate = expirationDate.toLocaleDateString();
+    
+    // Create expiration message
+    const daysText = winningPromo.DAYSTOLIVE === 1 ? 'day' : 'days';
+    const expirationMessage = `Valid for ${winningPromo.DAYSTOLIVE} ${daysText} (expires on ${formattedExpirationDate})`;
+    
     prizeDisplay.innerHTML = `
         <div class="prize-container">
             ${prizeImage}
@@ -218,6 +227,7 @@ function displayPrize() {
                 <p class="discount-text">You won a ${winningPromo.DISCOUNT * 100}% discount for:</p>
                 <p class="prize-text">${prizeText}</p>
                 <p class="code-text">Redeem code: ${redeemCode}</p>
+                <p class="expiration-text">${expirationMessage}</p>
                 <p class="redeem-instruction">Photograph this code and redeem it at the register</p>
             </div>
         </div>
