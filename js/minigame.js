@@ -66,11 +66,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
     });
 
+    // Validate that chances sum to 1
+    const totalChance = promos.reduce((sum, promo) => sum + (promo.CHANCE || 0), 0);
+    if (Math.abs(totalChance - 1) > 0.001) { // Allow for small floating point errors
+        console.warn(`Total chance is ${totalChance}, expected 1.0. This may affect visual distribution.`);
+    }
+
     // Define props for the wheel
     const props = {
         items: promos.map(promo => ({
                 label: `${promo.DISCOUNT * 100}%`,
-                chance: promo.CHANCE || 1, 
+                weight: promo.CHANCE, // This will determine the visual size of each slice
                 id: promo.ID 
             })),
             onRest: onStop,
@@ -215,24 +221,24 @@ function winningItemCalc() {
     }
 
     try {
-        // Calculate total chance
-        const totalChance = promos.reduce((sum, promo) => sum + (promo.CHANCE || 1), 0);
-        
-        // Generate random number between 0 and total chance
-        const random = Math.random() * totalChance;
+        // Since total chance equals 1, we can use the chances directly
+        const random = Math.random(); // Random number between 0 and 1
 
         // Find winning item based on cumulative probability
         let cumulative = 0;
         for (let i = 0; i < promos.length; i++) {
-            cumulative += promos[i].CHANCE || 1;
+            cumulative += promos[i].CHANCE || 0;
             if (random <= cumulative) {
                 winningItemIndex = i;
                 console.log(`Selected winning item index: ${i}`, promos[i]);
+                console.log(`Random value: ${random}, Cumulative: ${cumulative}`);
                 return i;
             }
         }
 
+        // Fallback to last item if rounding errors occur
         winningItemIndex = promos.length - 1;
+        console.log(`Fallback to last item: ${winningItemIndex}`);
         return promos.length - 1;
 
     } catch (error) {
