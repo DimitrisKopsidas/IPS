@@ -30,6 +30,13 @@ var overlay=new Image();
 overlay.src='media/overlay.svg';// Initialize overlay as image
 let isPreview = false;
 let carouselSource;
+
+// Timer variables
+let countdownInterval;
+let currentTimeout;
+let timeRemaining;
+let timerElement;
+let isInactivityTimer = true;
 // #endregion VARIABLE DECLARATION
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -37,6 +44,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     connectkey = params.get('connectkey');
     isPreview = params.get('preview');
     carouselSource = params.get('carousel');
+
+    // Initialize timer element FIRST - after DOM is loaded
+    timerElement = document.getElementById('countdownTimer');
+    if (!timerElement) {
+        console.error('Timer element not found!');
+    }
 
     if (isPreview != 1) {
         settings = await fetchMinigameSettings(connectkey);
@@ -75,7 +88,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Define props for the wheel
     const props = {
         items: promos.map(promo => ({
-                label: `${promo.DISCOUNT * 100}%`,
+                label: `-${promo.DISCOUNT * 100}%`,
                 weight: promo.CHANCE, // This will determine the visual size of each slice
                 id: promo.ID 
             })),
@@ -87,7 +100,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         const container = document.querySelector('.wheel-wrapper');
         window.wheel = new Wheel(container, props);
-        changePageOnInactivity();
+        
+        // Start inactivity countdown when page loads - AFTER timerElement is set
+        startInactivityCountdown();
     } catch (error) {
         console.error('Error initializing wheel:', error);
     }
@@ -95,6 +110,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Consolidated spin function
     function triggerSpin(direction) {
         if (wheelStartBySeparator === 0 && wheel) {
+            // Stop the inactivity countdown when spinning starts
+            stopCountdown();
+            
             wheel.spinToItem(winningItemIndex, spinDuration, false, revolutions, direction, null);
             // Disable all spin triggers after any spin starts
             rightSep.removeEventListener('mouseover', spinRight);
@@ -145,8 +163,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 // #region FUNCTIONS
 async function onStop(){
     if(wheelStartBySeparator==1){
-    changePageOnStop();
-    displayPrize();
+        // Start result countdown when wheel stops
+        startResultCountdown();
+        displayPrize();
     }
 
     if (isPreview != 1) {
@@ -155,19 +174,13 @@ async function onStop(){
 }
 
 function changePageOnStop() {
-    setTimeout(function() {
-        if (onStopChangeDelay!=0) {
-            window.location.href = nextPageUrl;
-        }
-    }, onStopChangeDelay);
+    // This function is now handled by startResultCountdown()
+    // Keep it for compatibility but functionality moved to countdown system
 }
 
 function changePageOnInactivity() {
-    setTimeout(function() {
-        if ((wheelStartBySeparator==0)&&(inactivityChangeDelay!=0)) {
-            window.location.href = nextPageUrl;
-        }
-    }, inactivityChangeDelay);
+    // This function is now handled by startInactivityCountdown()
+    // Keep it for compatibility but functionality moved to countdown system
 }
 
 function displayPrize() {
@@ -254,5 +267,138 @@ function redeemCodeGenerator() {
     const code = Math.floor(Math.random() * (max - min + 1)) + min;
     
     return code;
+}
+
+function startInactivityCountdown() {
+    console.log('Starting inactivity countdown with delay:', inactivityChangeDelay);
+    
+    if (inactivityChangeDelay === 0) {
+        console.log('Inactivity delay is 0, skipping countdown');
+        return;
+    }
+    
+    isInactivityTimer = true;
+    timeRemaining = Math.ceil(inactivityChangeDelay / 1000);
+    
+    if (timerElement) {
+        timerElement.className = 'countdown-timer inactivity';
+        timerElement.style.display = 'flex';
+    }
+    
+    // Start visual countdown
+    countdownInterval = setInterval(updateCountdown, 1000);
+    updateCountdown();
+    
+    // Start actual timeout with navigation
+    currentTimeout = setTimeout(function() {
+        console.log('Inactivity timeout reached, navigating to:', nextPageUrl);
+        if (wheelStartBySeparator === 0 && inactivityChangeDelay !== 0) {
+            navigateToNextPage();
+        } else {
+            console.log('Navigation blocked - wheelStartBySeparator:', wheelStartBySeparator);
+        }
+    }, inactivityChangeDelay);
+    
+    console.log(`Started inactivity countdown: ${timeRemaining} seconds`);
+}
+
+function startResultCountdown() {
+    console.log('Starting result countdown with delay:', onStopChangeDelay);
+    
+    if (onStopChangeDelay === 0) {
+        console.log('Result delay is 0, skipping countdown');
+        return;
+    }
+    
+    isInactivityTimer = false;
+    timeRemaining = Math.ceil(onStopChangeDelay / 1000);
+    
+    if (timerElement) {
+        timerElement.className = 'countdown-timer result';
+        timerElement.style.display = 'flex';
+    }
+    
+    // Start visual countdown
+    countdownInterval = setInterval(updateCountdown, 1000);
+    updateCountdown();
+    
+    // Start actual timeout with navigation
+    currentTimeout = setTimeout(function() {
+        console.log('Result timeout reached, navigating to:', nextPageUrl);
+        navigateToNextPage();
+    }, onStopChangeDelay);
+    
+    console.log(`Started result countdown: ${timeRemaining} seconds`);
+}
+
+function updateCountdown() {
+    if (!timerElement || timeRemaining <= 0) {
+        console.log('Countdown finished, navigating...');
+        stopCountdown();
+        // Navigate immediately when countdown reaches zero
+        navigateToNextPage();
+        return;
+    }
+    
+    const minutes = Math.floor(timeRemaining / 60);
+    const seconds = timeRemaining % 60;
+    const timerText = document.getElementById('timerText');
+    
+    if (timerText) {
+        timerText.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+    
+    // Add warning classes based on time remaining
+    let baseClass = isInactivityTimer ? 'countdown-timer inactivity' : 'countdown-timer result';
+    
+    if (timeRemaining <= 3) {
+        timerElement.className = baseClass + ' critical';
+    } else if (timeRemaining <= 10) {
+        timerElement.className = baseClass + ' warning';
+    } else {
+        timerElement.className = baseClass;
+    }
+    
+    timeRemaining--;
+}
+
+
+// Add a dedicated navigation function
+function navigateToNextPage() {
+    console.log('Attempting navigation to:', nextPageUrl);
+    
+    if (!nextPageUrl) {
+        console.error('nextPageUrl is not set!');
+        return;
+    }
+    
+    // Clear any existing timers before navigation
+    stopCountdown();
+    
+    // Add a small delay to ensure any ongoing processes complete
+    setTimeout(() => {
+        console.log('Navigating now to:', nextPageUrl);
+        window.location.href = nextPageUrl;
+    }, 100);
+}
+
+function stopCountdown() {
+    console.log('Stopping countdown...');
+    
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+        console.log('Cleared countdown interval');
+    }
+    
+    if (currentTimeout) {
+        clearTimeout(currentTimeout);
+        currentTimeout = null;
+        console.log('Cleared current timeout');
+    }
+    
+    if (timerElement) {
+        timerElement.style.display = 'none';
+    }
 }
 //#endregion FUNCTIONS
