@@ -77,6 +77,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
   } catch (error) {
       console.error('Error loading carousel data:', error);
+      updateData();
   }
 
   car.addEventListener('click', function() {  //RESTART AUTOPLAY AFTER INTERACTION
@@ -243,6 +244,7 @@ async function updateData() {
       };
     } catch (error) {
         console.error('Failed to fetching state:', error);
+        location.reload();
     }
   }, 1000);
 }

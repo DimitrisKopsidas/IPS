@@ -89,20 +89,40 @@ export function getItemCardHtml(choice, item, date, date2) {
                 <button class="groups-btn-delete-item" title="Delete group">🗑️</button>`;
     } else if (choice === "promoProduct") {
         return `<p><strong>${item.DISCOUNT * 100}%</strong> discount for <strong>${item.PRODUCT}</strong></p>
-        <p>Created on ${date2}</p>
-        <p>Valid until ${date}</p>`;
+    <p>Created on ${date2}</p>
+    <p>Valid until ${date}</p>
+    <div class="promo-source-info">
+        <p><strong>Carousel:</strong> ${item.CAROUSELNAME || 'Unknown'}</p>
+        <p><strong>Device:</strong> ${item.DEVICENAME || 'Unknown'}</p>
+        <p><strong>Chance:</strong> ${item.CHANCE * 100 || 'Unknown'}%</p>
+    </div>`;
     } else if (choice === "promoTypeMaker") {
-        return `<p><strong>${promoData.DISCOUNT * 100}% Discount</strong></p>
-        <p>For type: ${promoData.TYPE} and maker: ${promoData.MAKER}</p>
-        <p>Valid until ${formattedDate}</p>`;
+        return `<p><strong>${item.DISCOUNT * 100}% Discount</strong></p>
+    <p>For type: ${item.TYPE} and maker: ${item.MAKER}</p>
+    <p>Valid until ${date}</p>
+    <div class="promo-source-info">
+        <p><strong>Carousel:</strong> ${item.CAROUSELNAME || 'Unknown'}</p>
+        <p><strong>Device:</strong> ${item.DEVICENAME || 'Unknown'}</p>
+        <p><strong>Chance:</strong> ${item.CHANCE * 100 || 'Unknown'}%</p>
+    </div>`;
     } else if (choice === "promoType") {
         return `<p><strong>${item.DISCOUNT * 100}% Discount</strong></p>
-        <p>For type: ${item.TYPE}</p>
-        <p>Valid until ${date}</p>`;
+    <p>For type: ${item.TYPE}</p>
+    <p>Valid until ${date}</p>
+    <div class="promo-source-info">
+        <p><strong>Carousel:</strong> ${item.CAROUSELNAME || 'Unknown'}</p>
+        <p><strong>Device:</strong> ${item.DEVICENAME || 'Unknown'}</p>
+        <p><strong>Chance:</strong> ${item.CHANCE * 100 || 'Unknown'}%</p>
+    </div>`;
     } else if (choice === "promoMaker") {
         return `<p><strong>${item.DISCOUNT * 100}% Discount</strong></p>
-        <p>For maker: ${item.MAKER}</p>
-        <p>Valid until ${date}</p>`;
+    <p>For maker: ${item.MAKER}</p>
+    <p>Valid until ${date}</p>
+    <div class="promo-source-info">
+        <p><strong>Carousel:</strong> ${item.CAROUSELNAME || 'Unknown'}</p>
+        <p><strong>Device:</strong> ${item.DEVICENAME || 'Unknown'}</p>
+        <p><strong>Chance:</strong> ${item.CHANCE * 100 || 'Unknown'}%</p>
+    </div>`;
     } else if (choice === "promo") {
         return `<div class="product-layout">
                     <div class="product-details">
