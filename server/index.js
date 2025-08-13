@@ -76,7 +76,8 @@ app.get('/api/getCarouselSettingsConnect/:connectkey', async (req, res) => {
     }
 });
 
-app.get('/api/updateDeviceLastPing/:connectKey', async (req, res) => {
+// Change from GET to PUT
+app.put('/api/updateDeviceLastPing/:connectKey', async (req, res) => {
     try {
         const connectKey = req.params.connectKey;
         const [result] = await pool.query('CALL UpdateDeviceLastPing(?)', [connectKey]);
@@ -198,11 +199,10 @@ app.get('/api/getMinigameSettingsCarousel/:carousel', async (req, res) => {
     }
 });
 
-app.get('/api/insertIssuedPromo/:connectKey/:redeemCode/:promoId', async (req, res) => {
+// Change from GET to POST
+app.post('/api/insertIssuedPromo', async (req, res) => {
     try {
-        const connectKey = req.params.connectKey;
-        const redeemCode = req.params.redeemCode;
-        const promoId = req.params.promoId;
+        const { connectKey, redeemCode, promoId } = req.body;
 
         const [result] = await pool.query('CALL InsertIssuedPromo(?, ?, ?)', 
             [connectKey, redeemCode, promoId]);
@@ -220,7 +220,7 @@ app.get('/api/insertIssuedPromo/:connectKey/:redeemCode/:promoId', async (req, r
 // #endregion MINIGAME
 
 // #region CHECK
-app.get('/api/updateRedeemed/:redeemCode', async (req, res) => {
+app.put('/api/updateRedeemed/:redeemCode', async (req, res) => {
     try {
         const redeemCode = req.params.redeemCode;
         const [result] = await pool.query('CALL UpdateRedeemed(?)', [redeemCode]);

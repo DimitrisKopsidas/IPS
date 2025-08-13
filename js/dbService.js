@@ -39,7 +39,9 @@ async function fetchCarouselSettings(connectkey) {
 async function updateDeviceLastPing(connectKey) {
     try {
         //console.log('Updating last ping for device:', connectKey);
-        const response = await fetch(`http://localhost:3000/api/updateDeviceLastPing/${connectKey}`);
+        const response = await fetch(`http://localhost:3000/api/updateDeviceLastPing/${connectKey}`, {
+            method: 'PUT'
+        });
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -134,9 +136,17 @@ async function insertIssuedPromo(connectKey, redeemCode, promoId) {
             promoId
         });
 
-        const response = await fetch(
-            `http://localhost:3000/api/insertIssuedPromo/${connectKey}/${redeemCode}/${promoId}`
-        );
+        const response = await fetch('http://localhost:3000/api/insertIssuedPromo', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                connectKey: connectKey,
+                redeemCode: redeemCode,
+                promoId: promoId
+            })
+        });
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -193,7 +203,9 @@ async function fetchMinigameSettingsCarousel(carousel) {
 async function updateRedeemed(redeemCode) {
     try {
         console.log('Updating redeem code:', redeemCode);
-        const response = await fetch(`http://localhost:3000/api/updateRedeemed/${redeemCode}`);
+        const response = await fetch(`http://localhost:3000/api/updateRedeemed/${redeemCode}`, {
+            method: 'PUT'
+        });
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
