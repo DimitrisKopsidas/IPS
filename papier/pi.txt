@@ -1,0 +1,22 @@
+------------------------WHAT WORKS-------------------
+0) sudo nano /etc/xdg/lxsession/LXDE-pi/autostart
+@chromium-browser --start-fullscreen --noerrdialogs --disable-session-crashed-bubble --disable-infobars --disablenotifications
+--disable-restore-session-state --incognito https://users.iee.ihu.gr/~it175008/crystal/staticCarousel.html
+-----------------------------------------------------
+
+
+WHAT TO WRITE
+1)nano ~/.config/autostart/crystal.desktop
+[Desktop Entry]
+Type=Application
+Name=Crystal Script
+Exec=sh -c "sleep 5 && python3 /home/pi/Desktop/crystal.py"
+X-GNOME-Autostart-enabled=true
+
+1)nano ~/.config/autostart/chromium.desktop
+[Desktop Entry]
+Type=Application
+Name=Chromium Script
+Exec=chromium-browser --start-fullscreen --noerrdialogs --disable-session-crashed-bubble --disable-infobars --disablenotifications
+--disable-restore-session-state --incognito https://users.iee.ihu.gr/~it175008/crystal/staticCarousel.html
+X-GNOME-Autostart-enabled=true

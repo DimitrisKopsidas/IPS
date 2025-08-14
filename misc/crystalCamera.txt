@@ -1,0 +1,742 @@
+#!/usr/bin/env python3
+"""
+High-performance multiprocessing hand tracking for Raspberry Pi 4
+Utilizes all 4 CPU cores for maximum performance
+Optimized for directional control with minimal latency
+Requires: pip install imutils psutil
+"""
+
+import cv2
+import mediapipe as mp
+import pyautogui
+import numpy as np
+from picamera2 import Picamera2
+import time
+import threading
+import multiprocessing as mp_proc
+from multiprocessing import Process, Queue, Value, Array, shared_memory
+import psutil
+import os
+from queue import Empty
+from imutils.video import FPS
+import ctypes
+from threading import Lock
+
+# ==================== PERFORMANCE SETTINGS ====================
+TARGET_FPS = 60         # Increased FPS for faster hand tracking
+CAMERA_WIDTH = 320      # Camera resolution width  
+CAMERA_HEIGHT = 240     # Camera resolution height
+SHOW_PREVIEW = True     # Set to True for debugging, False for max performance
+SHOW_FPS = True         # Display FPS counter for monitoring
+DIRECTIONAL_KEYS = True # Press left/right arrow keys
+
+# ========== MOVEMENT SENSITIVITY SETTINGS ==========
+SWIPE_THRESHOLD = 10         # [ADJUST THIS] Lower = more sensitive (was 8, now 4)
+MIN_TRAVEL_DISTANCE = 100    # [ADJUST THIS] Minimum pixels to travel for button press
+MOVEMENT_ACCUMULATION = True # [ADJUST THIS] Add up small movements over time
+SPEED_BOOST_FACTOR = 1    # [ADJUST THIS] Multiplier for velocity calculation
+REACTION_TIME_MS = 1000      # [ADJUST THIS] Faster reaction window (was 1000ms)
+MIN_MOVEMENT_FRAMES = 3     # [ADJUST THIS] Minimum frames showing movement (was 3)
+# ======================================================================
+
+NUM_WORKER_PROCESSES = 1 # Reduced to 1 for better stability on Pi 4
+USE_PROCESS_POOL = True # Enable multiprocessing
+SET_CPU_AFFINITY = False # Disabled initially for compatibility
+USE_SHARED_MEMORY = True # Use shared memory for frame data
+FRAME_BUFFER_SIZE = 2   # Reduced buffer size for lower latency
+# ============================================================
+
+# Disable pyautogui failsafe
+pyautogui.FAILSAFE = False
+
+def set_process_priority():
+    """Set high priority for main process"""
+    try:
+        os.nice(-10)  # Higher priority (requires sudo for negative values)
+    except:
+        pass
+
+def set_cpu_affinity(core_id):
+    """Pin process to specific CPU core"""
+    if SET_CPU_AFFINITY:
+        try:
+            psutil.Process().cpu_affinity([core_id])
+            print(f"Process {os.getpid()} pinned to CPU core {core_id}")
+        except:
+            pass
+
+class SharedFrameBuffer:
+    """Shared memory frame buffer for inter-process communication"""
+    def __init__(self, width, height, buffer_size=3):
+        self.width = width
+        self.height = height
+        self.buffer_size = buffer_size
+        self.frame_size = width * height * 3  # RGB
+        
+        # Create shared memory for frame buffer
+        if USE_SHARED_MEMORY:
+            self.shm_size = self.frame_size * buffer_size
+            self.shm = shared_memory.SharedMemory(create=True, size=self.shm_size)
+            self.buffer = np.ndarray((buffer_size, height, width, 3), 
+                                   dtype=np.uint8, buffer=self.shm.buf)
+        else:
+            self.buffer = np.zeros((buffer_size, height, width, 3), dtype=np.uint8)
+            self.shm = None
+        
+        # Synchronization
+        self.write_index = Value('i', 0)
+        self.read_index = Value('i', 0)
+        self.frame_count = Value('i', 0)
+        self.lock = mp_proc.Lock()
+    
+    def write_frame(self, frame):
+        """Write frame to shared buffer"""
+        with self.lock:
+            idx = self.write_index.value
+            self.buffer[idx] = frame
+            self.write_index.value = (idx + 1) % self.buffer_size
+            self.frame_count.value = min(self.frame_count.value + 1, self.buffer_size)
+    
+    def read_frame(self):
+        """Read latest frame from shared buffer"""
+        with self.lock:
+            if self.frame_count.value == 0:
+                return None
+            idx = (self.write_index.value - 1) % self.buffer_size
+            return self.buffer[idx].copy()
+    
+    def cleanup(self):
+        """Clean up shared memory"""
+        if self.shm:
+            self.shm.close()
+            self.shm.unlink()
+
+def mediapipe_worker(worker_id, input_queue, output_queue, should_stop):
+    """Worker process for MediaPipe hand detection"""
+    set_cpu_affinity(worker_id + 1)  # Pin to CPU cores 1, 2
+    
+    print(f"MediaPipe worker {worker_id} starting on CPU core {worker_id + 1}")
+    
+    # Initialize MediaPipe in worker process with optimized settings for speed
+    mp_hands = mp.solutions.hands
+    hands = mp_hands.Hands(
+        static_image_mode=False,
+        max_num_hands=1,
+        min_detection_confidence=0.4,  # Even lower for faster detection
+        min_tracking_confidence=0.2,   # Lower for better fast movement tracking
+        model_complexity=0             # Fastest model for high-speed tracking
+    )
+    
+    frames_processed = 0
+    
+    try:
+        while not should_stop.value:
+            try:
+                # Get frame with timeout
+                frame_data = input_queue.get(timeout=0.1)
+                if frame_data is None:
+                    continue
+                
+                frame, timestamp, frame_id = frame_data
+                
+                # Ensure frame is in correct format for MediaPipe (RGB)
+                if len(frame.shape) == 3 and frame.shape[2] == 3:
+                    # Frame is already RGB from PiCamera2, no conversion needed
+                    rgb_frame = frame
+                else:
+                    # Fallback conversion if needed
+                    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                
+                # Process with MediaPipe
+                results = hands.process(rgb_frame)
+                
+                # Extract hand landmarks if detected
+                hand_data = None
+                if results.multi_hand_landmarks:
+                    landmarks = results.multi_hand_landmarks[0]
+                    # Extract only the index finger tip (landmark 8) for efficiency
+                    index_tip = landmarks.landmark[8]
+                    hand_data = {
+                        'x': index_tip.x,
+                        'y': index_tip.y,
+                        'detected': True
+                    }
+                else:
+                    hand_data = {'detected': False}
+                
+                # Send result
+                result = {
+                    'hand_data': hand_data,
+                    'timestamp': timestamp,
+                    'frame_id': frame_id,
+                    'worker_id': worker_id
+                }
+                
+                if not output_queue.full():
+                    output_queue.put_nowait(result)
+                
+                frames_processed += 1
+                
+            except Empty:
+                continue
+            except Exception as e:
+                print(f"Worker {worker_id} error: {e}")
+                break
+    
+    finally:
+        hands.close()
+        print(f"Worker {worker_id} processed {frames_processed} frames")
+
+class MultiprocessingPiCamera:
+    """High-performance camera with multiprocessing support"""
+    def __init__(self, resolution=(320, 240)):
+        self.width, self.height = resolution
+        self.picam2 = Picamera2()
+        
+        # Configure for maximum performance
+        config = self.picam2.create_preview_configuration(
+            main={"size": resolution, "format": "RGB888"},
+            buffer_count=2  # Minimal buffering
+        )
+        self.picam2.configure(config)
+        
+        # Set frame rate and enable auto-adjustments for better image quality
+        if TARGET_FPS > 0:
+            frame_duration = int(1000000 / TARGET_FPS)
+            self.picam2.set_controls({
+                "FrameDurationLimits": (frame_duration, frame_duration),
+                "AeEnable": True,   # Enable auto-exposure for proper brightness
+                "AwbEnable": True,  # Enable auto white balance for color accuracy
+                "Brightness": 0.1,  # Slight brightness boost
+                "Contrast": 1.1     # Slight contrast boost for better hand detection
+            })
+        
+        self.picam2.start()
+        
+        # Threading
+        self.running = True
+        self.capture_thread = None
+        self.frame_buffer = None
+        self.frame_id = 0
+        
+        if USE_SHARED_MEMORY:
+            self.frame_buffer = SharedFrameBuffer(self.width, self.height, FRAME_BUFFER_SIZE)
+        
+    def start_capture(self):
+        """Start threaded capture with CPU affinity"""
+        self.capture_thread = threading.Thread(target=self.capture_loop, daemon=True)
+        self.capture_thread.start()
+        
+        # Set CPU affinity for capture thread to core 0
+        if SET_CPU_AFFINITY:
+            try:
+                # Note: Thread affinity setting is limited in Python
+                pass
+            except:
+                pass
+    
+    def capture_loop(self):
+        """High-performance capture loop"""
+        while self.running:
+            try:
+                frame = self.picam2.capture_array()
+                
+                # Flip frame immediately for mirror effect
+                frame = cv2.flip(frame, 1)
+                
+                if self.frame_buffer:
+                    self.frame_buffer.write_frame(frame)
+                
+                self.frame_id += 1
+                
+            except Exception as e:
+                print(f"Capture error: {e}")
+                break
+    
+    def read_frame(self):
+        """Get latest frame"""
+        if self.frame_buffer:
+            return self.frame_buffer.read_frame()
+        return None
+    
+    def stop(self):
+        """Stop camera and cleanup"""
+        self.running = False
+        if self.capture_thread:
+            self.capture_thread.join(timeout=1)
+        
+        try:
+            self.picam2.stop()
+            self.picam2.close()
+        except:
+            pass
+        
+        if self.frame_buffer:
+            self.frame_buffer.cleanup()
+
+class MultiprocessingDirectionalTracker:
+    """High-performance directional tracker with enhanced sensitivity"""
+    def __init__(self):
+        # Enhanced movement tracking for faster response
+        self.movement_history = []
+        self.max_movement_history = MIN_MOVEMENT_FRAMES  # Configurable
+        self.last_x_position = None
+        self.last_key_press_time = 0
+        self.key_press_cooldown = REACTION_TIME_MS / 1000.0  # Convert to seconds
+        
+        # New: Movement accumulation for small gestures
+        self.cumulative_movement = 0
+        self.movement_start_time = None
+        self.movement_start_position = None
+        
+        # New: Motion prediction for fast movements
+        self.velocity_history = []
+        self.max_velocity_history = 3
+        
+        # New: Directional momentum tracking
+        self.direction_momentum = 0  # Positive = right, negative = left
+        self.momentum_decay = 0.8    # How quickly momentum fades
+        
+        # Multiprocessing setup
+        self.worker_processes = []
+        self.input_queues = []
+        self.output_queue = None
+        self.should_stop = None
+        
+        if USE_PROCESS_POOL:
+            self.setup_worker_processes()
+        
+        # Results tracking
+        self.last_frame_id = -1
+        self.results_cache = {}
+    
+    def setup_worker_processes(self):
+        """Initialize worker processes for MediaPipe"""
+        self.should_stop = Value('b', False)
+        self.output_queue = Queue(maxsize=10)
+        
+        # Create worker processes
+        for i in range(NUM_WORKER_PROCESSES):
+            input_queue = Queue(maxsize=2)
+            self.input_queues.append(input_queue)
+            
+            worker = Process(
+                target=mediapipe_worker,
+                args=(i, input_queue, self.output_queue, self.should_stop),
+                daemon=True
+            )
+            worker.start()
+            self.worker_processes.append(worker)
+        
+        print(f"Started {NUM_WORKER_PROCESSES} MediaPipe worker processes")
+    
+    def distribute_frame(self, frame, timestamp, frame_id):
+        """Distribute frame to available worker"""
+        if not USE_PROCESS_POOL:
+            return
+        
+        # Find worker with least queue load
+        best_worker = 0
+        min_qsize = float('inf')
+        
+        for i, queue in enumerate(self.input_queues):
+            qsize = queue.qsize()
+            if qsize < min_qsize:
+                min_qsize = qsize
+                best_worker = i
+        
+        # Send to best available worker
+        try:
+            self.input_queues[best_worker].put_nowait((frame.copy(), timestamp, frame_id))
+        except:
+            pass  # Queue full, skip this frame
+    
+    def get_latest_result(self):
+        """Get latest MediaPipe result from workers"""
+        latest_result = None
+        
+        # Collect all available results
+        while True:
+            try:
+                result = self.output_queue.get_nowait()
+                latest_result = result
+            except Empty:
+                break
+        
+        return latest_result
+    
+    def detect_directional_movement(self, frame, timestamp, frame_id):
+        """Main directional detection with multiprocessing"""
+        if frame is None:
+            return False, {}
+        
+        # Distribute frame to workers
+        if USE_PROCESS_POOL:
+            self.distribute_frame(frame, timestamp, frame_id)
+            
+            # Get latest result
+            result = self.get_latest_result()
+            if result is None:
+                return False, {}
+            
+            hand_data = result['hand_data']
+        else:
+            # Fallback to single-process mode with speed-optimized settings
+            mp_hands = mp.solutions.hands
+            hands = mp_hands.Hands(
+                static_image_mode=False,
+                max_num_hands=1,
+                min_detection_confidence=0.4,  # Lower for faster detection
+                min_tracking_confidence=0.2,   # Lower for fast movement tracking
+                model_complexity=0             # Fastest model for speed
+            )
+            
+            # Ensure proper RGB format
+            if len(frame.shape) == 3 and frame.shape[2] == 3:
+                rgb_frame = frame
+            else:
+                rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                
+            results = hands.process(rgb_frame)
+            hands.close()
+            
+            hand_data = {'detected': False}
+            if results.multi_hand_landmarks:
+                landmarks = results.multi_hand_landmarks[0]
+                index_tip = landmarks.landmark[8]
+                hand_data = {
+                    'x': index_tip.x,
+                    'y': index_tip.y,
+                    'detected': True
+                }
+        
+        tracking_info = {}
+        hand_detected = hand_data['detected']
+        
+        if hand_detected:
+            # Calculate movement with speed boost and sensitivity enhancements
+            frame_width = frame.shape[1]
+            x = hand_data['x'] * frame_width
+            
+            if self.last_x_position is not None:
+                # Calculate raw velocity
+                raw_velocity = x - self.last_x_position
+                
+                # Apply speed boost factor for better sensitivity
+                boosted_velocity = raw_velocity * SPEED_BOOST_FACTOR
+                
+                # Store velocity for prediction
+                self.velocity_history.append(boosted_velocity)
+                if len(self.velocity_history) > self.max_velocity_history:
+                    self.velocity_history.pop(0)
+                
+                # Update movement history with timestamp
+                self.movement_history.append((timestamp, boosted_velocity))
+                if len(self.movement_history) > self.max_movement_history:
+                    self.movement_history.pop(0)
+                
+                # NEW: Cumulative movement tracking for small gestures
+                if MOVEMENT_ACCUMULATION:
+                    if self.movement_start_position is None:
+                        self.movement_start_position = x
+                        self.movement_start_time = timestamp
+                        self.cumulative_movement = 0
+                    
+                    # Calculate total distance from start
+                    total_distance = x - self.movement_start_position
+                    self.cumulative_movement = total_distance
+                
+                # NEW: Update directional momentum
+                if abs(boosted_velocity) > 1:  # Only update momentum for meaningful movement
+                    momentum_factor = min(abs(boosted_velocity) / 10, 1.0)  # Scale momentum
+                    if boosted_velocity > 0:
+                        self.direction_momentum = max(0, self.direction_momentum) + momentum_factor
+                    else:
+                        self.direction_momentum = min(0, self.direction_momentum) - momentum_factor
+                else:
+                    # Decay momentum when not moving
+                    self.direction_momentum *= self.momentum_decay
+                
+                # Check for directional gesture (now more sensitive)
+                direction = self.check_enhanced_directional_gesture(timestamp)
+                if direction:
+                    tracking_info['triggered_direction'] = direction
+                    tracking_info['velocity'] = boosted_velocity
+                    tracking_info['cumulative_movement'] = self.cumulative_movement
+                    tracking_info['momentum'] = self.direction_momentum
+            
+            self.last_x_position = x
+            tracking_info['hand_x_pos'] = x
+            tracking_info['normalized_x'] = hand_data['x']
+            tracking_info['raw_velocity'] = raw_velocity if 'raw_velocity' in locals() else 0
+            tracking_info['boosted_velocity'] = boosted_velocity if 'boosted_velocity' in locals() else 0
+            
+        else:
+            # Reset tracking when hand is lost
+            self.last_x_position = None
+            self.movement_history.clear()
+            self.velocity_history.clear()
+            self.cumulative_movement = 0
+            self.movement_start_position = None
+            self.movement_start_time = None
+            self.direction_momentum *= 0.5  # Slower decay when hand lost
+        
+        return hand_detected, tracking_info
+    
+    def check_enhanced_directional_gesture(self, current_time):
+        """Enhanced directional gesture detection with multiple sensitivity modes"""
+        if len(self.movement_history) < MIN_MOVEMENT_FRAMES:
+            return None
+        
+        # Check cooldown period
+        if current_time - self.last_key_press_time < self.key_press_cooldown:
+            return None
+        
+        # Method 1: Traditional velocity-based detection (more sensitive)
+        recent_velocities = [vel for _, vel in self.movement_history[-MIN_MOVEMENT_FRAMES:]]
+        avg_velocity = sum(recent_velocities) / len(recent_velocities)
+        
+        # Check velocity consistency (less strict than before)
+        velocity_consistency = len(recent_velocities) >= MIN_MOVEMENT_FRAMES and \
+                              sum(1 for vel in recent_velocities if (vel > 0) == (avg_velocity > 0)) >= (MIN_MOVEMENT_FRAMES - 1)
+        
+        # Method 2: Cumulative distance-based detection
+        cumulative_trigger = False
+        if MOVEMENT_ACCUMULATION and self.movement_start_position is not None:
+            if abs(self.cumulative_movement) > MIN_TRAVEL_DISTANCE:
+                cumulative_trigger = True
+                print(f"Cumulative distance trigger: {self.cumulative_movement:.1f} pixels")
+        
+        # Method 3: Momentum-based detection
+        momentum_trigger = abs(self.direction_momentum) > 2.0
+        
+        # Trigger conditions (ANY of these can trigger)
+        velocity_trigger = velocity_consistency and abs(avg_velocity) > SWIPE_THRESHOLD
+        
+        if velocity_trigger or cumulative_trigger or momentum_trigger:
+            direction = None
+            trigger_reason = ""
+            
+            # Determine direction from strongest signal
+            if velocity_trigger and avg_velocity > SWIPE_THRESHOLD:
+                direction = 'right'
+                trigger_reason = f"velocity ({avg_velocity:.1f})"
+            elif velocity_trigger and avg_velocity < -SWIPE_THRESHOLD:
+                direction = 'left' 
+                trigger_reason = f"velocity ({avg_velocity:.1f})"
+            elif cumulative_trigger and self.cumulative_movement > MIN_TRAVEL_DISTANCE:
+                direction = 'right'
+                trigger_reason = f"distance ({self.cumulative_movement:.1f}px)"
+            elif cumulative_trigger and self.cumulative_movement < -MIN_TRAVEL_DISTANCE:
+                direction = 'left'
+                trigger_reason = f"distance ({self.cumulative_movement:.1f}px)"
+            elif momentum_trigger and self.direction_momentum > 2.0:
+                direction = 'right'
+                trigger_reason = f"momentum ({self.direction_momentum:.1f})"
+            elif momentum_trigger and self.direction_momentum < -2.0:
+                direction = 'left'
+                trigger_reason = f"momentum ({self.direction_momentum:.1f})"
+            
+            if direction:
+                # Execute key press
+                pyautogui.press(direction)
+                self.last_key_press_time = current_time
+                
+                # Reset tracking after successful trigger
+                self.cumulative_movement = 0
+                self.movement_start_position = None
+                self.movement_start_time = None
+                self.direction_momentum = 0
+                
+                print(f"{direction.upper()} key triggered by {trigger_reason}")
+                return direction
+        
+        return None
+    
+    def cleanup(self):
+        """Clean up all processes and resources"""
+        if USE_PROCESS_POOL and self.should_stop:
+            print("Stopping worker processes...")
+            self.should_stop.value = True
+            
+            # Wait for processes to finish
+            for process in self.worker_processes:
+                process.join(timeout=2)
+                if process.is_alive():
+                    process.terminate()
+            
+            # Clear queues
+            for queue in self.input_queues:
+                while not queue.empty():
+                    try:
+                        queue.get_nowait()
+                    except Empty:
+                        break
+            
+            while not self.output_queue.empty():
+                try:
+                    self.output_queue.get_nowait()
+                except Empty:
+                    break
+
+def main():
+    # Set high priority for main process
+    set_process_priority()
+    set_cpu_affinity(0)  # Pin main process to core 0
+    
+    print("High-Performance Multiprocessing Hand Tracker")
+    print("=" * 50)
+    print(f"Camera: {CAMERA_WIDTH}x{CAMERA_HEIGHT} @ {TARGET_FPS} FPS")
+    print(f"Multiprocessing: {'ON' if USE_PROCESS_POOL else 'OFF'}")
+    print(f"Worker processes: {NUM_WORKER_PROCESSES}")
+    print(f"CPU Affinity: {'ON' if SET_CPU_AFFINITY else 'OFF'}")
+    print(f"Shared Memory: {'ON' if USE_SHARED_MEMORY else 'OFF'}")
+    print(f"Preview: {'ON' if SHOW_PREVIEW else 'OFF'}")
+    print()
+    print("SENSITIVITY SETTINGS:")
+    print(f"• Speed threshold: {SWIPE_THRESHOLD} (lower = more sensitive)")
+    print(f"• Travel distance: {MIN_TRAVEL_DISTANCE}px (lower = easier trigger)")
+    print(f"• Reaction time: {REACTION_TIME_MS}ms (lower = faster response)")
+    print(f"• Movement accumulation: {'ON' if MOVEMENT_ACCUMULATION else 'OFF'}")
+    print(f"• Speed boost factor: {SPEED_BOOST_FACTOR}x")
+    print()
+    print("Move hand left/right to trigger arrow keys. Press Ctrl+C to quit.")
+    print("Red/blue lines show trigger zones from center.")
+    
+    try:
+        # Initialize components
+        camera = MultiprocessingPiCamera((CAMERA_WIDTH, CAMERA_HEIGHT))
+        tracker = MultiprocessingDirectionalTracker()
+        
+        # Start camera capture
+        camera.start_capture()
+        time.sleep(1.0)  # Camera warm-up
+        
+        # Performance monitoring
+        if SHOW_FPS:
+            fps_counter = FPS().start()
+            frame_count = 0
+            last_fps_time = time.time()
+            fps_display = 0
+        
+        print("Starting high-performance tracking...")
+        frame_id = 0
+        
+        while True:
+            start_time = time.time()
+            
+            # Get frame
+            frame = camera.read_frame()
+            if frame is None:
+                time.sleep(0.001)
+                continue
+            
+            frame_id += 1
+            
+            if SHOW_FPS:
+                frame_count += 1
+                fps_counter.update()
+            
+            # Detect directional movement
+            hand_detected, tracking_info = tracker.detect_directional_movement(
+                frame, start_time, frame_id
+            )
+            
+            # Display preview if enabled
+            if SHOW_PREVIEW:
+                # Frame is already RGB from PiCamera2, convert to BGR for OpenCV display
+                display_frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+                
+                if tracking_info and 'hand_x_pos' in tracking_info:
+                    hand_x = int(tracking_info['hand_x_pos'])
+                    hand_y = CAMERA_HEIGHT // 2
+                    
+                    # Draw larger, more visible hand position indicator
+                    cv2.circle(display_frame, (hand_x, hand_y), 12, (0, 255, 0), 3)
+                    cv2.circle(display_frame, (hand_x, hand_y), 6, (255, 255, 255), -1)
+                    
+                    # Draw center reference line and movement zones
+                    center_x = CAMERA_WIDTH // 2
+                    cv2.line(display_frame, (center_x, 0), (center_x, CAMERA_HEIGHT), (128, 128, 128), 1)
+                    
+                    # Show movement sensitivity zones
+                    left_zone = center_x - MIN_TRAVEL_DISTANCE
+                    right_zone = center_x + MIN_TRAVEL_DISTANCE
+                    cv2.line(display_frame, (left_zone, 0), (left_zone, CAMERA_HEIGHT), (255, 100, 100), 1)
+                    cv2.line(display_frame, (right_zone, 0), (right_zone, CAMERA_HEIGHT), (100, 100, 255), 1)
+                    
+                    # Show velocity and movement info
+                    if 'boosted_velocity' in tracking_info:
+                        vel_text = f"Vel: {tracking_info['boosted_velocity']:.1f}"
+                        cv2.putText(display_frame, vel_text, (10, 70), 
+                                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+                    
+                    if 'cumulative_movement' in tracking_info:
+                        cum_text = f"Dist: {tracking_info['cumulative_movement']:.1f}px"
+                        cv2.putText(display_frame, cum_text, (10, 90), 
+                                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+                    
+                    # Show triggered direction with larger text
+                    if 'triggered_direction' in tracking_info:
+                        direction = tracking_info['triggered_direction']
+                        velocity = tracking_info.get('velocity', 0)
+                        color = (0, 255, 0) if direction == 'right' else (0, 0, 255)
+                        cv2.putText(display_frame, f'{direction.upper()} TRIGGERED!', 
+                                   (10, 40), cv2.FONT_HERSHEY_SIMPLEX, 1.0, color, 3)
+                
+                # Show hand detection status
+                status_color = (0, 255, 0) if hand_detected else (0, 0, 255)
+                status_text = "HAND DETECTED" if hand_detected else "NO HAND"
+                cv2.putText(display_frame, status_text, (10, CAMERA_HEIGHT - 20), 
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.6, status_color, 2)
+                
+                if SHOW_FPS:
+                    current_time = time.time()
+                    if current_time - last_fps_time >= 1.0:
+                        fps_display = frame_count / (current_time - last_fps_time)
+                        frame_count = 0
+                        last_fps_time = current_time
+                    
+                    cv2.putText(display_frame, f'FPS: {fps_display:.0f}', 
+                               (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+                
+                cv2.imshow('Multiprocessing Hand Tracker - Press Q to quit', display_frame)
+                
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
+            
+            # Frame rate limiting
+            if TARGET_FPS > 0:
+                elapsed = time.time() - start_time
+                target_time = 1.0 / TARGET_FPS
+                if elapsed < target_time:
+                    time.sleep(target_time - elapsed)
+    
+    except KeyboardInterrupt:
+        print("\nInterrupted by user")
+    except Exception as e:
+        print(f"Error: {e}")
+        import traceback
+        traceback.print_exc()
+    finally:
+        print("Cleaning up...")
+        
+        if SHOW_FPS and 'fps_counter' in locals():
+            fps_counter.stop()
+            print(f"Average FPS: {fps_counter.approx_fps:.2f}")
+        
+        if 'tracker' in locals():
+            tracker.cleanup()
+        
+        if 'camera' in locals():
+            camera.stop()
+        
+        if SHOW_PREVIEW:
+            cv2.destroyAllWindows()
+        
+        print("High-performance hand tracker stopped.")
+
+if __name__ == "__main__":
+    # Ensure we can create processes
+    mp_proc.set_start_method('spawn', force=True)
+    main()

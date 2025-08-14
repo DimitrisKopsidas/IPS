@@ -6,12 +6,21 @@
     <title>Crystal - Static Carousel</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flickity/2.2.2/flickity.min.css">
     <link rel="stylesheet" href="css/activeCarousel.css">
+    
+    <!-- Preload images to prevent jittering -->
+    <link rel="preload" href="media/1.png" as="image">
+    <link rel="preload" href="media/2.png" as="image">
+    <link rel="preload" href="media/3.png" as="image">
+    <link rel="preload" href="media/4.png" as="image">
+    <link rel="preload" href="media/5.png" as="image">
+    <link rel="preload" href="media/6.png" as="image">
+    <link rel="preload" href="media/404.png" as="image">
 </head>
 <body>
     <div class="carousel">
         <!-- Default static carousel items -->
         <div class="carousel-cell">
-            <img src="media/1.png" onerror="this.src='media/404.png'">
+            <img src="media/1.png" onerror="this.src='media/404.png'" loading="eager">
             <div class="product-info-overlay">
                 <div class="product-title">Sample Product 1</div>
                 <div class="product-price">
@@ -24,7 +33,7 @@
         </div>
         
         <div class="carousel-cell">
-            <img src="media/2.png" onerror="this.src='media/404.png'">
+            <img src="media/2.png" onerror="this.src='media/404.png'" loading="eager">
             <div class="product-info-overlay">
                 <div class="product-title">Sample Product 2</div>
                 <div class="product-price">$149.99</div>
@@ -32,7 +41,7 @@
         </div>
         
         <div class="carousel-cell">
-            <img src="media/3.png" onerror="this.src='media/404.png'">
+            <img src="media/3.png" onerror="this.src='media/404.png'" loading="eager">
             <div class="product-info-overlay">
                 <div class="product-title">Sample Product 3</div>
                 <div class="product-price">
@@ -45,7 +54,7 @@
         </div>
         
         <div class="carousel-cell">
-            <img src="media/4.png" onerror="this.src='media/404.png'">
+            <img src="media/4.png" onerror="this.src='media/404.png'" loading="eager">
             <div class="product-info-overlay">
                 <div class="product-title">Sample Product 4</div>
                 <div class="product-price">$89.99</div>
@@ -53,7 +62,7 @@
         </div>
         
         <div class="carousel-cell">
-            <img src="media/5.png" onerror="this.src='media/404.png'">
+            <img src="media/5.png" onerror="this.src='media/404.png'" loading="eager">
             <div class="product-info-overlay">
                 <div class="product-title">Sample Product 5</div>
                 <div class="product-price">
@@ -66,7 +75,7 @@
         </div>
         
         <div class="carousel-cell">
-            <img src="media/6.png" onerror="this.src='media/404.png'">
+            <img src="media/6.png" onerror="this.src='media/404.png'" loading="eager">
             <div class="product-info-overlay">
                 <div class="product-title">Sample Product 6</div>
                 <div class="product-price">$59.99</div>
@@ -74,85 +83,118 @@
         </div>
     </div> 
 
-    <!-- Instruction Modal -->
-    <div class="instruction-modal" id="instructionModal">
-        <div class="instruction-modal-content">
-            <img src="media/hand.png" id="hand" alt="Hand gesture">
-            <p class="instruction-text">Use your hand to scroll through the catalog to win a prize!</p>
-        </div>
-    </div>
-
     <!-- Flickity JavaScript -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/flickity/2.2.2/flickity.pkgd.min.js"></script>
     
-    <!-- Enhanced initialization script with keyboard controls from activeCarousel.js -->
+    <!-- Enhanced initialization script with image preloading and performance optimizations -->
     <script>
+        // Preload all images programmatically for better performance
+        function preloadImages() {
+            const imageUrls = [
+                'media/1.png',
+                'media/2.png', 
+                'media/3.png',
+                'media/4.png',
+                'media/5.png',
+                'media/6.png',
+                'media/404.png'
+            ];
+
+            return Promise.all(imageUrls.map(url => {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.onload = () => resolve(img);
+                    img.onerror = () => resolve(img); // Still resolve to continue
+                    img.src = url;
+                });
+            }));
+        }
+
+        // Wait for images to preload before initializing carousel
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('Starting image preload...');
+            
+            preloadImages().then(() => {
+                console.log('All images preloaded, initializing carousel...');
+                
+                var carousel = document.querySelector('.carousel');
+                var flkty = new Flickity(carousel, { 
+                    wrapAround: true,
+                    prevNextButtons: false,
+                    pageDots: false,
+                    autoPlay: 3000, // 3 second autoplay
+                    pauseAutoPlayOnHover: true,
+                    // Performance optimizations for Raspberry Pi
+                    imagesLoaded: true, // Wait for images to load
+                    percentPosition: false, // Use transform3d for better performance
+                    setGallerySize: true // Set gallery size to prevent reflows
+                });
+                
+                // Settings from activeCarousel.js
+                var autoplayWait = 2000; // Wait time after interaction before restarting autoplay
+                
+                // Click interaction - restart autoplay after interaction
+                carousel.addEventListener('click', function() {
+                    flkty.stopPlayer();
+                    setTimeout(function(){
+                        flkty.playPlayer();
+                    }, autoplayWait);
+                });
+
+                // Keyboard event listener for arrow keys
+                document.addEventListener('keydown', function(event) {
+                    // Check if left arrow key is pressed
+                    if (event.key === 'ArrowLeft' || event.keyCode === 37) {
+                        event.preventDefault();
+                        if (flkty) {
+                            flkty.previous();
+                            flkty.stopPlayer();
+                            setTimeout(function(){
+                                flkty.playPlayer();
+                            }, autoplayWait);
+                        }
+                        console.log("Left arrow pressed - Previous item");
+                    }
+                    
+                    // Check if right arrow key is pressed
+                    if (event.key === 'ArrowRight' || event.keyCode === 39) {
+                        event.preventDefault();
+                        if (flkty) {
+                            flkty.next();
+                            flkty.stopPlayer();
+                            setTimeout(function(){
+                                flkty.playPlayer();
+                            }, autoplayWait);
+                        }
+                        console.log("Right arrow pressed - Next item");
+                    }
+                });
+
+                // Change listener for debugging
+                flkty.on('change', function(index) {
+                    console.log('Carousel changed to slide:', index);
+                });
+
+                console.log('Carousel initialized successfully');
+            }).catch(error => {
+                console.error('Error preloading images:', error);
+                // Initialize carousel anyway as fallback
+                initializeCarouselFallback();
+            });
+        });
+
+        // Fallback initialization if preloading fails
+        function initializeCarouselFallback() {
+            console.log('Using fallback carousel initialization...');
             var carousel = document.querySelector('.carousel');
             var flkty = new Flickity(carousel, { 
                 wrapAround: true,
                 prevNextButtons: false,
                 pageDots: false,
-                autoPlay: 3000, // 3 second autoplay
+                autoPlay: 4000, // Slower autoplay for performance
                 pauseAutoPlayOnHover: true
             });
-            
-            // Settings from activeCarousel.js
-            var autoplayWait = 2000; // Wait time after interaction before restarting autoplay
-            
-            // Optional: Show instruction modal for 3 seconds
-            var instructionModal = document.getElementById('instructionModal');
-            if (instructionModal) {
-                instructionModal.style.display = 'flex';
-                setTimeout(function() {
-                    instructionModal.style.display = 'none';
-                }, 3000);
-            }
-            
-            // Click interaction - restart autoplay after interaction (from activeCarousel.js)
-            carousel.addEventListener('click', function() {
-                flkty.stopPlayer();
-                setTimeout(function(){
-                    flkty.playPlayer();
-                }, autoplayWait);
-            });
-
-            // Keyboard event listener for arrow keys (exact copy from activeCarousel.js)
-            document.addEventListener('keydown', function(event) {
-                // Check if left arrow key is pressed
-                if (event.key === 'ArrowLeft' || event.keyCode === 37) {
-                    event.preventDefault(); // Prevent default scroll behavior
-                    if (flkty) {
-                        flkty.previous(); // Go to previous item
-                        // Restart autoplay after manual navigation
-                        flkty.stopPlayer();
-                        setTimeout(function(){
-                            flkty.playPlayer();
-                        }, autoplayWait);
-                    }
-                    console.log("Left arrow pressed - Previous item");
-                }
-                
-                // Check if right arrow key is pressed
-                if (event.key === 'ArrowRight' || event.keyCode === 39) {
-                    event.preventDefault(); // Prevent default scroll behavior
-                    if (flkty) {
-                        flkty.next(); // Go to next item
-                        // Restart autoplay after manual navigation
-                        flkty.stopPlayer();
-                        setTimeout(function(){
-                            flkty.playPlayer();
-                        }, autoplayWait);
-                    }
-                    console.log("Right arrow pressed - Next item");
-                }
-            });
-
-            // Change listener (simplified version from activeCarousel.js for debugging)
-            flkty.on('change', function(index) {
-                console.log('Carousel changed to slide:', index);
-            });
-        });
+        }
     </script>
 </body>
 </html>
