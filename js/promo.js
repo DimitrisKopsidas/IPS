@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     productForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        saveProductData();
+        savePromoData();
         formChanged = false;
 
         // Only navigate if save was successful and there's a pending navigation
@@ -184,7 +184,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             navigateProduct(pendingNavigationDirection);
             pendingNavigationDirection = null;
         }
-        // Remove the else showConfirmation() call since it's handled in saveProductData()
+        // Remove the else showConfirmation() call since it's handled in savePromoData()
     });
 
     cancelBtn.addEventListener('click', function() {
@@ -217,7 +217,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     saveAndContinueBtn.addEventListener('click', function() {
-        saveProductData();
+        savePromoData();
         formChanged = false;
         
         // Only navigate if save was successful
@@ -249,13 +249,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     saveBtn.addEventListener('click', function(e) {
         e.preventDefault(); // Prevent default form submission
-        saveProductData();
+        savePromoData();
         formChanged = false;
         // Remove the automatic showConfirmation() call:
         // if (validForInsert){
         //     showConfirmation();
         // }
-        // The showConfirmation() should only be called from within saveProductData() upon successful save
+        // The showConfirmation() should only be called from within savePromoData() upon successful save
     });
 
     discountInput.addEventListener('input', function() {
@@ -545,7 +545,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    async function saveProductData() {
+    async function savePromoData() {
     if (!headerProductCode.value.trim()) {
         showWarningModal('Promo Code is required');
         headerProductCode.focus();
