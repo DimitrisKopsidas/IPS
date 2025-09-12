@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promo Code Verification</title>
+    <link rel="stylesheet" href="css/product.css">
+    <link rel="stylesheet" href="css/check.css">
+    <link rel="stylesheet" href="css/common.css">
+    <script src="js/check.js" type="module"></script>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-content">
+            <div class="app-brand">
+                <img src="media/logo.webp" alt="Crystal" class="app-logo">
+                <span class="app-name">Crystal</span>
+            </div>
+            <ul>
+                <li><a href="index.html">Admin</a></li>
+                <li><a href="products.html">Products</a></li>
+                <li><a href="carousels.html">Carousels</a></li>
+                <li><a href="promos.html">Promos</a></li>
+                <li><a href="check.html">Check</a></li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container">        
+        <div class="promo-container">
+            <div class="promo-card">
+                <div class="promo-header">
+                    <h2>🏷️ Verify Your Promo Code</h2>
+                </div>
+                <div class="promo-description">
+                    Enter your promo code below to verify its validity and see the applicable discount or special offer.
+                </div>
+                <form id="promoForm" class="promo-form">
+                    <div class="form-group">
+                        <label for="promoCode">Promo Code</label>
+                        <input type="text" id="promoCode" name="promoCode" placeholder="Enter promo code" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="verifyBtn">Verify Code</button>
+                </form>
+                <!-- Result Modal -->
+                <div id="resultContainer" class="result-container hidden">
+                    <div id="statusIcon" class="status-icon"></div>
+                    <div id="resultMessage" class="result-message"></div>
+                    <div id="discountDetails" class="discount-details"></div>
+                    <div class="action-buttons promo-actions" id="buttonDiv">
+                        <button class="btn btn-primary" id="applyCodeBtn">Apply to Cart</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Verification Modal -->
+    <div id="verificationModal" class="modal">
+        <div class="modal-content warning-modal">
+            <h3>⚠️ Warning</h3>
+            <p>By applying this code to your cart, it will be permanently removed from the database and cannot be used again.</p>
+            <div class="modal-buttons">
+                <button id="confirmApplyBtn" class="btn btn-primary">Apply Code</button>
+                <button id="cancelApplyBtn" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,157 @@
+.carousel {
+    background: #EEE;
+  }
+  
+.carousel-cell {
+    width: 99%;
+    height: 96vh;
+    background: white;
+    border-radius: 5px;
+    counter-increment: gallery-cell;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden; /* Add this to contain enlarged images */
+} 
+  
+/* .carousel-cell:nth-child(even) {
+  background: #8C8;
+}
+  
+.carousel-cell:nth-child(odd) {
+  background: #88C;
+}  */
+  
+.carousel-cell img {
+    display: block;
+    height: 100%;     /* Fill height of cell */
+    width: auto;      /* Maintain aspect ratio */
+    object-fit: contain; /* Ensure image fits without distortion */
+    max-width: none;  /* Override max-width constraint */
+    margin: auto;     /* Center the image */
+}
+
+.product-info-overlay {
+    position: absolute;
+    bottom: 24px;      /* Increased from 20px */
+    left: 24px;        /* Increased from 20px */
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 18px;     /* Increased from 15px */
+    border-radius: 10px; /* Increased from 8px */
+    z-index: 10;
+    font-family: Arial, sans-serif;
+    pointer-events: none;
+    transform: scale(1.2); /* Added 20% scale */
+    transform-origin: bottom left; /* Scale from bottom left corner */
+}
+
+.product-title {
+    font-size: 29px;    /* Increased from 24px */
+    font-weight: bold;
+    margin-bottom: 12px; /* Increased from 10px */
+}
+
+.product-price {
+    font-size: 24px;    /* Increased from 20px */
+    margin-bottom: 6px; /* Increased from 5px */
+    display: flex;
+    align-items: center;
+    gap: 12px;         /* Increased from 10px */
+}
+
+.original-price {
+    text-decoration: line-through;
+    color: #999;
+}
+
+.final-price {
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+.product-discount {
+    color: #ff4444;
+    font-size: 22px;    /* Increased from 18px */
+    font-weight: bold;
+}
+
+/* Modal overlay */
+.instruction-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(2px);
+}
+
+/* Modal content */
+.instruction-modal-content {
+    background: white; /* Changed from rgba(255, 255, 255, 0.95) to solid white */
+    border-radius: 18px;
+    padding: 20modalTimeoutTimepx;
+    text-align: center;
+    box-shadow: 0 5px 18px rgba(0, 0, 0, 0.3);
+    max-width: 600px;
+    margin: 0 auto;
+    transform: scale(1.2);
+    transform-origin: center center;
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+/* Modal animation */
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1.2);
+    }
+}
+
+/* Hand animation in modal */
+.instruction-modal #hand {
+    width: 200px;
+    height: 200px;
+    object-fit: contain;
+    margin: 30px 0;
+    animation: slideHand 3s ease-in-out infinite;
+}
+
+@keyframes slideHand {
+    0% {
+        transform: translateX(-150px);
+    }
+    50% {
+        transform: translateX(150px);
+    }
+    100% {
+        transform: translateX(-150px);
+    }
+}
+
+/* Modal text */
+.instruction-text {
+    color: #2C3E50;
+    font-size: 28px;
+    font-weight: bold;
+    line-height: 1.4;
+    margin: 20px 0;
+}
+
+/* Close instruction */
+.close-instruction {
+    color: #7F8C8D;
+    font-size: 18px;
+    font-style: italic;
+    margin-top: 20px;
+}

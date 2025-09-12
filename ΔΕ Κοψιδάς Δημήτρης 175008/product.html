@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product View</title>
+    <link rel="stylesheet" href="css/product.css">
+    <script type="module" src="js/product.js"></script>
+</head>
+<body>
+    <nav class="top-nav">
+    <div class="nav-content">
+        <div class="app-brand">
+            <img src="media/logo.webp" alt="Crystal" class="app-logo">
+            <span class="app-name">Crystal</span>
+        </div>
+        <ul>
+            <li><a href="index.html">Admin</a></li>
+            <li><a href="products.html">Products</a></li>
+            <li><a href="carousels.html">Carousels</a></li>
+            <li><a href="promos.html">Promos</a></li>
+            <li><a href="check.html">Check</a></li>
+        </ul>
+    </div>
+    </nav>
+    <div class="container">
+        <div class="header-container">
+            <div class="title-section">
+                <div class="product-header">
+                    <input type="number" id="headerProductCode" class="header-input code" placeholder="0000">
+                    <input type="text" id="headerProductName" class="header-input name" placeholder="Enter Product Name">
+                </div>
+            </div>
+            <div class="navigation-buttons">
+                <button id="createNewBtn" class="btn btn-new">Create New+</button>
+            </div>
+        </div>
+        
+        <div class="product-container">
+            <div class="product-section-left">
+                <!-- Product Image Section -->
+                <div class="product-image">
+                    <img alt="Product Image" id="mainProductImage">
+                </div>
+                <div class="image-upload">
+                    <input type="file" id="imageInput" accept="image/*" class="hidden-input">
+                    <button type="button" class="btn btn-secondary btn-upload" id="changeImageBtn">
+                        <span class="upload-icon">📷</span>
+                        <span id="changeImageTxt">Change Image</span>
+                    </button>
+                </div>
+                <!-- Action buttons -->
+                <div class="action-buttons">
+                    <button type="submit" class="btn btn-primary" id="saveBtn">Save Changes</button>
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="deleteBtn">Delete</button>
+                </div>
+            </div>
+            
+            <!-- Product Details Section -->
+            <div class="product-details">
+                <form id="productForm">
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="productType" class="clickable">Type:</label>
+                            <div class="group-select-wrapper">
+                                <input type="text" 
+                                       id="groupCodeInput" 
+                                       class="group-code-input" 
+                                       maxlength="3" 
+                                       pattern="\d*"
+                                       placeholder="000"
+                                       oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                                <select id="productType" name="group" required>
+                                    <!-- Options will be populated dynamically -->
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group half">
+                            <label for="productMaker" class="clickable">Maker:</label>
+                            <div class="group-select-wrapper">
+                                <input type="text" 
+                                       id="makerCodeInput" 
+                                       class="group-code-input" 
+                                       maxlength="3" 
+                                       pattern="\d*"
+                                       placeholder="000"
+                                       oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                                <select id="productMaker" name="maker" required>
+                                    <!-- Options will be populated dynamically -->
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="productPrice">Price ($):</label>
+                            <input type="number" id="productPrice" name="price" required>
+                        </div>
+                        <div class="form-group half">
+                            <label for="productDiscount">Discount (%):</label>
+                            <input type="number" id="productDiscount" name="discount" value="0" step="1" min="0" max="100">
+                        </div>
+                        <div class="form-group half">
+                            <label for="productDiscount">Final Price ($):</label>
+                            <input type="number" id="productFinalPrice" name="finalprice" value="0" step="1" min="0" max="100">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="productNotes">Notes:</label>
+                            <textarea id="productNotes" name="notes" class="auto-grow" rows="1"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="form-section">
+                        <h3>Associated Carousels</h3>
+                        <div class="info-carousel" id="carouselList"></div>
+                    </div>
+                    
+                    <div class="form-section">
+                        <h3>Active Promo Codes</h3>
+                        <div class="info-promo" id="promoList"></div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div id="saveConfirmation" class="confirmation-modal">
+        <div class="modal-content success-modal">
+            <span class="close-btn">&times;</span>
+            <div class="success-icon">✓</div>
+            <p>Changes saved successfully!</p>
+        </div>
+    </div>
+    
+    <div id="unsavedChangesModal" class="confirmation-modal">
+        <div class="modal-content">
+            <h3>Unsaved Changes</h3>
+            <p>You have unsaved changes. Would you like to save before moving to another product?</p>
+            <div class="modal-buttons">
+                <button id="saveAndContinueBtn" class="btn btn-primary">Save & Continue</button>
+                <button id="discardAndContinueBtn" class="btn btn-secondary">Discard Changes</button>
+                <button id="cancelNavigationBtn" class="btn btn-outline">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="deleteConfirmationModal" class="confirmation-modal">
+        <div class="modal-content">
+            <h3>Confirm Delete</h3>
+            <p>Are you sure you want to delete this product? This action cannot be undone.</p>
+            <div class="modal-buttons">
+                <button id="confirmDeleteBtn" class="btn btn-danger">Delete Product</button>
+                <button id="cancelDeleteBtn" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="cancelConfirmationModal" class="confirmation-modal">
+        <div class="modal-content">
+            <h3>Confirm Cancel</h3>
+            <p>Are you sure you want to cancel? All unsaved changes will be lost.</p>
+            <div class="modal-buttons">
+                <button id="confirmCancelBtn" class="btn btn-secondary">Yes, Revert Changes</button>
+                <button id="cancelRevertBtn" class="btn btn-outline">No, Keep Editing</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="warningModal" class="confirmation-modal">
+        <div class="modal-content warning-modal">
+            <span class="close-btn">&times;</span>
+            <div class="warning-icon">⚠️</div>
+            <h3>Warning</h3>
+            <p id="warningMessage"></p>
+            <div class="modal-buttons">
+                <button id="warningOkBtn" class="btn btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Preview Modal -->
+    <div id="imagePreviewModal" class="preview-modal">
+        <span class="preview-close-modal">&times;</span>
+        <img class="preview-modal-content" id="previewImage">
+    </div>
+
+    <!-- Groups Management Modal -->
+    <div id="groupsModal" class="groups-modal">
+        <div class="groups-modal-content">
+            <span class="groups-close">&times;</span>
+            <h3>Manage Groups</h3>
+            <!-- Combined search and sort controls -->
+            <div class="groups-controls-row">
+                <div class="groups-search-row">
+                    <input type="number" 
+                           id="searchGroupCode" 
+                           class="groups-search code" 
+                           placeholder="Code">
+                    <input type="text" 
+                           id="searchGroupName" 
+                           class="groups-search name" 
+                           placeholder="Search name">
+                </div>
+                🔎
+                <div class="groups-sort-controls">
+                    <button id="sortByCode" class="groups-btn-sort">Sort by Code ↓</button>
+                    <button id="sortByName" class="groups-btn-sort">Sort by Name ↓</button>
+                </div>
+            </div>
+            <div class="group-item">
+                <input type="number" class="groups-input code" id="newGroupCode" value="" placeholder="Code">
+                <input type="text" class="groups-input name" id="newGroupName" value="" placeholder="New name">
+                <button class="groups-btn-save-item" id="addGroupBtn" title="Add group">➕</button>
+            </div>
+            <div class="groups-list" id="groupsList">
+            </div>
+            <button id="saveGroupBtn" class="groups-btn groups-btn-save">Save Changes</button>
+        </div>
+    </div>
+    <div class="groups-save-notification" style="display: none;">
+        <p>✓ Groups data saved and exported successfully!</p>
+    </div>
+
+    <div class="side-navigation">
+        <button id="sidePrevBtn" class="side-nav-btn side-nav-prev">
+            <span>←</span>
+        </button>
+        <button id="sideNextBtn" class="side-nav-btn side-nav-next">
+            <span>→</span>
+        </button>
+    </div>
+
+
+
+</body>
+</html>
+

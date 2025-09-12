@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products List</title>
+    <link rel="stylesheet" href="css/products.css">
+    <link rel="stylesheet" href="css/common.css">
+    <script src="js/products.js" type="module"></script>
+    <script src="js/navigation.js"></script>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-content">
+            <div class="app-brand">
+                <img src="media/logo.webp" alt="Crystal" class="app-logo">
+                <span class="app-name">Crystal</span>
+            </div>
+            <ul>
+                <li><a href="index.html">Admin</a></li>
+                <li><a href="products.html">Products</a></li>
+                <li><a href="carousels.html">Carousels</a></li>
+                <li><a href="promos.html">Promos</a></li>
+                <li><a href="check.html">Check</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header-container">
+            <div class="title-section">
+                <h1>Products</h1>
+            </div>
+            <div class="navigation-buttons">
+                <button class="btn btn-new" id="createNewButton">
+                    <span>+</span> Create New
+                </button>
+            </div>
+        </div>
+        <div class="filters-section">
+            <div class="filter-group">
+                <label for="codeFilter">Code:</label>
+                <input type="number" id="codeFilter" class="filter-input" placeholder="Enter code">
+            </div>
+            <div class="filter-group">
+                <label for="nameFilter">Name:</label>
+                <input type="text" id="nameFilter" class="filter-input" placeholder="Enter name">
+            </div>
+            <div class="filter-group">
+                <label for="groupFilter">Type:</label>
+                <select id="groupFilter" class="filter-input">
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="makerFilter">Maker:</label>
+                <select id="makerFilter" class="filter-input">
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="makerFilter">Items per page:</label>
+                <select id="itemsPerPage" class="filter-input">
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+            
+        </div>
+        <div id="productList" class="product-list">
+            <!-- Products here -->
+        </div>
+    </div>
+    <div class="side-navigation">
+        <button id="sidePrevBtn" class="side-nav-btn side-nav-prev">
+            <span>←</span>
+        </button>
+        <button id="sideNextBtn" class="side-nav-btn side-nav-next">
+            <span>→</span>
+        </button>
+    </div>
+</body>
+</html>
