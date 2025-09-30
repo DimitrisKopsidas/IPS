@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crystal - Static Carousel</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flickity/2.2.2/flickity.min.css">
+    <link rel="stylesheet" href="css/flickity.min.css">
     <link rel="stylesheet" href="css/activeCarousel.css">
     
     <!-- Preload images to prevent jittering -->
@@ -84,7 +84,7 @@
     </div> 
 
     <!-- Flickity JavaScript -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/flickity/2.2.2/flickity.pkgd.min.js"></script>
+    <script src="js/flickity.pkgd.min.js"></script>
     
     <!-- Enhanced initialization script with image preloading and performance optimizations -->
     <script>
@@ -139,35 +139,6 @@
                     setTimeout(function(){
                         flkty.playPlayer();
                     }, autoplayWait);
-                });
-
-                // Keyboard event listener for arrow keys
-                document.addEventListener('keydown', function(event) {
-                    // Check if left arrow key is pressed
-                    if (event.key === 'ArrowLeft' || event.keyCode === 37) {
-                        event.preventDefault();
-                        if (flkty) {
-                            flkty.previous();
-                            flkty.stopPlayer();
-                            setTimeout(function(){
-                                flkty.playPlayer();
-                            }, autoplayWait);
-                        }
-                        console.log("Left arrow pressed - Previous item");
-                    }
-                    
-                    // Check if right arrow key is pressed
-                    if (event.key === 'ArrowRight' || event.keyCode === 39) {
-                        event.preventDefault();
-                        if (flkty) {
-                            flkty.next();
-                            flkty.stopPlayer();
-                            setTimeout(function(){
-                                flkty.playPlayer();
-                            }, autoplayWait);
-                        }
-                        console.log("Right arrow pressed - Next item");
-                    }
                 });
 
                 // Change listener for debugging
